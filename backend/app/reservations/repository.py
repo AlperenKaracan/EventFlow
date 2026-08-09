@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import cast
 from uuid import UUID
 
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.events.models import Event, EventStatus
@@ -51,6 +52,55 @@ async def owned_event_exists(*, session: AsyncSession, event_id: UUID, organizer
             )
         )
     ) is not None
+
+
+async def get_owned_reservation_event_id(
+    *, session: AsyncSession, reservation_id: UUID, attendee_id: UUID
+) -> UUID | None:
+    return cast(
+        UUID | None,
+        await session.scalar(
+            select(Reservation.event_id).where(
+                Reservation.id == reservation_id,
+                Reservation.attendee_id == attendee_id,
+            )
+        ),
+    )
+
+
+async def get_event_for_update(*, session: AsyncSession, event_id: UUID) -> Event | None:
+    return cast(
+        Event | None,
+        await session.scalar(select(Event).where(Event.id == event_id).with_for_update()),
+    )
+
+
+async def get_owned_reservation_for_update(
+    *,
+    session: AsyncSession,
+    reservation_id: UUID,
+    attendee_id: UUID,
+    event_id: UUID,
+) -> Reservation | None:
+    return cast(
+        Reservation | None,
+        await session.scalar(
+            select(Reservation)
+            .where(
+                Reservation.id == reservation_id,
+                Reservation.attendee_id == attendee_id,
+                Reservation.event_id == event_id,
+            )
+            .with_for_update()
+        ),
+    )
+
+
+async def get_database_now(session: AsyncSession) -> datetime:
+    value = await session.scalar(select(func.now()))
+    if value is None:
+        raise RuntimeError("database clock did not return a value")
+    return value
 
 
 async def list_attendee_reservations(

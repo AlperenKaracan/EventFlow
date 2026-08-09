@@ -104,11 +104,13 @@ async def get_owned_event_for_update(
     )
 
 
-async def lock_active_event_reservations(*, session: AsyncSession, event_id: UUID) -> list[UUID]:
+async def lock_active_event_reservations(
+    *, session: AsyncSession, event_id: UUID
+) -> list[Reservation]:
     return list(
         (
             await session.scalars(
-                select(Reservation.id)
+                select(Reservation)
                 .where(
                     Reservation.event_id == event_id,
                     Reservation.status == ReservationStatus.ACTIVE,

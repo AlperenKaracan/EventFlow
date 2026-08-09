@@ -34,6 +34,7 @@ from app.events.schemas import (
     PublicEventResponse,
 )
 from app.events.timezone import validate_event_datetime
+from app.reservations.models import Reservation, ReservationStatus
 from app.shared.config import Settings
 from app.shared.errors import AppError
 from app.shared.request_context import get_request_id
@@ -275,12 +276,25 @@ async def cancel_event(
     database_now = await get_database_now(session)
     if event.starts_at <= database_now:
         raise event_started_error()
-    await lock_active_event_reservations(session=session, event_id=event.id)
+    active_reservations = await lock_active_event_reservations(
+        session=session,
+        event_id=event.id,
+    )
+    if event.reserved_count != len(active_reservations):
+        raise RuntimeError("event reserved_count does not match active reservations")
 
     before = _event_snapshot(event)
+    reservation_changes: list[tuple[Reservation, dict[str, Any]]] = []
+    for reservation in active_reservations:
+        reservation_before = _reservation_snapshot(reservation)
+        reservation.status = ReservationStatus.CANCELLED_BY_EVENT
+        reservation.cancelled_at = database_now
+        reservation.updated_at = database_now
+        reservation_changes.append((reservation, reservation_before))
     event.status = EventStatus.CANCELLED
     event.cancelled_at = database_now
     event.updated_at = database_now
+    event.reserved_count = 0
     event.version += 1
     try:
         await session.flush()
@@ -291,6 +305,21 @@ async def cancel_event(
                 resource_id=event.id,
                 changes={"before": before, "after": _event_snapshot(event)},
             )
+        )
+        session.add_all(
+            [
+                _audit_log(
+                    actor_id=organizer_id,
+                    action="reservation.cancelled_by_event",
+                    resource_id=reservation.id,
+                    changes={
+                        "before": reservation_before,
+                        "after": _reservation_snapshot(reservation),
+                    },
+                    resource_type="reservation",
+                )
+                for reservation, reservation_before in reservation_changes
+            ]
         )
         await session.commit()
     except Exception:
@@ -357,13 +386,29 @@ def _event_snapshot(event: Event) -> dict[str, Any]:
     }
 
 
+def _reservation_snapshot(reservation: Reservation) -> dict[str, Any]:
+    return {
+        "eventId": str(reservation.event_id),
+        "attendeeId": str(reservation.attendee_id),
+        "status": reservation.status.value,
+        "cancelledAt": (
+            reservation.cancelled_at.isoformat() if reservation.cancelled_at is not None else None
+        ),
+    }
+
+
 def _audit_log(
-    *, actor_id: UUID, action: str, resource_id: UUID, changes: dict[str, Any]
+    *,
+    actor_id: UUID,
+    action: str,
+    resource_id: UUID,
+    changes: dict[str, Any],
+    resource_type: str = "event",
 ) -> AuditLog:
     return AuditLog(
         actor_id=actor_id,
         action=action,
-        resource_type="event",
+        resource_type=resource_type,
         resource_id=resource_id,
         changes=changes,
         request_id=UUID(get_request_id()),
