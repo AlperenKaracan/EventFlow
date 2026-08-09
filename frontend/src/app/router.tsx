@@ -7,6 +7,12 @@ import {
 import { PublicEventsPage } from '../features/events/PublicEventsPage'
 import { RouteNotFoundPage } from '../shared/RouteNotFoundPage'
 import { LoginPage, PublicEventDetailPage, RegisterPage } from './lazyPages'
+import {
+  OrganizerAttendeesRoute,
+  OrganizerEventCreateRoute,
+  OrganizerEventEditRoute,
+  OrganizerEventsRoute,
+} from './OrganizerRoutes'
 import { RootLayout, UpcomingRoute } from './RouteLayouts'
 
 const rootRoute = createRootRoute({
@@ -41,11 +47,7 @@ const registerRoute = createRoute({
   component: RegisterPage,
 })
 
-const upcomingPaths = [
-  '/attendee/reservations',
-  '/organizer/events',
-  '/organizer/events/new',
-] as const
+const upcomingPaths = ['/attendee/reservations'] as const
 
 const upcomingRoutes = upcomingPaths.map((path) =>
   createRoute({
@@ -55,16 +57,34 @@ const upcomingRoutes = upcomingPaths.map((path) =>
   }),
 )
 
+const organizerEventsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/organizer/events',
+  component: OrganizerEventsRoute,
+})
+
+const organizerCreateRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/organizer/events/new',
+  component: OrganizerEventCreateRoute,
+})
+
 const organizerEditRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/organizer/events/$eventId/edit',
-  component: UpcomingRoute,
+  component: function OrganizerEditRoute() {
+    const { eventId } = organizerEditRoute.useParams()
+    return <OrganizerEventEditRoute eventId={eventId} />
+  },
 })
 
 const organizerAttendeesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/organizer/events/$eventId/attendees',
-  component: UpcomingRoute,
+  component: function EventAttendeesRoute() {
+    const { eventId } = organizerAttendeesRoute.useParams()
+    return <OrganizerAttendeesRoute eventId={eventId} />
+  },
 })
 
 const routeTree = rootRoute.addChildren([
@@ -73,6 +93,8 @@ const routeTree = rootRoute.addChildren([
   loginRoute,
   registerRoute,
   ...upcomingRoutes,
+  organizerEventsRoute,
+  organizerCreateRoute,
   organizerEditRoute,
   organizerAttendeesRoute,
 ])
