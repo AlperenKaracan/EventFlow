@@ -2,7 +2,7 @@
 
 EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Proje, ürün gereksinimleri ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmektedir.
 
-Bu branch yalnız **PR 1 — Foundation + DB/migrations** kapsamındadır. Çalışan monorepo, PostgreSQL şeması, Alembic migration, tekrar çalıştırılabilir seed, ortak HTTP/observability altyapısı, Docker Compose ve CI kalite kapıları hazırdır. Auth, event ve reservation iş endpointleri sonraki PR'lara bilinçli olarak bırakılmıştır.
+Bu branch **PR 2 — Auth + authorization** kapsamındadır. Foundation'a ek olarak register/login/me/refresh/logout, Argon2id, access JWT, opaque rotating refresh, Redis login rate limit, server-side authorization bağımlılıkları, exact CORS ve security header'ları hazırdır. Event ve reservation iş endpointleri sonraki PR'lara bilinçli olarak bırakılmıştır.
 
 ## Roller ve hedef akışlar
 
@@ -15,7 +15,7 @@ PR 1 seed'i bu iki rolü ve farklı durumları temsil eden altı etkinliği üre
 ## Teknoloji yığını
 
 - Backend: Python 3.14.3, FastAPI, async SQLAlchemy 2, Alembic, Pydantic Settings, uv
-- Veri: PostgreSQL 17.6; Redis 8.2 yalnız ileride rate-limit state'i için
+- Veri: PostgreSQL 17.6; Redis 8.2 yalnız geçici rate-limit state'i için
 - Frontend: React, TypeScript, Vite, Vitest; production'da unprivileged Nginx
 - Test: pytest, Testcontainers, Ruff, mypy, ESLint, Prettier
 - Teslim: pnpm workspace, multi-stage/non-root Docker image'ları, Docker Compose, GitHub Actions
@@ -154,7 +154,7 @@ docs/                    P0 kabul matrisi
 .github/workflows/       CI kalite kapıları
 ```
 
-Mimari ve veri modeli için `ARCHITECTURE.md`, kabul edilen trade-off'lar için `DECISIONS.md`, P0 izlenebilirliği için `docs/P0_ACCEPTANCE_MATRIX.md` okunmalıdır.
+Mimari ve veri modeli için `ARCHITECTURE.md`, kabul edilen trade-off'lar için `DECISIONS.md`, HTTP sözleşmesi için `API.md`, tehdit/kontrol özeti için `SECURITY.md` ve P0 izlenebilirliği için `docs/P0_ACCEPTANCE_MATRIX.md` okunmalıdır.
 
 ## Konfigürasyon ve secret güvenliği
 
@@ -165,11 +165,18 @@ Mimari ve veri modeli için `ARCHITECTURE.md`, kabul edilen trade-off'lar için 
 - `.env` ignore edilir; yalnız güvenli örnek değerli `.env.example` commitlenir.
 - Structured loglara secret ve gereksiz PII yazılmaz; her HTTP isteği güncel `X-Request-ID` taşır.
 
+Refresh token bakım temizliği:
+
+```powershell
+Push-Location backend
+uv run python -m app.auth.cleanup
+Pop-Location
+```
+
 ## Bilinçli olarak bu PR'da yapılmayanlar
 
-- Register/login/refresh/logout, authorization ve rate limiting: PR 2
 - Event API, owner-scoped detail, UTC/IANA/DST validation ve cursor pagination: PR 3
-- Reservation transaction'ları, concurrency, idempotency replay ve kritik audit yazımı: PR 4
+- Reservation transaction'ları, reservation rate limit, concurrency, idempotency replay ve kritik audit yazımı: PR 4
 - Tam responsive MUI arayüzü, generated OpenAPI client ve P0 E2E kapanışı: PR 5
 - Search/filtre, governance, graceful shutdown ve provisioning tabanlı observability stack: PR 6
 

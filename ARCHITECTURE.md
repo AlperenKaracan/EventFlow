@@ -252,10 +252,10 @@ PR 3 ve PR 4 gerçek sorguları eklediğinde `EXPLAIN (ANALYZE, BUFFERS)` kanıt
 
 ## Güvenlik sınırları
 
-- Browser güvenilir değildir; rol ve ownership backend'de tekrar doğrulanacaktır.
+- Browser güvenilir değildir; access claim rolü aktif kullanıcı DB rolüyle backend'de tekrar doğrulanır ve ownership domain sorgularında ayrıca scope edilir.
 - Başkasına ait UUID resource erişimi, varlığı gizlemek için `404`; genel capability reddi gerekirse `403` kullanır.
-- Access token kısa ömürlü JWT; refresh token opaque, yalnız hash'i saklanan ve döndürülen bir credential olacaktır.
-- CORS wildcard kabul etmez; exact allowlist kullanır.
+- Access token kısa ömürlü JWT; refresh token opaque ve yalnız hash'i saklanan rotating credential'dır. Replay aynı token family'yi kapatır.
+- CORS wildcard kabul etmez; exact allowlist ve cookie endpointlerinde exact Origin kontrolü kullanır.
 - Zorunlu env ve secret kuralları startup'ta fail-fast uygulanır.
 - Audit ve idempotency response'larında secret/PII kapsamı minimize edilir; log formatter yalnız allowlist alanlarını üretir.
 - Local demo credentials production için uygun değildir ve production demo JWT secret'ını reddeder.

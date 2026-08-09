@@ -6,7 +6,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 
 | ID | PDF P0 gereksinimi | Sahip PR | Otomatik/manüel kanıt | Durum |
 |---|---|---:|---|---|
-| P0-ID-01 | Kayıt ve giriş; organizer/attendee rolleri | 2 | Auth integration ve role testleri | ⬜ Bekliyor |
+| P0-ID-01 | Kayıt ve giriş; organizer/attendee rolleri | 2 | Auth integration ve role testleri | ✅ Kanıtlandı |
 | P0-ID-02 | Her endpointte server-side yetkilendirme | 2-4 | Role/capability negatif matrisi | ⬜ Bekliyor |
 | P0-ID-03 | IDOR koruması ve kaynak varlığını gizleyen 404 | 2-4 | Ownership-scoped saldırgan testleri | ⬜ Bekliyor |
 | P0-EVT-01 | Organizer yalnız kendi eventini oluşturur/günceller/iptal eder | 3 | Event lifecycle + ownership testleri | ⬜ Bekliyor |
@@ -29,8 +29,8 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-DI-04 | Eşzamanlı event düzenleme bilinçli conflict üretir | 3,5 | Version 409 integration/E2E | ⬜ Bekliyor |
 | P0-DI-05 | Event silme politikası gerekçeli ve tutarlı | 3,4 | Soft cancel/transition testleri + decision | ⬜ Bekliyor |
 | P0-DI-06 | KVKK silme/anonymization politikası belgeli | 1 | `DECISIONS.md` D-014 | ✅ Kanıtlandı |
-| P0-SEC-01 | Login ve reservation endpoint rate limit | 2,4 | Redis 429 + Retry-After testleri | ⬜ Bekliyor |
-| P0-SEC-02 | Security headers ve exact CORS allowlist | 2 | Header/config negatif testleri | ⬜ Bekliyor |
+| P0-SEC-01 | Login ve reservation endpoint rate limit | 2,4 | Redis 429 + Retry-After testleri | 🟡 Devam ediyor |
+| P0-SEC-02 | Security headers ve exact CORS allowlist | 2 | Header/config negatif testleri | ✅ Kanıtlandı |
 | P0-INF-01 | Her servis multi-stage Dockerfile kullanır | 1 | Backend/frontend Docker build ve image inspection | ✅ Kanıtlandı |
 | P0-INF-02 | Compose DB, Redis ve uygulamayı tek komutla başlatır | 1,5 | Config + clean-clone smoke | 🟡 Devam ediyor |
 | P0-INF-03 | Runtime containerlar non-root çalışır | 1 | Image user + runtime UID: backend `10001`, frontend `101` | ✅ Kanıtlandı |
