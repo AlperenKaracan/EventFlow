@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from typing import cast
 from uuid import UUID
 
-from sqlalchemy import delete, exists, select, update
+from anyio import to_thread
+from sqlalchemy import delete, exists, select, text, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import aliased
@@ -44,10 +46,11 @@ def invalid_refresh_token_error() -> AppError:
 
 
 async def register_user(*, request: RegisterRequest, session: AsyncSession) -> User:
+    password_hash = await to_thread.run_sync(hash_password, request.password)
     user = User(
         email=str(request.email),
         full_name=request.full_name,
-        password_hash=hash_password(request.password),
+        password_hash=password_hash,
         role=request.role.to_model(),
         status=UserStatus.ACTIVE,
     )
@@ -70,7 +73,7 @@ async def authenticate_user(
 ) -> AuthenticatedSession:
     user = await session.scalar(select(User).where(User.email == str(request.email)))
     encoded_hash = user.password_hash if user is not None else DUMMY_PASSWORD_HASH
-    password_valid = verify_password(request.password, encoded_hash)
+    password_valid = await to_thread.run_sync(verify_password, request.password, encoded_hash)
 
     if user is None or user.status is not UserStatus.ACTIVE or not password_valid:
         raise AppError(
@@ -80,7 +83,7 @@ async def authenticate_user(
         )
 
     if password_needs_rehash(user.password_hash):
-        user.password_hash = hash_password(request.password)
+        user.password_hash = await to_thread.run_sync(hash_password, request.password)
 
     now = datetime.now(tz=UTC)
     access = create_access_token(user_id=user.id, role=user.role, settings=settings, now=now)
@@ -111,15 +114,36 @@ async def _revoke_token_family(
     )
 
 
+def _family_advisory_lock_key(family_id: UUID) -> int:
+    return int.from_bytes(family_id.bytes[:8], byteorder="big", signed=True)
+
+
+async def _find_and_lock_refresh_token(
+    *, raw_token: str, session: AsyncSession
+) -> RefreshToken | None:
+    token_hash = hash_refresh_token(raw_token)
+    family_id = await session.scalar(
+        select(RefreshToken.family_id).where(RefreshToken.token_hash == token_hash)
+    )
+    if family_id is None:
+        return None
+    await session.execute(
+        text("SELECT pg_advisory_xact_lock(:lock_key)"),
+        {"lock_key": _family_advisory_lock_key(family_id)},
+    )
+    return cast(
+        RefreshToken | None,
+        await session.scalar(
+            select(RefreshToken).where(RefreshToken.token_hash == token_hash).with_for_update()
+        ),
+    )
+
+
 async def rotate_refresh_token(
     *, raw_token: str, session: AsyncSession, settings: Settings
 ) -> AuthenticatedSession:
     now = datetime.now(tz=UTC)
-    current = await session.scalar(
-        select(RefreshToken)
-        .where(RefreshToken.token_hash == hash_refresh_token(raw_token))
-        .with_for_update()
-    )
+    current = await _find_and_lock_refresh_token(raw_token=raw_token, session=session)
     if current is None:
         await session.rollback()
         raise invalid_refresh_token_error()
@@ -166,11 +190,7 @@ async def rotate_refresh_token(
 
 
 async def revoke_refresh_token_family(*, raw_token: str, session: AsyncSession) -> None:
-    token = await session.scalar(
-        select(RefreshToken)
-        .where(RefreshToken.token_hash == hash_refresh_token(raw_token))
-        .with_for_update()
-    )
+    token = await _find_and_lock_refresh_token(raw_token=raw_token, session=session)
     if token is None:
         await session.rollback()
         return

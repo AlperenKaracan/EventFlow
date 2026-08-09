@@ -186,7 +186,7 @@ Neyi feda ettim: Request ID araması label lookup kadar ucuz değildir; producti
 
 Durum: PR 2'de satır kilitli transaction, concurrent replay testi ve aktif-family güvenli cleanup ile uygulandı.
 
-Karar: Her login yeni `family_id` başlatacak; rotation eski token satırını kilitleyip nullable self-FK `replaced_by_id` zinciri kuracak. Eski token replay'i aynı family'nin bütün aktif tokenlarını revoke edecek.
+Karar: Her login yeni `family_id` başlatacak; rotation önce transaction advisory lock ile family'yi, sonra eski token satırını kilitleyip nullable self-FK `replaced_by_id` zinciri kuracak. Eski token replay'i aynı family'nin bütün aktif tokenlarını revoke edecek.
 
 Değerlendirdiğim alternatifler: Her tokenı bağımsız revoke; reuse detection olmadan rotation; Redis session; replacement zinciri olmadan tek current-token alanı.
 

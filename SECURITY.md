@@ -5,7 +5,7 @@
 - Parolalar Argon2id ile hash'lenir; düz parola/token/cookie loglanmaz.
 - Access JWT varsayılan 15 dakika yaşar; issuer, audience, subject, role, issued-at, expiry ve unique JWT ID zorunludur.
 - Refresh credential 48 random byte'tan üretilen opaque değerdir; PostgreSQL yalnız SHA-256 hash'ini saklar.
-- Her login yeni token family başlatır. Her refresh eski satırı `FOR UPDATE` ile kilitler ve rotate eder.
+- Her login yeni token family başlatır. Her refresh önce PostgreSQL transaction advisory lock ile family'yi, ardından eski satırı `FOR UPDATE` ile kilitler ve rotate eder.
 - Eski token replay'i, yarışın kazananı dahil aynı family'nin bütün aktif tokenlarını revoke eder. Client bu nedenle refresh isteklerini single-flight yapmalıdır.
 
 Refresh cookie `HttpOnly`, `SameSite=Lax`, `/api/v1/auth` path'li ve production'da `Secure`'dır. Refresh/logout exact allowlist `Origin` kontrolü olmadan çalışmaz. Access tokenın browser storage yerine yalnız frontend belleğinde tutulması hedeflenir.

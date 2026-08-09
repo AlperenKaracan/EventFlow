@@ -207,6 +207,58 @@ async def test_concurrent_refresh_allows_one_rotation_then_revokes_winner(
     assert revoked_winner.status_code == 401
 
 
+async def test_old_replay_and_next_generation_refresh_leave_no_active_family_member(
+    auth_client: AsyncClient, auth_app: object
+) -> None:
+    _payload, _login, original_token = await register_and_login(auth_client)
+    first_rotation = await auth_client.post(
+        "/api/v1/auth/refresh", headers={"Origin": ALLOWED_ORIGIN}
+    )
+    assert first_rotation.status_code == 200
+    replacement_token = auth_client.cookies.get(REFRESH_COOKIE_NAME)
+    assert replacement_token is not None
+    app = cast(FastAPI, auth_app)
+
+    async def use_token(raw_token: str) -> Any:
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://testserver") as contender:
+            contender.cookies.set(
+                REFRESH_COOKIE_NAME,
+                raw_token,
+                domain="testserver.local",
+                path="/api/v1/auth",
+            )
+            return await contender.post("/api/v1/auth/refresh", headers={"Origin": ALLOWED_ORIGIN})
+
+    replay_response, rotation_response = await asyncio.gather(
+        use_token(original_token),
+        use_token(replacement_token),
+    )
+    assert replay_response.status_code == 401
+    assert rotation_response.status_code in {200, 401}
+
+    if rotation_response.status_code == 200:
+        successor_token = rotation_response.cookies.get(REFRESH_COOKIE_NAME)
+        assert successor_token is not None
+        successor_response = await use_token(successor_token)
+        assert successor_response.status_code == 401
+
+    async with app.state.session_factory() as session:
+        original = await session.scalar(
+            select(RefreshToken).where(
+                RefreshToken.token_hash == hash_refresh_token(original_token)
+            )
+        )
+        assert original is not None
+        family_tokens = (
+            await session.scalars(
+                select(RefreshToken).where(RefreshToken.family_id == original.family_id)
+            )
+        ).all()
+        assert family_tokens
+        assert all(token.revoked_at is not None for token in family_tokens)
+
+
 async def test_cleanup_preserves_active_family_chain(
     auth_client: AsyncClient, auth_app: object, integration_settings: Settings
 ) -> None:
