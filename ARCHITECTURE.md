@@ -1,6 +1,6 @@
 # EventFlow Architecture
 
-Bu belge çalışan sistemin mimarisini açıklar. PR 3 itibarıyla foundation, auth/authorization ve event use-case'leri gerçektir; reservation transaction'ları PR 4'te eklenecektir.
+Bu belge çalışan sistemin mimarisini açıklar. PR 4 itibarıyla foundation, auth/authorization, event ve reservation use-case'leri gerçek transaction ve HTTP akışlarıyla çalışmaktadır.
 
 ## Mimari hedefler
 
@@ -75,9 +75,9 @@ Modül sınırları:
 | `auth` | Register/login/me ve refresh rotation/replay | PR 2'de çalışıyor |
 | `categories` | Seed edilmiş kategori kataloğu | Public read API çalışıyor |
 | `events` | Owner/public lifecycle, cursor ve timezone politikası | PR 3'te çalışıyor |
-| `reservations` | Reservation persistence ve ileride kapasite transaction'ları | Şema hazır; use-case PR 4 |
-| `idempotency` | Request ownership ve semantic response snapshot'ı | Şema hazır; algoritma PR 4 |
-| `audit` | Kritik değişikliklerin immutable kaydı | Event writer'ları hazır; reservation writer'ları PR 4 |
+| `reservations` | Create/reactivate/cancel/history, attendee listesi ve kapasite transaction'ları | PR 4'te çalışıyor |
+| `idempotency` | Atomik request ownership, semantic replay ve retention cleanup | PR 4'te çalışıyor |
+| `audit` | Event ve reservation kritik değişikliklerinin immutable kaydı | Çalışıyor |
 
 `backend/app/models.py`, bütün modelleri Alembic metadata için import eder; domain davranışı içeren bir “god model” değildir.
 
@@ -230,7 +230,7 @@ erDiagram
 - Audit satırına `UPDATE` veya `DELETE`, PostgreSQL trigger tarafından koşulsuz reddedilir.
 - Domain foreign key'lerinde bilinçli olarak cascade delete kullanılmaz; tarihçe sessizce kaybolamaz.
 
-Bu constraint'ler tek başına use-case algoritması değildir. Event lifecycle'ın version kilidi, cancellation lock order ve same-transaction audit'i PR 3'te uygulanmıştır; reservation/idempotency algoritmaları PR 4'te kanıtlanacaktır.
+Bu constraint'ler tek başına use-case algoritması değildir. Event lifecycle'ın version kilidi PR 3'te; reservation/idempotency sahipliği, event-first lock order ve same-transaction audit PR 4'te gerçek PostgreSQL yarışlarıyla kanıtlanmıştır.
 
 ## İndeksler ve maliyetleri
 
@@ -248,7 +248,7 @@ Bu constraint'ler tek başına use-case algoritması değildir. Event lifecycle'
 | Idempotency `(user_id, operation, key)` unique | Concurrent claim/replay | Her idempotent işlemde write contention |
 | Idempotency `expires_at` | Retention cleanup | Snapshot write alanı |
 
-PR 3 public ve owner cursor sorguları kontrollü `EXPLAIN` testinde ilgili event indekslerini seçmektedir. PR 4 reservation sorguları için aynı kanıt genişletilecektir. Erken genel amaçlı indeks eklenmedi; her indeks bir sorgu veya invariant ile ilişkilidir.
+Public/owner event ve attendee/history reservation cursor sorguları kontrollü PostgreSQL `EXPLAIN` testlerinde ilgili composite indeksleri seçmektedir. Erken genel amaçlı indeks eklenmedi; her indeks bir sorgu veya invariant ile ilişkilidir.
 
 ## Güvenlik sınırları
 

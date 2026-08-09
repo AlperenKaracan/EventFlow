@@ -2,7 +2,7 @@
 
 EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Proje, ürün gereksinimleri ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmektedir.
 
-Bu branch **PR 3 — Events** kapsamındadır. Foundation ve auth'a ek olarak kategori kataloğu, public/owner event okumaları, organizer event create/update/soft-cancel, imzalı cursor pagination, UTC/IANA/DST doğrulaması, optimistic version conflict ve aynı transaction event audit'leri hazırdır. Reservation iş endpointleri PR 4'e bilinçli olarak bırakılmıştır.
+Bu branch **PR 4 — Reservations integrity** kapsamındadır. Foundation, auth ve event lifecycle'a ek olarak reservation create/cancel/reactivate/history, organizer attendee listesi, event-first kapasite kilidi, concurrent idempotency replay, Redis reservation limiti ve aynı transaction reservation audit'leri hazırdır.
 
 ## Roller ve hedef akışlar
 
@@ -10,7 +10,7 @@ Bu branch **PR 3 — Events** kapsamındadır. Foundation ve auth'a ek olarak ka
 - `ATTENDEE`: public etkinlikleri inceler, rezervasyon oluşturur/iptal eder ve geçmişini görür.
 - Yetkilendirme her zaman server-side uygulanacaktır; UI'da bir kontrolü gizlemek güvenlik sınırı değildir.
 
-PR 1 seed'i bu iki rolü ve farklı durumları temsil eden altı etkinliği üretir. Public event API'si ve organizer event yönetim API'si bu verilerle çalışır; reservation API'si ve ürün ekranları henüz bu branch'in parçası değildir.
+PR 1 seed'i bu iki rolü, altı etkinliği ve aktif/iptal edilmiş reservation örneklerini üretir. Public, organizer ve reservation API'leri bu verilerle çalışır; ürün ekranları PR 5 kapsamındadır.
 
 ## Teknoloji yığını
 
@@ -181,18 +181,23 @@ uv run python -m app.idempotency.cleanup
 Pop-Location
 ```
 
-## PR 3 event API özeti
+## PR 4 API özeti
 
 - `GET /api/v1/categories`
 - `GET /api/v1/events` ve `GET /api/v1/events/{eventId}`
 - `POST /api/v1/events`, `PATCH /api/v1/events/{eventId}`, `DELETE /api/v1/events/{eventId}`
 - `GET /api/v1/me/events` ve `GET /api/v1/me/events/{eventId}`
+- `POST /api/v1/events/{eventId}/reservations`
+- `DELETE /api/v1/reservations/{reservationId}`
+- `GET /api/v1/me/reservations`
+- `GET /api/v1/events/{eventId}/attendees`
 
 Liste API'leri yalnız opaque `nextCursor` döndürür. Organizer mutasyonları authentication kimliğini kullanır; client organizer ID gönderemez. Event tarihleri açık ISO offset + IANA timezone ile doğrulanır ve UTC instant olarak saklanır. Ayrıntılı sözleşme `API.md` içindedir.
 
+Reservation create için `Idempotency-Key` zorunludur. Kapasite event satırı kilidi altında kontrol edilir; counter, reservation, audit ve semantic replay snapshot tek PostgreSQL transaction'ında commit edilir. Aynı key replay edilir, farklı payload/key reuse `409` olur ve Redis limit aşımı `429 + Retry-After` döndürür.
+
 ## Bilinçli olarak bu PR'da yapılmayanlar
 
-- Event cancellation sırasında reservation bulk transition, reservation transaction'ları, reservation rate limit, concurrency, idempotency replay ve reservation audit yazımı: PR 4
 - Tam responsive MUI arayüzü, generated OpenAPI client ve P0 E2E kapanışı: PR 5
 - Search/filtre, governance, graceful shutdown ve provisioning tabanlı observability stack: PR 6
 

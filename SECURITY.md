@@ -23,7 +23,7 @@ Server, JWT rolünü DB'deki aktif kullanıcı rolüyle yeniden karşılaştır�
 
 ## Brute force ve dependency failure
 
-Login limiti IP + normalize e-posta birleşiminin HMAC özetini Redis anahtarı olarak kullanır; ham IP/e-posta key'e yazılmaz. Sayaç ve TTL Lua ile atomiktir. Limit aşımı 429 + `Retry-After`; Redis erişilemezliği korumayı sessizce geçmek yerine 503 üretir.
+Login limiti IP + normalize e-posta, reservation limiti authenticated user UUID değerinin HMAC özetini Redis anahtarı olarak kullanır; ham IP/e-posta/user ID key'e yazılmaz. Sayaç ve TTL Lua ile atomiktir. Limit aşımı 429 + `Retry-After`; Redis erişilemezliği korumayı sessizce geçmek yerine 503 üretir.
 
 ## Token cleanup
 
@@ -36,6 +36,8 @@ Pop-Location
 ```
 
 Cleanup yalnız aktif, revoke edilmemiş ve süresi dolmamış hiçbir üyesi bulunmayan family'lerden eligible expired/revoked satırları siler. Böylece aktif replacement zincirinin replay kanıtı korunur. Komut tekrar çalıştırılabilir ve silinen sayıyı structured loglar.
+
+Idempotency semantic snapshot'ları request ID içermez; replay güncel request ID'yi enjekte eder ve original owner ID'yi yalnız ayrı header'da taşır. Kayıtlar 24 saat tutulur. Süresi dolan kayıtlar `uv run python -m app.idempotency.cleanup` ile tekrar çalıştırılabilir biçimde temizlenir.
 
 ## Zafiyet bildirimi
 
