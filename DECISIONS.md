@@ -229,3 +229,15 @@ Değerlendirdiğim alternatifler: Public detail'i alıp UI'da owner kontrolü; t
 Neden bunu seçtim: Yönetim verisi ve authorization sınırı açık olur; public projection'ın edit için yetersiz veya fazla veri taşıması önlenir.
 
 Neyi feda ettim: Benzer event projection'ları ve ek endpoint/test bakımı oluşur; frontend iki farklı query key kullanır.
+
+## D-020 — Browser access tokenı yalnız process belleğinde
+
+Durum: PR 5'te memory-only token store, refresh-cookie bootstrap ve single-flight retry ile uygulandı.
+
+Karar: Access JWT `localStorage`, `sessionStorage` veya kalıcı cookie'ye yazılmayacak; yalnız frontend modül belleğinde tutulacak. HttpOnly refresh cookie ile reload bootstrap yapılacak. Eşzamanlı korumalı `401` yanıtları tek refresh çağrısını paylaşacak ve özgün `Request` yeni Bearer token ile yeniden gönderilecek.
+
+Değerlendirdiğim alternatifler: Access tokenı localStorage/sessionStorage'da saklamak; bütün kimliği JavaScript tarafından okunabilir cookie'ye koymak; her `401` için bağımsız refresh; otomatik retry yapmamak.
+
+Neden bunu seçtim: XSS durumunda kalıcı access credential okuma yüzeyi azalır; refresh credential JavaScript'e açılmaz; token rotation yarışı sınırlanır. Özgün `Request` replay'i reservation `Idempotency-Key` başlığını retry boyunca korur.
+
+Neyi feda ettim: Her tam sayfa yüklemesi bir refresh çağrısı gerektirir; ayrı browser tabları process belleğini paylaşmaz ve kendi bootstrap'ını yapar. Refresh servisi geçici olarak erişilemezse mevcut access token kalıcı depodan kurtarılamaz.

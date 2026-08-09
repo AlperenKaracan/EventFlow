@@ -2,7 +2,7 @@
 
 EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Proje, ürün gereksinimleri ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmektedir.
 
-Bu branch **PR 4 — Reservations integrity** kapsamındadır. Foundation, auth ve event lifecycle'a ek olarak reservation create/cancel/reactivate/history, organizer attendee listesi, event-first kapasite kilidi, concurrent idempotency replay, Redis reservation limiti ve aynı transaction reservation audit'leri hazırdır.
+Bu branch **PR 5 — Frontend ve P0 kapanışı** kapsamındadır. Responsive ürün arayüzü, generated OpenAPI client, memory-only auth oturumu, organizer/attendee çalışma alanları, cursor navigation ve gerçek Compose üzerinde P0 Playwright yolculuğu hazırdır.
 
 ## Roller ve hedef akışlar
 
@@ -10,14 +10,14 @@ Bu branch **PR 4 — Reservations integrity** kapsamındadır. Foundation, auth 
 - `ATTENDEE`: public etkinlikleri inceler, rezervasyon oluşturur/iptal eder ve geçmişini görür.
 - Yetkilendirme her zaman server-side uygulanacaktır; UI'da bir kontrolü gizlemek güvenlik sınırı değildir.
 
-PR 1 seed'i bu iki rolü, altı etkinliği ve aktif/iptal edilmiş reservation örneklerini üretir. Public, organizer ve reservation API'leri bu verilerle çalışır; ürün ekranları PR 5 kapsamındadır.
+PR 1 seed'i bu iki rolü, altı etkinliği ve aktif/iptal edilmiş reservation örneklerini üretir. Public, organizer ve reservation API'leri ile PR 5 ürün ekranları bu verilerle çalışır.
 
 ## Teknoloji yığını
 
 - Backend: Python 3.14.3, FastAPI, async SQLAlchemy 2, Alembic, Pydantic Settings, uv
 - Veri: PostgreSQL 17.6; Redis 8.2 yalnız geçici rate-limit state'i için
-- Frontend: React, TypeScript, Vite, Vitest; production'da unprivileged Nginx
-- Test: pytest, Testcontainers, Ruff, mypy, ESLint, Prettier
+- Frontend: React 19, TypeScript, Vite, MUI, TanStack Query/Router, React Hook Form, Zod; production'da unprivileged Nginx
+- Test: pytest, Testcontainers, Vitest, Playwright, Ruff, mypy, ESLint, Prettier
 - Teslim: pnpm workspace, multi-stage/non-root Docker image'ları, Docker Compose, GitHub Actions
 
 ## Ön koşullar
@@ -117,6 +117,7 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm --filter @eventflow/e2e test
 pnpm audit --prod --audit-level high
 ```
 
@@ -181,7 +182,7 @@ uv run python -m app.idempotency.cleanup
 Pop-Location
 ```
 
-## PR 4 API özeti
+## P0 ürün ve API özeti
 
 - `GET /api/v1/categories`
 - `GET /api/v1/events` ve `GET /api/v1/events/{eventId}`
@@ -196,10 +197,11 @@ Liste API'leri yalnız opaque `nextCursor` döndürür. Organizer mutasyonları 
 
 Reservation create için `Idempotency-Key` zorunludur. Kapasite event satırı kilidi altında kontrol edilir; counter, reservation, audit ve semantic replay snapshot tek PostgreSQL transaction'ında commit edilir. Aynı key replay edilir, farklı payload/key reuse `409` olur ve Redis limit aşımı `429 + Retry-After` döndürür.
 
-## Bilinçli olarak bu PR'da yapılmayanlar
+## Bilinçli olarak P0 kapsamında yapılmayanlar
 
-- Tam responsive MUI arayüzü, generated OpenAPI client ve P0 E2E kapanışı: PR 5
-- Search/filtre, governance, graceful shutdown ve provisioning tabanlı observability stack: PR 6
+- Account deletion endpoint'i: anonymization politikası `DECISIONS.md` D-014'te belgeli, uygulama P0 dışında.
+- Search/filtre, governance, graceful shutdown ve provisioning tabanlı observability stack: PR 6.
+- Cursor geçmişi route belleğindedir; hard refresh bilinçli olarak ilk sayfaya döner.
 
 Şemada sonraki PR'ların bütünlük kuralları şimdiden vardır; bunun anlamı iş davranışlarının hazır olduğu değildir. Her davranış kendi PR'ında gerçek PostgreSQL/Redis ve saldırgan negatif testleriyle kanıtlanacaktır.
 
