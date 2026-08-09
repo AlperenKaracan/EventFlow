@@ -1,19 +1,14 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator, Iterator
-from pathlib import Path
+from collections.abc import AsyncIterator
 from typing import Any, cast
 from uuid import UUID, uuid4
 
 import pytest
-from alembic import command
-from alembic.config import Config
 from sqlalchemy import inspect, text
 from sqlalchemy.exc import DBAPIError, IntegrityError
 from sqlalchemy.ext.asyncio import AsyncConnection, AsyncEngine, create_async_engine
-from testcontainers.community.postgres import PostgresContainer
 
-POSTGRES_IMAGE = "postgres:17.6-alpine"
 EXPECTED_TABLES = {
     "alembic_version",
     "audit_logs",
@@ -29,29 +24,6 @@ EXPECTED_REFRESH_INDEXES = {
     "ix_refresh_tokens_user_id_expires_at",
     "uq_refresh_tokens_token_hash",
 }
-
-
-@pytest.fixture(scope="session")
-def postgres_url() -> Iterator[str]:
-    with PostgresContainer(
-        POSTGRES_IMAGE,
-        username="eventflow",
-        password="eventflow_test_password",
-        dbname="eventflow_test",
-        driver="asyncpg",
-    ) as postgres:
-        yield postgres.get_connection_url()
-
-
-@pytest.fixture(scope="session")
-def migrated_postgres_url(postgres_url: str) -> str:
-    config = Config(str(Path(__file__).parents[2] / "alembic.ini"))
-    config.set_main_option("sqlalchemy.url", postgres_url)
-
-    command.upgrade(config, "head")
-    command.upgrade(config, "head")
-    command.check(config)
-    return postgres_url
 
 
 @pytest.fixture
