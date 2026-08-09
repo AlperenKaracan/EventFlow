@@ -21,9 +21,27 @@ export function EventCard({ event }: { event: PublicEventResponse }) {
     <Card
       component="article"
       variant="outlined"
-      sx={{ display: 'flex', flexDirection: 'column' }}
+      sx={{
+        display: 'flex',
+        flexDirection: 'column',
+        minHeight: 250,
+        overflow: 'hidden',
+        position: 'relative',
+        transition: 'transform 180ms ease, box-shadow 180ms ease',
+        '&::before': {
+          background: 'linear-gradient(90deg, #4f46e5, #14b8a6)',
+          content: '""',
+          height: 4,
+          inset: '0 0 auto',
+          position: 'absolute',
+        },
+        '&:hover': {
+          boxShadow: '0 20px 46px rgba(32, 45, 76, 0.12)',
+          transform: 'translateY(-4px)',
+        },
+      }}
     >
-      <CardContent sx={{ flexGrow: 1 }}>
+      <CardContent sx={{ flexGrow: 1, p: 3 }}>
         <Stack
           direction="row"
           sx={{ alignItems: 'center', gap: 1, justifyContent: 'space-between' }}
@@ -43,17 +61,25 @@ export function EventCard({ event }: { event: PublicEventResponse }) {
               : 'Kontenjan dolu'}
           </Typography>
         </Stack>
-        <Typography component="h2" variant="h6" sx={{ mt: 2, fontWeight: 800 }}>
+        <Typography
+          component="h3"
+          variant="h5"
+          sx={{ fontWeight: 820, lineHeight: 1.2, mt: 3 }}
+        >
           {event.title}
         </Typography>
-        <Typography color="text.secondary" sx={{ mt: 1 }}>
+        <Typography sx={{ color: 'text.primary', fontWeight: 700, mt: 2 }}>
           {dateFormatter.format(new Date(event.startsAt))}
         </Typography>
-        <Typography color="text.secondary">{event.location}</Typography>
+        <Typography color="text.secondary" sx={{ mt: 0.5 }}>
+          {event.location}
+        </Typography>
       </CardContent>
-      <CardActions>
+      <CardActions sx={{ px: 2.25, pb: 2.25 }}>
         <Link to="/events/$eventId" params={{ eventId: event.id }}>
-          <Button component="span">Ayrıntıları gör</Button>
+          <Button component="span" variant="outlined">
+            Ayrıntıları gör →
+          </Button>
         </Link>
       </CardActions>
     </Card>
