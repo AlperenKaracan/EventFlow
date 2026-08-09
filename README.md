@@ -66,10 +66,10 @@ docker compose down
 
 ## Seed hesapları
 
-| Rol | E-posta | Parola env anahtarı |
-|---|---|---|
+| Rol       | E-posta                     | Parola env anahtarı       |
+| --------- | --------------------------- | ------------------------- |
 | Organizer | `organizer@eventflow.local` | `SEED_ORGANIZER_PASSWORD` |
-| Attendee | `attendee@eventflow.local` | `SEED_ATTENDEE_PASSWORD` |
+| Attendee  | `attendee@eventflow.local`  | `SEED_ATTENDEE_PASSWORD`  |
 
 Demo parolaları `.env.example` içinde yalnız lokal geliştirme için bulunur. Seed bunları Argon2id ile hash'ler, loglamaz ve aynı doğal anahtar/kararlı UUID'lerle tekrar çalıştırıldığında duplicate üretmez.
 
