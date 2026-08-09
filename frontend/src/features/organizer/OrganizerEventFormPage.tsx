@@ -25,6 +25,7 @@ import {
 } from '../../api/organizer'
 import { ApiError } from '../../api/errors'
 import { LoadingState } from '../../shared/AsyncState'
+import { useFeedback } from '../../shared/FeedbackProvider'
 import {
   localDateTimeToZonedIso,
   zonedIsoToLocalDateTime,
@@ -39,6 +40,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
   const isEditing = Boolean(eventId)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const feedback = useFeedback()
   const categoriesQuery = useQuery({
     queryKey: ['categories'],
     queryFn: fetchCategories,
@@ -94,10 +96,15 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
     },
     onSuccess: async (event) => {
       await queryClient.invalidateQueries({ queryKey: ['owned-events'] })
-      await navigate({
-        to: '/organizer/events/$eventId/edit',
-        params: { eventId: event.id },
-      })
+      queryClient.setQueryData(['owned-event', event.id], event)
+      if (isEditing) {
+        feedback.showSuccess('Değişiklikler kaydedildi.')
+        return
+      }
+      feedback.showSuccess(
+        'Etkinlik oluşturuldu. Etkinliklerim sayfasına yönlendirildiniz.',
+      )
+      await navigate({ to: '/organizer/events' })
     },
   })
 
