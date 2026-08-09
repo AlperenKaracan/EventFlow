@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "api:generate": "openapi-ts",
     "build": "tsc -b && vite build",
     "dev": "vite --host 0.0.0.0",
     "format": "prettier --write .",
