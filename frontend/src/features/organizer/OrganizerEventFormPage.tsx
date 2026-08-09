@@ -19,7 +19,11 @@ import {
   Typography,
 } from '@mui/material'
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker'
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider'
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs'
+import { trTR } from '@mui/x-date-pickers/locales'
 import dayjs from 'dayjs'
+import 'dayjs/locale/tr'
 import { Controller, useForm, useWatch } from 'react-hook-form'
 import { useEffect } from 'react'
 
@@ -340,28 +344,39 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
               control={form.control}
               name="startsAt"
               render={({ field }) => (
-                <DateTimePicker
-                  label="Başlangıç tarihi ve saati"
-                  ampm={false}
-                  format="DD.MM.YYYY HH:mm"
-                  minutesStep={5}
-                  disablePast={!isEditing}
-                  value={field.value ? dayjs(field.value) : null}
-                  onChange={(value) =>
-                    field.onChange(
-                      value?.isValid() ? value.format('YYYY-MM-DDTHH:mm') : '',
-                    )
+                <LocalizationProvider
+                  dateAdapter={AdapterDayjs}
+                  adapterLocale="tr"
+                  localeText={
+                    trTR.components.MuiLocalizationProvider.defaultProps
+                      .localeText
                   }
-                  slotProps={{
-                    textField: {
-                      fullWidth: true,
-                      error: Boolean(form.formState.errors.startsAt),
-                      helperText:
-                        form.formState.errors.startsAt?.message ??
-                        'Takvimden gün ve saati birlikte seçin.',
-                    },
-                  }}
-                />
+                >
+                  <DateTimePicker
+                    label="Başlangıç tarihi ve saati"
+                    ampm={false}
+                    format="DD.MM.YYYY HH:mm"
+                    minutesStep={5}
+                    disablePast={!isEditing}
+                    value={field.value ? dayjs(field.value) : null}
+                    onChange={(value) =>
+                      field.onChange(
+                        value?.isValid()
+                          ? value.format('YYYY-MM-DDTHH:mm')
+                          : '',
+                      )
+                    }
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        error: Boolean(form.formState.errors.startsAt),
+                        helperText:
+                          form.formState.errors.startsAt?.message ??
+                          'Takvimden gün ve saati birlikte seçin.',
+                      },
+                    }}
+                  />
+                </LocalizationProvider>
               )}
             />
             <TextField
