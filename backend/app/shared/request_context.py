@@ -25,3 +25,7 @@ def reset_request_id(token: Token[str | None]) -> None:
 def get_request_id() -> str:
     request_id = _request_id.get()
     return request_id if request_id is not None else str(uuid7())
+
+
+def peek_request_id() -> str | None:
+    return _request_id.get()

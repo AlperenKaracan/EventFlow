@@ -34,3 +34,20 @@ def test_json_formatter_emits_required_schema_without_secret_fields() -> None:
     assert payload["route"] == "/health"
     assert "authorization" not in payload
     assert "password" not in payload
+
+
+def test_json_formatter_does_not_invent_request_id_for_lifecycle_log() -> None:
+    record = logging.LogRecord(
+        name="uvicorn.error",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=40,
+        msg="Application startup complete.",
+        args=(),
+        exc_info=None,
+    )
+
+    payload = json.loads(JsonFormatter().format(record))
+
+    assert payload["event"] == "Application startup complete."
+    assert payload["requestId"] is None
