@@ -165,7 +165,7 @@ jobs:
 
       - name: Run P0 browser journey
         env:
-          PLAYWRIGHT_BASE_URL: http://localhost:8080
+          E2E_BASE_URL: http://localhost:8080
         run: pnpm --filter @eventflow/e2e test
 
       - name: Verify repeatable seed
