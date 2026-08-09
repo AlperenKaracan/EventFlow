@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from typing import cast
 from uuid import uuid7
 
@@ -165,6 +166,47 @@ async def test_update_increments_version_audits_and_rejects_stale_edit(
     assert [audit.action for audit in audits] == ["event.created", "event.updated"]
     assert audits[-1].changes["before"]["version"] == 1
     assert audits[-1].changes["after"]["version"] == 2
+
+
+async def test_concurrent_updates_accept_exactly_one_expected_version(
+    auth_client: AsyncClient, auth_app: object
+) -> None:
+    _user, headers = await register_writer(auth_client)
+    created = await create_writer_event(auth_client, headers)
+    event_id = created["id"]
+
+    first, second = await asyncio.gather(
+        auth_client.patch(
+            f"/api/v1/events/{event_id}",
+            json={"expectedVersion": 1, "title": "Concurrent Alpha"},
+            headers=headers,
+        ),
+        auth_client.patch(
+            f"/api/v1/events/{event_id}",
+            json={"expectedVersion": 1, "title": "Concurrent Beta"},
+            headers=headers,
+        ),
+    )
+
+    assert sorted((first.status_code, second.status_code)) == [200, 409]
+    conflict = first if first.status_code == 409 else second
+    assert conflict.json()["error"]["code"] == "EVENT_VERSION_CONFLICT"
+
+    app = cast(FastAPI, auth_app)
+    async with app.state.session_factory() as session:
+        event = await session.get(Event, event_id)
+        update_audits = (
+            await session.scalars(
+                select(AuditLog).where(
+                    AuditLog.resource_id == event_id,
+                    AuditLog.action == "event.updated",
+                )
+            )
+        ).all()
+    assert event is not None
+    assert event.version == 2
+    assert event.title in {"Concurrent Alpha", "Concurrent Beta"}
+    assert len(update_audits) == 1
 
 
 async def test_update_hides_other_owner_and_blocks_capacity_and_started_event(

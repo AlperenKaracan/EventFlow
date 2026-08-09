@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import cast
 from uuid import uuid7
 
+from fastapi import FastAPI
 from httpx import AsyncClient
+from sqlalchemy import text
 
 from app.seed import IDENTITY
 
@@ -174,3 +177,52 @@ async def test_attendee_gets_403_for_owner_list_but_404_for_owner_uuid(
     assert owner_list.json()["error"]["code"] == "FORBIDDEN"
     assert owner_detail.status_code == 404
     assert owner_detail.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
+
+
+async def test_event_list_queries_use_cursor_order_indexes(auth_app: object) -> None:
+    app = cast(FastAPI, auth_app)
+    async with app.state.session_factory() as session:
+        await session.execute(text("SET LOCAL enable_seqscan = off"))
+        public_plan = (
+            (
+                await session.execute(
+                    text(
+                        """
+                    EXPLAIN (FORMAT TEXT, COSTS OFF)
+                    SELECT events.id
+                    FROM events
+                    JOIN categories ON categories.id = events.category_id
+                    WHERE events.status = 'ACTIVE'
+                      AND events.starts_at > now()
+                    ORDER BY events.starts_at ASC, events.id ASC
+                    LIMIT 20
+                    """
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+        owner_plan = (
+            (
+                await session.execute(
+                    text(
+                        """
+                    EXPLAIN (FORMAT TEXT, COSTS OFF)
+                    SELECT events.id
+                    FROM events
+                    JOIN categories ON categories.id = events.category_id
+                    WHERE events.organizer_id = :organizer_id
+                    ORDER BY events.created_at DESC, events.id DESC
+                    LIMIT 20
+                    """
+                    ),
+                    {"organizer_id": IDENTITY.organizer_id},
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+    assert "ix_events_active_starts_at_id" in "\n".join(public_plan)
+    assert "ix_events_organizer_id_created_at_id" in "\n".join(owner_plan)
