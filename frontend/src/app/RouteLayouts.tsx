@@ -103,6 +103,7 @@ export function RootLayout() {
                   {auth.session.user.fullName}
                 </Typography>
                 <Button
+                  aria-label="Çıkış yap"
                   onClick={() => void handleLogout()}
                   size="small"
                   sx={{ minWidth: 0, px: { xs: 1, sm: 2 } }}
