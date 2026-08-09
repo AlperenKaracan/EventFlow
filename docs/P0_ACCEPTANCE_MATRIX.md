@@ -53,7 +53,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-TST-01 | Kritik iş kuralları otomatik testlidir | 1-5 | PR test paketleri | 🟡 Devam ediyor |
 | P0-TST-02 | Kapasite ve zamanlılık concurrency testi zorunlu | 4 | Gerçek PostgreSQL 200-request testi | ⬜ Bekliyor |
 | P0-TST-03 | Testler izole; lokal geliştirici DB’sine bağlı değil | 1-5 | Testcontainers/Compose test DB | 🟡 Devam ediyor |
-| P0-CI-01 | Push CI: lint/format/type/test/build/audit | 1,5 | GitHub Actions sonuçları | 🟡 Devam ediyor |
+| P0-CI-01 | Push CI: lint/format/type/test/build/audit | 1,5 | [PR 1 CI run #2](https://github.com/AlperenKaracan/EventFlow/actions/runs/31323243906) | ✅ Kanıtlandı |
 | P0-GIT-01 | Feature branch + PR; doğrudan main geliştirmesi yok | 1-5 | Branch/PR geçmişi | 🟡 Devam ediyor |
 | P0-GIT-02 | Anlamlı Conventional Commits ve açıklamalı PR’lar | 1-5 | Git log ve PR açıklamaları | 🟡 Devam ediyor |
 | P0-DOC-01 | README kurulum, kullanım, yapı ve bilinçli eksikleri açıklar | 1,5 | Clean-clone doc doğrulaması | 🟡 Devam ediyor |
@@ -73,13 +73,13 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Docker | Backend/frontend build, image user ve runtime UID | Geçti; `10001:10001` ve `101:101` |
 | Compose | Config, dependency-aware up, health/ready, one-shot exit'ler | Geçti; migrate/seed exit `0` |
 | Log şeması | Backend container stdout satırlarını JSON parse | 11/11 geçti |
-| CI workflow | Actionlint + lokal CI eşdeğer komutlar | Sözdizimi ve lokal kapılar geçti; remote run bekleniyor |
+| CI workflow | Actionlint + [GitHub Actions run #2](https://github.com/AlperenKaracan/EventFlow/actions/runs/31323243906) | Backend, frontend ve Compose job'ları geçti |
 
 ## PR kapıları
 
 | PR | Kapanış koşulu | Durum |
 |---:|---|---|
-| 1 | Foundation, schema, migration/seed, ortak HTTP/observability altyapısı ve CI kabul kriterleri yeşil | 🟡 Devam ediyor |
+| 1 | Foundation, schema, migration/seed, ortak HTTP/observability altyapısı ve CI kabul kriterleri yeşil | ✅ Kanıtlandı |
 | 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ⬜ Bekliyor |
 | 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ⬜ Bekliyor |
 | 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | ⬜ Bekliyor |
