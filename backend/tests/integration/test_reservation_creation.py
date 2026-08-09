@@ -10,12 +10,15 @@ from httpx import AsyncClient
 from sqlalchemy import func, select
 
 from app.audit.models import AuditLog
+from app.auth.security import DUMMY_PASSWORD_HASH, create_access_token
 from app.events.models import Event
 from app.idempotency.keys import reservation_create_request_hash
 from app.idempotency.models import IdempotencyRecord, IdempotencyState
 from app.idempotency.repository import claim_idempotency_key
 from app.reservations.models import Reservation, ReservationStatus
 from app.seed import IDENTITY
+from app.shared.config import Settings
+from app.users.models import User, UserRole, UserStatus
 
 
 async def register_actor(
@@ -357,3 +360,97 @@ async def test_visible_processing_record_returns_retryable_conflict(
         getattr(record, "event", None) == "idempotency.processing_visible"
         for record in caplog.records
     )
+
+
+async def test_capacity_one_allows_exactly_one_of_two_hundred_parallel_attendees(
+    auth_client: AsyncClient,
+    auth_app: object,
+) -> None:
+    _organizer, organizer_headers = await register_actor(auth_client, role="organizer")
+    event = await create_event(auth_client, organizer_headers, capacity=1)
+    app = cast(FastAPI, auth_app)
+    settings = cast(Settings, app.state.settings)
+    event_id = UUID(cast(str, event["id"]))
+    attendee_ids = [uuid7() for _ in range(200)]
+    async with app.state.session_factory() as session:
+        session.add_all(
+            [
+                User(
+                    id=attendee_id,
+                    email=f"capacity-{attendee_id}@example.com",
+                    full_name=f"Capacity Attendee {index:03d}",
+                    password_hash=DUMMY_PASSWORD_HASH,
+                    role=UserRole.ATTENDEE,
+                    status=UserStatus.ACTIVE,
+                )
+                for index, attendee_id in enumerate(attendee_ids)
+            ]
+        )
+        await session.commit()
+    headers = [
+        {
+            "Authorization": "Bearer "
+            + create_access_token(
+                user_id=attendee_id,
+                role=UserRole.ATTENDEE,
+                settings=settings,
+            ).raw,
+            "Idempotency-Key": f"capacity-{uuid7()}",
+        }
+        for attendee_id in attendee_ids
+    ]
+
+    responses = await asyncio.gather(
+        *[
+            auth_client.post(
+                f"/api/v1/events/{event_id}/reservations",
+                headers=request_headers,
+            )
+            for request_headers in headers
+        ]
+    )
+
+    assert sum(response.status_code == 201 for response in responses) == 1
+    assert sum(response.status_code == 409 for response in responses) == 199
+    assert {
+        response.json()["error"]["code"]
+        for response in responses
+        if response.status_code == 409
+    } == {"EVENT_FULL"}
+    assert all(
+        response.json()["error"]["requestId"] == response.headers["X-Request-ID"]
+        for response in responses
+        if response.status_code == 409
+    )
+    async with app.state.session_factory() as session:
+        persisted_event = await session.get(Event, event_id)
+        assert persisted_event is not None
+        active_count = await session.scalar(
+            select(func.count())
+            .select_from(Reservation)
+            .where(
+                Reservation.event_id == event_id,
+                Reservation.status == ReservationStatus.ACTIVE,
+            )
+        )
+        audit_count = await session.scalar(
+            select(func.count())
+            .select_from(AuditLog)
+            .where(
+                AuditLog.action == "reservation.created",
+                AuditLog.resource_id.in_(
+                    select(Reservation.id).where(Reservation.event_id == event_id)
+                ),
+            )
+        )
+        completed_keys = await session.scalar(
+            select(func.count())
+            .select_from(IdempotencyRecord)
+            .where(
+                IdempotencyRecord.user_id.in_(attendee_ids),
+                IdempotencyRecord.state == IdempotencyState.COMPLETED,
+            )
+        )
+    assert persisted_event.reserved_count == active_count == 1
+    assert audit_count == 1
+    assert completed_keys == 200
