@@ -1,6 +1,6 @@
 # EventFlow Architecture
 
-Bu belge çalışan sistemin mimarisini açıklar. PR 1 itibarıyla foundation, şema, migration/seed, system endpointleri ve delivery pipeline gerçektir; auth/event/reservation use-case'leri ilgili sonraki PR'larda eklenecektir.
+Bu belge çalışan sistemin mimarisini açıklar. PR 3 itibarıyla foundation, auth/authorization ve event use-case'leri gerçektir; reservation transaction'ları PR 4'te eklenecektir.
 
 ## Mimari hedefler
 
@@ -54,7 +54,7 @@ flowchart LR
     factory["Application factory"] --> middleware["RequestContextMiddleware"]
     factory --> errors["Exception handlers"]
     factory --> system["System router"]
-    factory --> modules["Domain routers — PR 2 to PR 4"]
+    factory --> modules["Auth and event domain routers"]
 
     middleware --> requestContext["ContextVar request ID"]
     middleware --> jsonlog["Structured JSON logger"]
@@ -67,17 +67,17 @@ flowchart LR
 
 Modül sınırları:
 
-| Modül | Sorumluluk | PR 1 durumu |
+| Modül | Sorumluluk | Güncel durum |
 |---|---|---|
 | `shared` | Fail-fast config, async DB base/session altyapısı, ortak hata modeli | Çalışıyor |
 | `observability` | Request ID, JSON logging, `/health`, `/ready` | Çalışıyor |
-| `users` | User persistence, rol/statü enum'ları | Şema hazır |
-| `auth` | Refresh-token persistence ve ileride rotation/replay | Şema hazır; use-case PR 2 |
-| `categories` | Seed edilmiş kategori kataloğu | Şema ve seed hazır; API PR 3 |
-| `events` | Event persistence ve ileride owner/public lifecycle | Şema hazır; use-case PR 3 |
+| `users` | User persistence, rol/statü enum'ları | Auth ile çalışıyor |
+| `auth` | Register/login/me ve refresh rotation/replay | PR 2'de çalışıyor |
+| `categories` | Seed edilmiş kategori kataloğu | Public read API çalışıyor |
+| `events` | Owner/public lifecycle, cursor ve timezone politikası | PR 3'te çalışıyor |
 | `reservations` | Reservation persistence ve ileride kapasite transaction'ları | Şema hazır; use-case PR 4 |
 | `idempotency` | Request ownership ve semantic response snapshot'ı | Şema hazır; algoritma PR 4 |
-| `audit` | Kritik değişikliklerin immutable kaydı | Şema/DB trigger hazır; writer'lar PR 3-4 |
+| `audit` | Kritik değişikliklerin immutable kaydı | Event writer'ları hazır; reservation writer'ları PR 4 |
 
 `backend/app/models.py`, bütün modelleri Alembic metadata için import eder; domain davranışı içeren bir “god model” değildir.
 
@@ -230,7 +230,7 @@ erDiagram
 - Audit satırına `UPDATE` veya `DELETE`, PostgreSQL trigger tarafından koşulsuz reddedilir.
 - Domain foreign key'lerinde bilinçli olarak cascade delete kullanılmaz; tarihçe sessizce kaybolamaz.
 
-Bu constraint'ler tek başına use-case algoritması değildir. Event-first lock order, idempotency takeover/replay ve same-transaction audit writer'ları PR 3-4'te uygulanıp concurrency testleriyle kanıtlanacaktır.
+Bu constraint'ler tek başına use-case algoritması değildir. Event lifecycle'ın version kilidi, cancellation lock order ve same-transaction audit'i PR 3'te uygulanmıştır; reservation/idempotency algoritmaları PR 4'te kanıtlanacaktır.
 
 ## İndeksler ve maliyetleri
 
@@ -248,7 +248,7 @@ Bu constraint'ler tek başına use-case algoritması değildir. Event-first lock
 | Idempotency `(user_id, operation, key)` unique | Concurrent claim/replay | Her idempotent işlemde write contention |
 | Idempotency `expires_at` | Retention cleanup | Snapshot write alanı |
 
-PR 3 ve PR 4 gerçek sorguları eklediğinde `EXPLAIN (ANALYZE, BUFFERS)` kanıtı üretilecek. Erken genel amaçlı indeks eklenmedi; her indeks bir sorgu veya invariant ile ilişkilidir.
+PR 3 public ve owner cursor sorguları kontrollü `EXPLAIN` testinde ilgili event indekslerini seçmektedir. PR 4 reservation sorguları için aynı kanıt genişletilecektir. Erken genel amaçlı indeks eklenmedi; her indeks bir sorgu veya invariant ile ilişkilidir.
 
 ## Güvenlik sınırları
 
@@ -262,11 +262,12 @@ PR 3 ve PR 4 gerçek sorguları eklediğinde `EXPLAIN (ANALYZE, BUFFERS)` kanıt
 
 ## Concurrency tasarım sınırı
 
-PR 1 şeması kapasiteyi son savunma hattında korur. PR 4 writer sırası değişmez olacaktır:
+PR 1 şeması kapasiteyi son savunma hattında korur. PR 3 event cancellation sırası ve PR 4 reservation writer sırası değişmezdir:
 
 ```text
 create/rebook: idempotency row -> event -> reservation -> audit -> idempotency finalize
 cancel: non-locking ownership lookup -> event -> reservation -> audit
+event cancel: event -> active reservations ordered by id -> audit
 ```
 
 Event satırı kapasite sayacının serialization point'idir. Cancellation reservation'ı event'ten önce kilitlemez; böylece ters kilit sırası ve deadlock riski önlenir. Kritik domain mutasyonu, sayaç, audit ve idempotency finalize aynı PostgreSQL transaction'ında kalır.

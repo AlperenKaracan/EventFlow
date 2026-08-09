@@ -8,6 +8,7 @@ from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.auth.router import router as auth_router
+from app.events.router import categories_router, events_router
 from app.observability.logging import configure_logging
 from app.observability.middleware import RequestContextMiddleware
 from app.observability.router import router as observability_router
@@ -63,5 +64,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.add_middleware(RequestContextMiddleware, logger=logger)
     register_exception_handlers(app)
     app.include_router(auth_router)
+    app.include_router(categories_router)
+    app.include_router(events_router)
     app.include_router(observability_router)
     return app

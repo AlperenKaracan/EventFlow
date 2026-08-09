@@ -9,9 +9,9 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-ID-01 | Kayıt ve giriş; organizer/attendee rolleri | 2 | Auth integration ve role testleri | ✅ Kanıtlandı |
 | P0-ID-02 | Her endpointte server-side yetkilendirme | 2-4 | Role/capability negatif matrisi | ⬜ Bekliyor |
 | P0-ID-03 | IDOR koruması ve kaynak varlığını gizleyen 404 | 2-4 | Ownership-scoped saldırgan testleri | ⬜ Bekliyor |
-| P0-EVT-01 | Organizer yalnız kendi eventini oluşturur/günceller/iptal eder | 3 | Event lifecycle + ownership testleri | ⬜ Bekliyor |
-| P0-EVT-02 | Başlık, açıklama, zaman, konum, kapasite, kategori alanları | 1,3 | Migration şeması + API testleri | 🟡 Devam ediyor |
-| P0-EVT-03 | Kapasite mevcut rezervasyon sayısının altına indirilemez | 3 | PostgreSQL lock/conflict integration testi | ⬜ Bekliyor |
+| P0-EVT-01 | Organizer yalnız kendi eventini oluşturur/günceller/iptal eder | 3 | Event lifecycle + ownership testleri | ✅ Kanıtlandı |
+| P0-EVT-02 | Başlık, açıklama, zaman, konum, kapasite, kategori alanları | 1,3 | Migration şeması + API testleri | ✅ Kanıtlandı |
+| P0-EVT-03 | Kapasite mevcut rezervasyon sayısının altına indirilemez | 3 | PostgreSQL lock/conflict integration testi | ✅ Kanıtlandı |
 | P0-EVT-04 | Organizer kendi event katılımcı listesini görür | 4 | Owner/not-owner attendee-list testleri | ⬜ Bekliyor |
 | P0-EVT-05 | Public event listesi cursor ile sayfalanır | 3,5 | API sözleşmesi + cursor UI testleri | ⬜ Bekliyor |
 | P0-RES-01 | Attendee rezervasyon oluşturur ve iptal eder | 4,5 | Lifecycle integration/E2E | ⬜ Bekliyor |
@@ -89,12 +89,31 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
 | Compose smoke | Config/build/up + auth HTTP journey + cleanup CLI | `201/200/200/200/204`; backend UID `10001`; cleanup structured log |
 
+## PR 3 kanıt günlüğü
+
+| Kapı | Komut/kanıt | Sonuç |
+|---|---|---|
+| Backend statik kalite | Ruff format/lint ve strict mypy | 69 dosya formatlı; 67 source file typed; temiz |
+| Backend tam test | `uv run pytest --cov=app --cov-report=term-missing` | 83/83 geçti; toplam coverage `%94`, event service `%94` |
+| Event read API | Category, public/owner list-detail ve saldırgan cursor testleri | Stable cursor, cancelled/past görünürlük ve owner-bound cursor geçti |
+| Event lifecycle | Gerçek PostgreSQL create/update/soft-cancel ve ownership testleri | Role, owner-hiding 404, kapasite ve DB-clock kuralları geçti |
+| Timezone | IANA zone, ISO offset, DST gap/fold unit/integration matrisi | Normal zaman ve iki geçerli fold kabul; gap/mismatch/naive reddedildi |
+| Optimistic concurrency | Aynı `expectedVersion` ile beş update/update ve beş update/cancel yarışı | Her yarışta tek başarı, tek `409`, sürüm `2` ve tek mutation audit'i |
+| Audit atomikliği | Create/update/cancel sırasında zorlanan audit INSERT hatası | Üç domain mutasyonu da rollback; auditsiz domain commit yok |
+| İndeks planı | Public ve owner cursor SQL'i için kontrollü PostgreSQL `EXPLAIN` | İlgili iki bileşik event indeksi seçildi |
+| OpenAPI | Stable operation ID, ortak error ref ve yalnız `nextCursor` testi | Lokal sözleşme testi geçti |
+| Frontend/workspace regresyonu | Peer, format, Markdownlint, ESLint, typecheck, Vitest, build | Geçti; 1/1 component testi ve production build yeşil |
+| Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
+| Compose lifecycle smoke | Temiz restart + gerçek HTTP olumlu/saldırgan event matrisi | Migrate/seed exit `0`; `403/404/409/422` negatifleri ve lifecycle geçti; UID `10001/101` |
+| Seed/log/audit smoke | İkinci seed + DB audit sorgusu + container JSON parse | Seed `2\|6\|6\|2`; audit `created,updated,cancelled`; JSON log `37/37` |
+| Remote CI | [GitHub Actions run #16](https://github.com/AlperenKaracan/EventFlow/actions/runs/31328302106) | Hardened 83-test HEAD için backend, frontend ve Compose job'ları geçti |
+
 ## PR kapıları
 
 | PR | Kapanış koşulu | Durum |
 |---:|---|---|
 | 1 | Foundation, schema, migration/seed, ortak HTTP/observability altyapısı ve CI kabul kriterleri yeşil | ✅ Kanıtlandı |
 | 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ✅ Kanıtlandı |
-| 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ⬜ Bekliyor |
+| 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ✅ Kanıtlandı |
 | 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | ⬜ Bekliyor |
 | 5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış | ⬜ Bekliyor |

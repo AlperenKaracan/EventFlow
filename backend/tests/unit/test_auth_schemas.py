@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from app.auth.schemas import RegisterRequest, RegistrationRole
+from app.auth.schemas import LoginRequest, RegisterRequest, RegistrationRole
 from app.users.models import UserRole
 
 
@@ -31,3 +31,11 @@ def test_register_request_rejects_blank_name_after_trimming() -> None:
                 "role": "attendee",
             }
         )
+
+
+def test_login_accepts_documented_local_seed_identity() -> None:
+    payload = LoginRequest.model_validate(
+        {"email": " ORGANIZER@eventflow.local ", "password": "seed-password"}
+    )
+
+    assert payload.email == "organizer@eventflow.local"

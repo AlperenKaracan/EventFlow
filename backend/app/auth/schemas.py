@@ -45,18 +45,27 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=320)
     password: Annotated[str, StringConstraints(min_length=1, max_length=128)]
 
     @field_validator("email", mode="after")
     @classmethod
-    def normalize_email(cls, value: EmailStr) -> str:
-        return str(value).strip().lower()
+    def normalize_email(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        local_part, separator, domain = normalized.partition("@")
+        if (
+            separator != "@"
+            or not local_part
+            or not domain
+            or any(character.isspace() for character in normalized)
+        ):
+            raise ValueError("email must have a valid lookup format")
+        return normalized
 
 
 class UserResponse(BaseModel):
     id: UUID
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=320)
     full_name: str = Field(serialization_alias="fullName")
     role: RegistrationRole
 

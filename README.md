@@ -2,7 +2,7 @@
 
 EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Proje, ürün gereksinimleri ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmektedir.
 
-Bu branch **PR 2 — Auth + authorization** kapsamındadır. Foundation'a ek olarak register/login/me/refresh/logout, Argon2id, access JWT, opaque rotating refresh, Redis login rate limit, server-side authorization bağımlılıkları, exact CORS ve security header'ları hazırdır. Event ve reservation iş endpointleri sonraki PR'lara bilinçli olarak bırakılmıştır.
+Bu branch **PR 3 — Events** kapsamındadır. Foundation ve auth'a ek olarak kategori kataloğu, public/owner event okumaları, organizer event create/update/soft-cancel, imzalı cursor pagination, UTC/IANA/DST doğrulaması, optimistic version conflict ve aynı transaction event audit'leri hazırdır. Reservation iş endpointleri PR 4'e bilinçli olarak bırakılmıştır.
 
 ## Roller ve hedef akışlar
 
@@ -10,7 +10,7 @@ Bu branch **PR 2 — Auth + authorization** kapsamındadır. Foundation'a ek ola
 - `ATTENDEE`: public etkinlikleri inceler, rezervasyon oluşturur/iptal eder ve geçmişini görür.
 - Yetkilendirme her zaman server-side uygulanacaktır; UI'da bir kontrolü gizlemek güvenlik sınırı değildir.
 
-PR 1 seed'i bu iki rolü ve farklı durumları temsil eden altı etkinliği üretir. İş akışlarını kullanan API ve ekranlar henüz bu branch'in parçası değildir.
+PR 1 seed'i bu iki rolü ve farklı durumları temsil eden altı etkinliği üretir. Public event API'si ve organizer event yönetim API'si bu verilerle çalışır; reservation API'si ve ürün ekranları henüz bu branch'in parçası değildir.
 
 ## Teknoloji yığını
 
@@ -140,7 +140,7 @@ backend/                 FastAPI modüler monolit, Alembic ve pytest
     auth/                Refresh-token persistence sınırı
     audit/               Immutable audit persistence sınırı
     categories/          Seed edilmiş kategori kataloğu
-    events/              Event modeli
+    events/              Public/owner event lifecycle, cursor ve timezone kuralları
     idempotency/         Request sahipliği/replay persistence modeli
     observability/       Request ID, JSON log, health/readiness
     reservations/        Reservation modeli
@@ -173,10 +173,18 @@ uv run python -m app.auth.cleanup
 Pop-Location
 ```
 
+## PR 3 event API özeti
+
+- `GET /api/v1/categories`
+- `GET /api/v1/events` ve `GET /api/v1/events/{eventId}`
+- `POST /api/v1/events`, `PATCH /api/v1/events/{eventId}`, `DELETE /api/v1/events/{eventId}`
+- `GET /api/v1/me/events` ve `GET /api/v1/me/events/{eventId}`
+
+Liste API'leri yalnız opaque `nextCursor` döndürür. Organizer mutasyonları authentication kimliğini kullanır; client organizer ID gönderemez. Event tarihleri açık ISO offset + IANA timezone ile doğrulanır ve UTC instant olarak saklanır. Ayrıntılı sözleşme `API.md` içindedir.
+
 ## Bilinçli olarak bu PR'da yapılmayanlar
 
-- Event API, owner-scoped detail, UTC/IANA/DST validation ve cursor pagination: PR 3
-- Reservation transaction'ları, reservation rate limit, concurrency, idempotency replay ve kritik audit yazımı: PR 4
+- Event cancellation sırasında reservation bulk transition, reservation transaction'ları, reservation rate limit, concurrency, idempotency replay ve reservation audit yazımı: PR 4
 - Tam responsive MUI arayüzü, generated OpenAPI client ve P0 E2E kapanışı: PR 5
 - Search/filtre, governance, graceful shutdown ve provisioning tabanlı observability stack: PR 6
 
