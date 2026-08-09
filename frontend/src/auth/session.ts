@@ -20,6 +20,7 @@ export type SessionState =
 
 let accessToken: string | null = null
 let state: SessionState = { status: 'bootstrapping', user: null }
+let sessionRevision = 0
 let refreshInFlight: Promise<LoginResponse | null> | null = null
 let bootstrapInFlight: Promise<void> | null = null
 const listeners = new Set<() => void>()
@@ -30,11 +31,13 @@ function publish(nextState: SessionState) {
 }
 
 function acceptSession(session: LoginResponse) {
+  sessionRevision += 1
   accessToken = session.accessToken
   publish({ status: 'authenticated', user: session.user })
 }
 
 function rejectSession() {
+  sessionRevision += 1
   accessToken = null
   publish({ status: 'anonymous', user: null })
 }
@@ -60,12 +63,13 @@ export function refreshAccessToken(): Promise<LoginResponse | null> {
   if (refreshInFlight) return refreshInFlight
 
   refreshInFlight = (async () => {
+    const revisionAtStart = sessionRevision
     try {
       const result = await refreshSession({ throwOnError: true })
-      acceptSession(result.data)
+      if (sessionRevision === revisionAtStart) acceptSession(result.data)
       return result.data
     } catch {
-      rejectSession()
+      if (sessionRevision === revisionAtStart) rejectSession()
       return null
     } finally {
       refreshInFlight = null

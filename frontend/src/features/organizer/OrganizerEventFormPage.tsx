@@ -22,16 +22,14 @@ import {
 import { ApiError } from '../../api/errors'
 import { LoadingState } from '../../shared/AsyncState'
 import {
+  localDateTimeToZonedIso,
+  zonedIsoToLocalDateTime,
+} from '../../shared/timezone'
+import {
   eventFormSchema,
   type EventFormInput,
   type EventFormValues,
 } from './eventSchema'
-
-function toLocalDateTime(value: string): string {
-  const date = new Date(value)
-  const offset = date.getTimezoneOffset() * 60_000
-  return new Date(date.getTime() - offset).toISOString().slice(0, 16)
-}
 
 export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
   const isEditing = Boolean(eventId)
@@ -67,7 +65,10 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
       title: eventQuery.data.title,
       description: eventQuery.data.description,
       location: eventQuery.data.location,
-      startsAt: toLocalDateTime(eventQuery.data.startsAt),
+      startsAt: zonedIsoToLocalDateTime(
+        eventQuery.data.startsAt,
+        eventQuery.data.timezone,
+      ),
       timezone: eventQuery.data.timezone,
       capacity: eventQuery.data.capacity,
     })
@@ -77,7 +78,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
     mutationFn: async (values: EventFormValues) => {
       const payload = {
         ...values,
-        startsAt: new Date(values.startsAt).toISOString(),
+        startsAt: localDateTimeToZonedIso(values.startsAt, values.timezone),
       }
       if (eventId && eventQuery.data) {
         return updateOwnedEvent(eventId, {
