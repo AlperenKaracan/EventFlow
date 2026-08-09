@@ -162,9 +162,7 @@ async def test_booking_and_capacity_update_serialize_without_oversell(
     if first_writer == "booking":
         original = reservation_service.get_event_for_update  # type: ignore[attr-defined]
 
-        async def pause_booking(
-            *, session: AsyncSession, event_id: UUID
-        ) -> Event | None:
+        async def pause_booking(*, session: AsyncSession, event_id: UUID) -> Event | None:
             locked_event = await original(session=session, event_id=event_id)
             first_has_event_lock.set()
             await release_first.wait()
@@ -264,9 +262,7 @@ async def test_booking_and_event_cancel_serialize_without_orphaned_seats(
     if first_writer == "booking":
         original = reservation_service.get_event_for_update  # type: ignore[attr-defined]
 
-        async def pause_booking(
-            *, session: AsyncSession, event_id: UUID
-        ) -> Event | None:
+        async def pause_booking(*, session: AsyncSession, event_id: UUID) -> Event | None:
             locked_event = await original(session=session, event_id=event_id)
             first_has_event_lock.set()
             await release_first.wait()

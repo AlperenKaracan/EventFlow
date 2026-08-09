@@ -73,9 +73,7 @@ async def create_attendee_reservation(
     )
     return JSONResponse(
         status_code=semantic_response.status_code,
-        content=semantic_response.materialize_body(
-            current_request_id=UUID(get_request_id())
-        ),
+        content=semantic_response.materialize_body(current_request_id=UUID(get_request_id())),
         headers=semantic_response.replay_headers(),
     )
 

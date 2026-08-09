@@ -92,9 +92,7 @@ async def get_attendee_event_reservation_for_update(
     )
 
 
-async def add_reservation_in_savepoint(
-    *, session: AsyncSession, reservation: Reservation
-) -> bool:
+async def add_reservation_in_savepoint(*, session: AsyncSession, reservation: Reservation) -> bool:
     try:
         async with session.begin_nested():
             session.add(reservation)

@@ -82,13 +82,11 @@ async def test_create_replay_and_reactivate_preserve_semantic_response_and_invar
 
     owner = await auth_client.post(
         f"/api/v1/events/{event_id}/reservations",
-        headers=attendee_headers
-        | {"Idempotency-Key": key, "X-Request-ID": str(owner_request_id)},
+        headers=attendee_headers | {"Idempotency-Key": key, "X-Request-ID": str(owner_request_id)},
     )
     replay = await auth_client.post(
         f"/api/v1/events/{event_id}/reservations",
-        headers=attendee_headers
-        | {"Idempotency-Key": key, "X-Request-ID": str(replay_request_id)},
+        headers=attendee_headers | {"Idempotency-Key": key, "X-Request-ID": str(replay_request_id)},
     )
 
     assert owner.status_code == replay.status_code == 201
@@ -169,8 +167,7 @@ async def test_same_key_parallel_requests_replay_one_domain_write(
         *[
             auth_client.post(
                 f"/api/v1/events/{event_id}/reservations",
-                headers=attendee_headers
-                | {"Idempotency-Key": key, "X-Request-ID": str(uuid7())},
+                headers=attendee_headers | {"Idempotency-Key": key, "X-Request-ID": str(uuid7())},
             )
             for _ in range(5)
         ]
@@ -222,9 +219,7 @@ async def test_different_keys_parallel_requests_return_one_created_and_conflicts
 
     assert sorted(response.status_code for response in responses) == [201, 409, 409, 409, 409]
     assert {
-        response.json()["error"]["code"]
-        for response in responses
-        if response.status_code == 409
+        response.json()["error"]["code"] for response in responses if response.status_code == 409
     } == {"ALREADY_RESERVED"}
     async with app.state.session_factory() as session:
         persisted_event = await session.get(Event, event_id)
@@ -305,13 +300,11 @@ async def test_deterministic_full_error_replay_injects_current_request_id(
 
     owner = await auth_client.post(
         f"/api/v1/events/{event_id}/reservations",
-        headers=second_headers
-        | {"Idempotency-Key": key, "X-Request-ID": str(owner_request_id)},
+        headers=second_headers | {"Idempotency-Key": key, "X-Request-ID": str(owner_request_id)},
     )
     replay = await auth_client.post(
         f"/api/v1/events/{event_id}/reservations",
-        headers=second_headers
-        | {"Idempotency-Key": key, "X-Request-ID": str(replay_request_id)},
+        headers=second_headers | {"Idempotency-Key": key, "X-Request-ID": str(replay_request_id)},
     )
 
     assert owner.status_code == replay.status_code == 409
@@ -413,9 +406,7 @@ async def test_capacity_one_allows_exactly_one_of_two_hundred_parallel_attendees
     assert sum(response.status_code == 201 for response in responses) == 1
     assert sum(response.status_code == 409 for response in responses) == 199
     assert {
-        response.json()["error"]["code"]
-        for response in responses
-        if response.status_code == 409
+        response.json()["error"]["code"] for response in responses if response.status_code == 409
     } == {"EVENT_FULL"}
     assert all(
         response.json()["error"]["requestId"] == response.headers["X-Request-ID"]

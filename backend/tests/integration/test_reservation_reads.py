@@ -196,9 +196,10 @@ async def test_reservation_list_queries_use_composite_cursor_indexes(
     async with app.state.session_factory() as session:
         await session.execute(text("SET LOCAL enable_seqscan = off"))
         attendee_plan = (
-            await session.execute(
-                text(
-                    """
+            (
+                await session.execute(
+                    text(
+                        """
                     EXPLAIN (FORMAT TEXT, COSTS OFF)
                     SELECT reservations.id
                     FROM reservations
@@ -206,14 +207,18 @@ async def test_reservation_list_queries_use_composite_cursor_indexes(
                     ORDER BY reservations.created_at DESC, reservations.id DESC
                     LIMIT 20
                     """
-                ),
-                {"attendee_id": IDENTITY.attendee_id},
+                    ),
+                    {"attendee_id": IDENTITY.attendee_id},
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         event_plan = (
-            await session.execute(
-                text(
-                    """
+            (
+                await session.execute(
+                    text(
+                        """
                     EXPLAIN (FORMAT TEXT, COSTS OFF)
                     SELECT reservations.id
                     FROM reservations
@@ -222,10 +227,13 @@ async def test_reservation_list_queries_use_composite_cursor_indexes(
                     ORDER BY reservations.created_at ASC, reservations.id ASC
                     LIMIT 20
                     """
-                ),
-                {"event_id": IDENTITY.istanbul_event_id},
+                    ),
+                    {"event_id": IDENTITY.istanbul_event_id},
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
     assert "ix_reservations_attendee_id_created_at_id" in "\n".join(attendee_plan)
     assert "ix_reservations_event_id_status_created_at" in "\n".join(event_plan)
