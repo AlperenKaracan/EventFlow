@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Any, cast
 from uuid import UUID
 
-from sqlalchemy import func, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -72,3 +72,15 @@ def complete_idempotency_record(
     record.response_status = status_code
     record.response_body = response_body
     record.original_request_id = original_request_id
+
+
+async def delete_expired_idempotency_records(
+    *,
+    session: AsyncSession,
+    now: datetime | None = None,
+) -> int:
+    cutoff = now if now is not None else func.now()
+    result = await session.execute(
+        delete(IdempotencyRecord).where(IdempotencyRecord.expires_at <= cutoff)
+    )
+    return int(getattr(result, "rowcount", 0))

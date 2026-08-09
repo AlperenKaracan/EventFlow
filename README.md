@@ -173,6 +173,14 @@ uv run python -m app.auth.cleanup
 Pop-Location
 ```
 
+Süresi dolmuş idempotency kayıtlarının tekrar çalıştırılabilir temizliği:
+
+```powershell
+Push-Location backend
+uv run python -m app.idempotency.cleanup
+Pop-Location
+```
+
 ## PR 3 event API özeti
 
 - `GET /api/v1/categories`
