@@ -18,7 +18,8 @@ async function register(
   await expect(page.getByRole('button', { name: 'Çıkış yap' })).toBeVisible()
   await expect(
     page.getByRole('heading', {
-      name: user.role === 'Organizatör' ? 'Etkinliklerim' : 'Yaklaşan etkinlikler',
+      name:
+        user.role === 'Organizatör' ? 'Etkinliklerim' : 'Yaklaşan etkinlikler',
     }),
   ).toBeVisible()
 }
@@ -79,10 +80,25 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   await page.getByRole('button', { name: 'Kaydet' }).click()
   await expect(page).toHaveURL(/\/organizer\/events\/[^/]+\/edit$/)
   const eventId = new URL(page.url()).pathname.split('/')[3]
+  const stalePage = await page.context().newPage()
+  await stalePage.goto(`/organizer/events/${eventId}/edit`)
+  await expect(stalePage.getByLabel('Başlık')).toHaveValue(eventTitle)
   const updatedTitle = `${eventTitle} Güncel`
   await page.getByLabel('Başlık').fill(updatedTitle)
   await page.getByRole('button', { name: 'Kaydet' }).click()
   await expect(page.getByLabel('Başlık')).toHaveValue(updatedTitle)
+  await stalePage.getByLabel('Konum').fill('Ankara')
+  await stalePage.getByRole('button', { name: 'Kaydet' }).click()
+  const conflictDialog = stalePage.getByRole('dialog', {
+    name: 'Etkinlik başka bir yerde güncellendi',
+  })
+  await expect(conflictDialog).toBeVisible()
+  await expect(conflictDialog.getByText(/İstek kimliği:/)).toBeVisible()
+  await conflictDialog
+    .getByRole('button', { name: 'Güncel veriyi yükle' })
+    .click()
+  await expect(stalePage.getByLabel('Başlık')).toHaveValue(updatedTitle)
+  await stalePage.close()
   await logout(page)
 
   await register(page, { ...attendeeOne, role: 'Katılımcı' })
@@ -94,7 +110,9 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   await expect(page.getByText('Yeriniz ayrıldı.')).toBeVisible()
 
   await page.reload()
-  await expect(page.getByRole('button', { name: 'Kontenjan dolu' })).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'Kontenjan dolu' }),
+  ).toBeDisabled()
 
   await cancelActiveReservation(page, updatedTitle)
   await page.getByRole('button', { name: 'Yeniden yer ayır' }).click()
