@@ -55,7 +55,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-TST-03 | Testler izole; lokal geliştirici DB’sine bağlı değil           |      1-5 | Testcontainers + temiz Compose + benzersiz E2E verisi                                  | ✅ Kanıtlandı |
 | P0-CI-01  | Push CI: lint/format/type/test/build/audit                     |      1,5 | [PR 1 CI run #2](https://github.com/AlperenKaracan/EventFlow/actions/runs/31323243906) | ✅ Kanıtlandı |
 | P0-GIT-01 | Feature branch + PR; doğrudan main geliştirmesi yok            |      1-5 | [PR 5](https://github.com/AlperenKaracan/EventFlow/pull/5) ve branch geçmişi           | ✅ Kanıtlandı |
-| P0-GIT-02 | Anlamlı Conventional Commits ve açıklamalı PR’lar              |      1-5 | 19 kapsam-odaklı Conventional Commit + PR1 formatlı açıklama                           | ✅ Kanıtlandı |
+| P0-GIT-02 | Anlamlı Conventional Commits ve açıklamalı PR’lar              |      1-5 | Kapsam-odaklı Conventional Commit geçmişi + PR1 formatlı açıklama                      | ✅ Kanıtlandı |
 | P0-DOC-01 | README kurulum, kullanım, yapı ve bilinçli eksikleri açıklar   |      1,5 | Detached clean-worktree kurulum/config/build                                           | ✅ Kanıtlandı |
 | P0-DOC-02 | DECISIONS alternatif/neden/feda formatında aktiftir            |      1-5 | 20 aktif karar; her biri alternatif/neden/feda içeriyor                                | ✅ Kanıtlandı |
 
@@ -137,7 +137,8 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Backend tam test          | `uv run pytest --cov=app --cov-report=term-missing`                                            | 124/124 geçti; toplam branch coverage `%92`                                                              |
 | Frontend kalite           | Peer, Prettier, Markdownlint, ESLint ve TypeScript                                             | Tüm workspace kapıları temiz                                                                             |
 | Frontend component test   | `pnpm test`                                                                                    | 9 dosyada 25/25 test geçti; cursor, state, auth-race ve timezone yolları dahil                           |
-| Frontend production build | `pnpm build` ve Docker multi-stage build                                                       | Geçti; ana lazy-loaded giriş chunk'ı `303.42 kB` (`97.17 kB` gzip)                                       |
+| Frontend production build | `pnpm build` ve Docker multi-stage build                                                       | Geçti; ana giriş `314.72 kB` (`100.59 kB` gzip), form lazy chunk'ı `268.49 kB` (`82.91 kB` gzip)         |
+| Görsel/UX regresyonu      | Masaüstü + mobil ekran görüntüsü, Türkçe tarih seçici ve kayıt geri bildirimi                  | Yeni form, keşif ekranı, konum/saat dilimi seçimleri ve kayıt sonrası yönlendirme doğrulandı             |
 | P0 browser journey        | Gerçek production Compose üzerinde desktop Chrome + Pixel 7                                    | 2/2 geçti; organizer, two-tab conflict, iki attendee, full/cancel/rebook, role guard ve request ID dahil |
 | Temiz Compose startup     | Volume sıfırlama + `up -d --build --wait`                                                      | Migrate/seed exit `0`; bütün servisler healthy; UID `10001/101`                                          |
 | Seed ve veri bütünlüğü    | İkinci seed + global reservation counter sorgusu                                               | Seed `2\|6\|6\|2`; active reservation/counter mismatch `0`                                               |
