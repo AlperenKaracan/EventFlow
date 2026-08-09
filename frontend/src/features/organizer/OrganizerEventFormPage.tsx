@@ -5,6 +5,10 @@ import {
   Alert,
   Button,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   MenuItem,
   Stack,
   TextField,
@@ -100,6 +104,14 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
   const submit = form.handleSubmit((values) =>
     mutation.mutateAsync(values).then(() => undefined),
   )
+  const mutationError =
+    mutation.error instanceof ApiError ? mutation.error : null
+  const hasVersionConflict = mutationError?.code === 'EVENT_VERSION_CONFLICT'
+
+  const reloadCurrentEvent = async () => {
+    mutation.reset()
+    await eventQuery.refetch()
+  }
 
   if (categoriesQuery.isPending || (isEditing && eventQuery.isPending)) {
     return <LoadingState label="Etkinlik formu yükleniyor" />
@@ -132,11 +144,14 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
         noValidate
         sx={{ gap: 2 }}
       >
-        {mutation.isError ? (
+        {mutation.isError && !hasVersionConflict ? (
           <Alert severity="error">
-            {mutation.error instanceof ApiError
-              ? mutation.error.message
-              : 'Etkinlik kaydedilemedi.'}
+            {mutationError?.message ?? 'Etkinlik kaydedilemedi.'}
+            {mutationError?.requestId ? (
+              <Typography variant="caption" component="p" sx={{ mt: 1 }}>
+                İstek kimliği: <code>{mutationError.requestId}</code>
+              </Typography>
+            ) : null}
           </Alert>
         ) : null}
         <Controller
@@ -213,6 +228,26 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
           </Button>
         </Stack>
       </Stack>
+      <Dialog open={hasVersionConflict} onClose={() => mutation.reset()}>
+        <DialogTitle>Etkinlik başka bir yerde güncellendi</DialogTitle>
+        <DialogContent>
+          <Typography>
+            Kaydınız uygulanmadı. Güncel veriyi yükleyerek değişiklikleri
+            yeniden değerlendirin.
+          </Typography>
+          {mutationError?.requestId ? (
+            <Typography variant="caption" component="p" sx={{ mt: 2 }}>
+              İstek kimliği: <code>{mutationError.requestId}</code>
+            </Typography>
+          ) : null}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => mutation.reset()}>Düzenlemeye dön</Button>
+          <Button variant="contained" onClick={() => void reloadCurrentEvent()}>
+            Güncel veriyi yükle
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   )
 }
