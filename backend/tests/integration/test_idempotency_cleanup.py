@@ -16,7 +16,7 @@ async def test_cleanup_removes_only_expired_records_and_is_repeatable(
     auth_app: object,
 ) -> None:
     app = cast(FastAPI, auth_app)
-    now = datetime(2035, 1, 1, tzinfo=UTC)
+    now = datetime.now(tz=UTC)
     expired_completed_key = f"expired-completed-{uuid7()}"
     expired_processing_key = f"expired-processing-{uuid7()}"
     future_key = f"future-{uuid7()}"
