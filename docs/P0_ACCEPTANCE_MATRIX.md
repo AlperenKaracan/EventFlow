@@ -106,7 +106,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
 | Compose lifecycle smoke | Temiz restart + gerçek HTTP olumlu/saldırgan event matrisi | Migrate/seed exit `0`; `403/404/409/422` negatifleri ve lifecycle geçti; UID `10001/101` |
 | Seed/log/audit smoke | İkinci seed + DB audit sorgusu + container JSON parse | Seed `2\|6\|6\|2`; audit `created,updated,cancelled`; JSON log `37/37` |
-| Remote CI | [GitHub Actions run #12](https://github.com/AlperenKaracan/EventFlow/actions/runs/31327179809) | Backend, frontend ve Compose job'ları geçti |
+| Remote CI | [GitHub Actions run #16](https://github.com/AlperenKaracan/EventFlow/actions/runs/31328302106) | Hardened 83-test HEAD için backend, frontend ve Compose job'ları geçti |
 
 ## PR kapıları
 
