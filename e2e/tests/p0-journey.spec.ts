@@ -73,11 +73,27 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   await page
     .getByLabel('Açıklama')
     .fill('P0 tarayıcı yolculuğu için izole etkinlik.')
-  await page.getByLabel('Konum').fill('İstanbul')
-  await page.getByLabel('Başlangıç').fill('2035-09-20T19:30')
-  await page.getByLabel('IANA saat dilimi').fill('Europe/Istanbul')
-  await page.getByLabel('Kapasite').fill('1')
+  await page.getByLabel('Konum veya platform').fill('İstanbul')
+  const startsAtField = page.getByRole('group', {
+    name: 'Başlangıç tarihi ve saati',
+  })
+  await startsAtField.getByRole('spinbutton', { name: 'Day' }).fill('20')
+  await startsAtField.getByRole('spinbutton', { name: 'Month' }).fill('09')
+  await startsAtField.getByRole('spinbutton', { name: 'Year' }).fill('2035')
+  await startsAtField.getByRole('spinbutton', { name: 'Hours' }).fill('19')
+  await startsAtField.getByRole('spinbutton', { name: 'Minutes' }).fill('30')
+  await page.getByLabel('Kontenjan').fill('1')
   await page.getByRole('button', { name: 'Kaydet' }).click()
+  await expect(
+    page.getByText(
+      'Etkinlik oluşturuldu. Etkinliklerim sayfasına yönlendirildiniz.',
+    ),
+  ).toBeVisible()
+  await expect(page).toHaveURL(/\/organizer\/events$/)
+  const createdEventCard = page.locator('.MuiCard-root').filter({
+    hasText: eventTitle,
+  })
+  await createdEventCard.getByRole('button', { name: 'Düzenle' }).click()
   await expect(page).toHaveURL(/\/organizer\/events\/[^/]+\/edit$/)
   const eventId = new URL(page.url()).pathname.split('/')[3]
   const stalePage = await page.context().newPage()
@@ -87,7 +103,7 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   await page.getByLabel('Başlık').fill(updatedTitle)
   await page.getByRole('button', { name: 'Kaydet' }).click()
   await expect(page.getByLabel('Başlık')).toHaveValue(updatedTitle)
-  await stalePage.getByLabel('Konum').fill('Ankara')
+  await stalePage.getByLabel('Konum veya platform').fill('Ankara')
   await stalePage.getByRole('button', { name: 'Kaydet' }).click()
   const conflictDialog = stalePage.getByRole('dialog', {
     name: 'Etkinlik başka bir yerde güncellendi',
