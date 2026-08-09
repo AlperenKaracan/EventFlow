@@ -1,13 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import {
-  Box,
-  Button,
-  Chip,
-  Container,
-  Paper,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Box, Button, Container, Stack, Typography } from '@mui/material'
 
 import { fetchPublicEvents } from '../../api/publicEvents'
 import { EmptyState, ErrorState, LoadingState } from '../../shared/AsyncState'
@@ -22,82 +14,48 @@ export function PublicEventsPage() {
   })
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
-      <Paper
+    <Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 7 } }}>
+      <Box
         component="section"
-        variant="outlined"
         sx={{
-          background:
-            'linear-gradient(135deg, rgba(79,70,229,0.98), rgba(49,46,129,0.96) 52%, rgba(15,118,110,0.94))',
-          border: 0,
-          borderRadius: { xs: 3, md: 5 },
-          color: 'common.white',
-          mb: { xs: 4, md: 6 },
-          overflow: 'hidden',
-          p: { xs: 3, sm: 5, md: 7 },
-          position: 'relative',
-          '&::after': {
-            background:
-              'radial-gradient(circle, rgba(255,255,255,.24) 1px, transparent 1px)',
-            backgroundSize: '22px 22px',
-            content: '""',
-            inset: 0,
-            maskImage: 'linear-gradient(to left, black, transparent 70%)',
-            opacity: 0.5,
-            pointerEvents: 'none',
-            position: 'absolute',
-          },
+          alignItems: { sm: 'end' },
+          display: { sm: 'flex' },
+          justifyContent: 'space-between',
+          mb: { xs: 4, md: 5 },
         }}
       >
-        <Box sx={{ maxWidth: 760, position: 'relative', zIndex: 1 }}>
-          <Chip
-            label="Canlı etkinlik kataloğu"
-            sx={{
-              bgcolor: 'rgba(255,255,255,.14)',
-              color: 'common.white',
-              mb: 2.5,
-            }}
-          />
-          <Typography component="h1" variant="h1">
-            Yeni insanlarla tanış, yeni deneyimler keşfet.
+        <Box sx={{ maxWidth: 680 }}>
+          <Typography
+            component="p"
+            color="secondary.main"
+            sx={{ fontWeight: 800 }}
+          >
+            EVENTFLOW KEŞİF
+          </Typography>
+          <Typography component="h1" variant="h2" sx={{ mt: 0.75 }}>
+            Yaklaşan etkinlikler
           </Typography>
           <Typography
             sx={{
-              color: 'rgba(255,255,255,.82)',
-              fontSize: { xs: '1rem', md: '1.18rem' },
-              mt: 2.5,
-              maxWidth: 650,
+              color: 'text.secondary',
+              fontSize: { xs: '0.98rem', md: '1.08rem' },
+              mt: 1.25,
             }}
           >
-            Yerini güvenle ayır, planını kolayca yönet ve etkinlik günü
-            geldiğinde yalnızca anın tadını çıkar.
-          </Typography>
-        </Box>
-      </Paper>
-
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        sx={{
-          alignItems: { sm: 'end' },
-          gap: 1,
-          justifyContent: 'space-between',
-          mb: 3,
-        }}
-      >
-        <Box>
-          <Typography component="p" color="primary" sx={{ fontWeight: 800 }}>
-            KEŞFET
-          </Typography>
-          <Typography component="h2" variant="h2" sx={{ mt: 0.5 }}>
-            Yaklaşan etkinlikler
+            İlgi alanına uygun etkinliği bul, ayrıntıları incele ve yerini
+            güvenle ayır.
           </Typography>
         </Box>
         {eventsQuery.data?.items.length ? (
-          <Typography color="text.secondary" variant="body2">
+          <Typography
+            color="text.secondary"
+            sx={{ mt: { xs: 2, sm: 0 } }}
+            variant="body2"
+          >
             Bu sayfada {eventsQuery.data.items.length} etkinlik
           </Typography>
         ) : null}
-      </Stack>
+      </Box>
 
       {eventsQuery.isPending ? (
         <LoadingState label="Etkinlikler yükleniyor" />

@@ -10,6 +10,7 @@ import {
 } from '@mui/material'
 
 import type { PublicEventResponse } from '../../api/generated'
+import { getCategoryAccent } from './categoryAccent'
 
 const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
   dateStyle: 'long',
@@ -17,6 +18,8 @@ const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
 })
 
 export function EventCard({ event }: { event: PublicEventResponse }) {
+  const accent = getCategoryAccent(event.category.slug)
+
   return (
     <Card
       component="article"
@@ -29,14 +32,14 @@ export function EventCard({ event }: { event: PublicEventResponse }) {
         position: 'relative',
         transition: 'transform 180ms ease, box-shadow 180ms ease',
         '&::before': {
-          background: 'linear-gradient(90deg, #4f46e5, #14b8a6)',
+          background: `linear-gradient(90deg, ${accent.border}, ${accent.foreground})`,
           content: '""',
           height: 4,
           inset: '0 0 auto',
           position: 'absolute',
         },
         '&:hover': {
-          boxShadow: '0 20px 46px rgba(32, 45, 76, 0.12)',
+          boxShadow: `0 22px 52px ${accent.glow}`,
           transform: 'translateY(-4px)',
         },
       }}
@@ -49,8 +52,12 @@ export function EventCard({ event }: { event: PublicEventResponse }) {
           <Chip
             label={event.category.name}
             size="small"
-            color="primary"
             variant="outlined"
+            sx={{
+              backgroundColor: accent.background,
+              borderColor: accent.border,
+              color: accent.foreground,
+            }}
           />
           <Typography
             variant="caption"
