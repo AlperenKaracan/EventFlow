@@ -156,4 +156,22 @@ describe('auth session', () => {
     expect(getSessionSnapshot()).toEqual({ status: 'anonymous', user: null })
     expect(getAccessToken()).toBeNull()
   })
+
+  it('does not let a stale bootstrap refresh erase a newer login', async () => {
+    let rejectRefresh!: (error: Error) => void
+    mocks.refreshSession.mockReturnValue(
+      new Promise((_resolve, reject) => {
+        rejectRefresh = reject
+      }),
+    )
+    const staleRefresh = refreshAccessToken()
+    mocks.loginUser.mockResolvedValue({ data: session('new-login-token') })
+
+    await login({ email: user.email, password: 'strong-password' })
+    rejectRefresh(new Error('stale refresh failed'))
+    await staleRefresh
+
+    expect(getSessionSnapshot()).toEqual({ status: 'authenticated', user })
+    expect(getAccessToken()).toBe('new-login-token')
+  })
 })
