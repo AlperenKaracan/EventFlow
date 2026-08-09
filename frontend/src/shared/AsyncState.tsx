@@ -11,7 +11,18 @@ import { ApiError } from '../api/errors'
 
 export function LoadingState({ label = 'Yükleniyor' }: { label?: string }) {
   return (
-    <Stack role="status" sx={{ alignItems: 'center', gap: 2, py: 8 }}>
+    <Stack
+      role="status"
+      sx={{
+        alignItems: 'center',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 3,
+        gap: 2,
+        mt: 4,
+        py: 8,
+      }}
+    >
       <CircularProgress aria-hidden="true" />
       <Typography>{label}</Typography>
     </Stack>
@@ -26,7 +37,17 @@ export function EmptyState({
   description: string
 }) {
   return (
-    <Box sx={{ py: 8, textAlign: 'center' }}>
+    <Box
+      sx={{
+        border: '1px dashed',
+        borderColor: 'divider',
+        borderRadius: 3,
+        mt: 4,
+        px: 3,
+        py: 8,
+        textAlign: 'center',
+      }}
+    >
       <Typography component="h2" variant="h5" sx={{ fontWeight: 750 }}>
         {title}
       </Typography>

@@ -58,7 +58,19 @@ export function OrganizerAttendeesPage({ eventId }: { eventId: string }) {
       <Button component={Link} to="/organizer/events">
         ← Etkinliklerime dön
       </Button>
-      <Typography component="h1" variant="h2" sx={{ mt: 3 }}>
+      <Typography
+        component="p"
+        color="primary.main"
+        sx={{
+          fontSize: '0.78rem',
+          fontWeight: 850,
+          letterSpacing: '0.12em',
+          mt: 3,
+        }}
+      >
+        KATILIMCI LİSTESİ
+      </Typography>
+      <Typography component="h1" variant="h2" sx={{ mt: 1 }}>
         {event.title} katılımcıları
       </Typography>
       <Typography color="text.secondary" sx={{ mt: 1 }}>
