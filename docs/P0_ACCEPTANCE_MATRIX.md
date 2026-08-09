@@ -94,17 +94,18 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Kapı | Komut/kanıt | Sonuç |
 |---|---|---|
 | Backend statik kalite | Ruff format/lint ve strict mypy | 69 dosya formatlı; 67 source file typed; temiz |
-| Backend tam test | `uv run pytest --cov=app --cov-report=term-missing` | 72/72 geçti; toplam coverage `%93` |
+| Backend tam test | `uv run pytest --cov=app --cov-report=term-missing` | 83/83 geçti; toplam coverage `%94`, event service `%94` |
 | Event read API | Category, public/owner list-detail ve saldırgan cursor testleri | Stable cursor, cancelled/past görünürlük ve owner-bound cursor geçti |
 | Event lifecycle | Gerçek PostgreSQL create/update/soft-cancel ve ownership testleri | Role, owner-hiding 404, kapasite ve DB-clock kuralları geçti |
 | Timezone | IANA zone, ISO offset, DST gap/fold unit/integration matrisi | Normal zaman ve iki geçerli fold kabul; gap/mismatch/naive reddedildi |
-| Optimistic concurrency | Aynı `expectedVersion` ile iki eşzamanlı `PATCH` | Tam bir `200`, bir `409`; sürüm `2` ve tek update audit'i |
-| Audit atomikliği | Event create sırasında zorlanan audit INSERT hatası | Event satırı da rollback; auditsiz domain commit yok |
+| Optimistic concurrency | Aynı `expectedVersion` ile beş update/update ve beş update/cancel yarışı | Her yarışta tek başarı, tek `409`, sürüm `2` ve tek mutation audit'i |
+| Audit atomikliği | Create/update/cancel sırasında zorlanan audit INSERT hatası | Üç domain mutasyonu da rollback; auditsiz domain commit yok |
 | İndeks planı | Public ve owner cursor SQL'i için kontrollü PostgreSQL `EXPLAIN` | İlgili iki bileşik event indeksi seçildi |
 | OpenAPI | Stable operation ID, ortak error ref ve yalnız `nextCursor` testi | Lokal sözleşme testi geçti |
 | Frontend/workspace regresyonu | Peer, format, Markdownlint, ESLint, typecheck, Vitest, build | Geçti; 1/1 component testi ve production build yeşil |
 | Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
-| Compose lifecycle smoke | Build + dependency-aware up + gerçek HTTP create/update/detail/cancel | Migrate/seed exit `0`; `201/200/200/204/404`; backend UID `10001` |
+| Compose lifecycle smoke | Temiz restart + gerçek HTTP olumlu/saldırgan event matrisi | Migrate/seed exit `0`; `403/404/409/422` negatifleri ve lifecycle geçti; UID `10001/101` |
+| Seed/log/audit smoke | İkinci seed + DB audit sorgusu + container JSON parse | Seed `2\|6\|6\|2`; audit `created,updated,cancelled`; JSON log `37/37` |
 | Remote CI | [GitHub Actions run #12](https://github.com/AlperenKaracan/EventFlow/actions/runs/31327179809) | Backend, frontend ve Compose job'ları geçti |
 
 ## PR kapıları
