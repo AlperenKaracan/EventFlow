@@ -49,10 +49,10 @@ export function RootLayout() {
                 aria-hidden="true"
                 sx={{
                   alignItems: 'center',
-                  background: 'linear-gradient(135deg, #4f46e5, #14b8a6)',
+                  backgroundColor: 'primary.main',
                   borderRadius: '11px',
-                  boxShadow: '0 7px 18px rgba(79, 70, 229, 0.22)',
-                  color: 'common.white',
+                  boxShadow: '0 7px 18px rgba(0, 0, 0, 0.22)',
+                  color: 'primary.contrastText',
                   display: 'inline-flex',
                   fontSize: 14,
                   fontWeight: 900,

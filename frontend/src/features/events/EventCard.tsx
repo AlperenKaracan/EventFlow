@@ -32,7 +32,7 @@ export function EventCard({ event }: { event: PublicEventResponse }) {
         position: 'relative',
         transition: 'transform 180ms ease, box-shadow 180ms ease',
         '&::before': {
-          background: `linear-gradient(90deg, ${accent.border}, ${accent.foreground})`,
+          backgroundColor: accent.foreground,
           content: '""',
           height: 4,
           inset: '0 0 auto',
