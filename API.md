@@ -61,4 +61,59 @@ Exact `Origin` gerektirir; bilinen cookie'nin tüm token family'sini revoke eder
 - Kaynak UUID'si içermeyen genel capability reddi: `403 FORBIDDEN`.
 - UUID tabanlı ownership/role erişimi yok veya kaynak yok: aynı `404 RESOURCE_NOT_FOUND`.
 
-Event ve reservation endpoint sözleşmeleri ilgili PR'larda bu belgeye eklenecektir.
+## Event endpointleri
+
+### `GET /api/v1/categories`
+
+Aktif kategori kataloğunu ad ve UUID ile kararlı sırada döner. Authentication gerekmez.
+
+### `GET /api/v1/events`
+
+Query parametreleri:
+
+- `limit`: `1-100`, varsayılan `20`.
+- `cursor`: Önceki yanıttaki opaque ve imzalı `nextCursor`.
+
+Yalnız gelecekte başlayan `ACTIVE` eventler `(startsAt ASC, id ASC)` sırasıyla döner. Yanıt `items`, `nextCursor` ve `hasMore` alanlarını içerir; API `previousCursor` üretmez. Bozuk, değiştirilmiş veya başka liste bağlamından kopyalanmış cursor `400 INVALID_CURSOR` döner.
+
+### `GET /api/v1/events/{eventId}`
+
+Public event projection'ını döner. İptal edilmiş veya bulunmayan event aynı `404 RESOURCE_NOT_FOUND` sonucunu üretir.
+
+### `POST /api/v1/events`
+
+Organizer bearer token gerektirir; attendee için `403 FORBIDDEN` döner.
+
+```json
+{
+  "categoryId": "20000000-0000-7000-8000-000000000001",
+  "title": "EventFlow Buluşması",
+  "description": "Teknik topluluk etkinliği",
+  "location": "İstanbul",
+  "startsAt": "2036-05-12T19:00:00+03:00",
+  "timezone": "Europe/Istanbul",
+  "capacity": 120
+}
+```
+
+`startsAt` açık ISO-8601 offset taşımalıdır. Offset seçilen IANA timezone ile aynı instantta eşleşmezse, zaman DST gap içindeyse, kategori aktif değilse veya DB saatine göre gelecek değilse `422` döner. Başarı `201`, başlangıç sürümü `1` ve durum `ACTIVE`'dir.
+
+### `PATCH /api/v1/events/{eventId}`
+
+Owner-scoped mutasyondur. Body `expectedVersion` ve en az bir değişiklik taşımalıdır. `startsAt` ile `timezone` birlikte değiştirilir. Kapasite `reservedCount` altına indirilemez. Başlamış/iptal edilmiş event değiştirilemez. Başarıda sürüm bir artar; stale sürüm `409 EVENT_VERSION_CONFLICT`, lifecycle/kapasite çatışmaları kendi `409` domain kodlarını döner. Başka organizer'a ait veya bulunmayan UUID aynı `404 RESOURCE_NOT_FOUND` sonucunu üretir.
+
+### `DELETE /api/v1/events/{eventId}?expectedVersion=1`
+
+Hard delete yapmaz; event'i `CANCELLED` durumuna geçirir, `cancelledAt` yazar ve sürümü artırır. Başarı `204`'tür. Aktif reservation'ların `CANCELLED_BY_EVENT` bulk transition'ı PR 4 transaction kapsamındadır.
+
+### `GET /api/v1/me/events`
+
+Organizer'ın kendi eventlerini iptal/geçmiş kayıtlar dahil `(createdAt DESC, id DESC)` sırasıyla, public listeyle aynı `limit/cursor` sözleşmesiyle döner. Genel organizer capability yoksa `403` döner.
+
+### `GET /api/v1/me/events/{eventId}`
+
+Organizer yönetim ekranı için status, version ve lifecycle tarihlerini içeren owner projection'ıdır. Başkasına ait UUID, eksik UUID ve UUID tabanlı rol reddi aynı `404 RESOURCE_NOT_FOUND` sonucunu üretir.
+
+Create/update/cancel başarılarında `event.created`, `event.updated` veya `event.cancelled` audit satırı domain değişikliğiyle aynı PostgreSQL transaction'ında yazılır.
+
+Reservation endpoint sözleşmeleri PR 4'te bu belgeye eklenecektir.

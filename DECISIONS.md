@@ -52,7 +52,7 @@ Neyi feda ettim: Her idempotent işlem ek satır/index write'ı ve retention cle
 
 ## D-005 — UTC instant ve IANA timezone
 
-Durum: Şema PR 1'de; validation PR 3, UI PR 5'te.
+Durum: Server validation PR 3'te uygulandı ve DST/offset testleriyle kanıtlandı; UI doğrulaması PR 5'te.
 
 Karar: Etkinlik zamanı PostgreSQL `timestamptz` ile UTC instant olarak, kullanıcı bağlamı ayrıca IANA timezone adıyla saklanacak.
 
@@ -64,9 +64,9 @@ Neyi feda ettim: API create/PATCH daha katı offset-zone doğrulaması ve timezo
 
 ## D-006 — Version ile optimistic concurrency
 
-Durum: Şema PR 1'de; API ve UI conflict akışı PR 3/5'te.
+Durum: API conflict akışı PR 3'te gerçek eşzamanlı PostgreSQL testiyle uygulandı; UI conflict akışı PR 5'te.
 
-Karar: Event update, client'ın gördüğü `version` ile koşullu yapılacak; stale update deterministik `409 VERSION_CONFLICT` üretecek.
+Karar: Event update, client'ın gördüğü `version` ile koşullu yapılacak; stale update deterministik `409 EVENT_VERSION_CONFLICT` üretecek.
 
 Değerlendirdiğim alternatifler: Last-write-wins; bütün edit boyunca pessimistic lock; ETag olmadan timestamp karşılaştırması.
 
@@ -76,7 +76,7 @@ Neyi feda ettim: Client conflict'i kullanıcıya göstermeli ve güncel veriyi y
 
 ## D-007 — Soft event cancellation
 
-Durum: Şema PR 1'de; lifecycle PR 3-4'te.
+Durum: Event soft-cancel ve kilit sırası PR 3'te; aktif reservation bulk transition'ı PR 4'te.
 
 Karar: Event fiziksel silinmeyecek; `status=CANCELLED` ve `cancelled_at` ile iptal edilecek, aktif reservation'lar aynı kontrollü akışta `CANCELLED_BY_EVENT` durumuna geçecek.
 
@@ -208,7 +208,7 @@ Neyi feda ettim: Replay serializer stored snapshot'ı bilinçli yeniden kurmalı
 
 ## D-018 — ISO offset, IANA timezone ve DST kabul politikası
 
-Durum: Karar kabul edildi; server validation PR 3, client validation PR 5'te.
+Durum: Server validation PR 3'te uygulandı; client validation PR 5'te.
 
 Karar: Event create/PATCH timestamp'inin açık ISO-8601 offset'i, seçilen IANA timezone'un aynı instanttaki gerçek offset'iyle eşleşmelidir. DST gap reddedilir; fold yalnız gönderilen offset geçerli seçeneklerden biri ise kabul edilir.
 
@@ -220,7 +220,7 @@ Neyi feda ettim: Request sözleşmesi daha katıdır; timezone kütüphanesi ve 
 
 ## D-019 — Organizer için owner-scoped detail endpoint'i
 
-Durum: Karar kabul edildi; API PR 3, organizer ekranları PR 5'te.
+Durum: Owner-scoped API PR 3'te uygulandı; organizer ekranları PR 5'te.
 
 Karar: Organizer edit/detail akışı public event detail kullanmayacak; `GET /api/v1/me/events/{eventId}` server-side ownership kontrolü yapacak ve başka organizatörün kaynağında gizleyen `404` döndürecek.
 

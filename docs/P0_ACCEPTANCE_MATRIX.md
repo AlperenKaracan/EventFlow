@@ -9,9 +9,9 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-ID-01 | Kayıt ve giriş; organizer/attendee rolleri | 2 | Auth integration ve role testleri | ✅ Kanıtlandı |
 | P0-ID-02 | Her endpointte server-side yetkilendirme | 2-4 | Role/capability negatif matrisi | ⬜ Bekliyor |
 | P0-ID-03 | IDOR koruması ve kaynak varlığını gizleyen 404 | 2-4 | Ownership-scoped saldırgan testleri | ⬜ Bekliyor |
-| P0-EVT-01 | Organizer yalnız kendi eventini oluşturur/günceller/iptal eder | 3 | Event lifecycle + ownership testleri | ⬜ Bekliyor |
-| P0-EVT-02 | Başlık, açıklama, zaman, konum, kapasite, kategori alanları | 1,3 | Migration şeması + API testleri | 🟡 Devam ediyor |
-| P0-EVT-03 | Kapasite mevcut rezervasyon sayısının altına indirilemez | 3 | PostgreSQL lock/conflict integration testi | ⬜ Bekliyor |
+| P0-EVT-01 | Organizer yalnız kendi eventini oluşturur/günceller/iptal eder | 3 | Event lifecycle + ownership testleri | ✅ Kanıtlandı |
+| P0-EVT-02 | Başlık, açıklama, zaman, konum, kapasite, kategori alanları | 1,3 | Migration şeması + API testleri | ✅ Kanıtlandı |
+| P0-EVT-03 | Kapasite mevcut rezervasyon sayısının altına indirilemez | 3 | PostgreSQL lock/conflict integration testi | ✅ Kanıtlandı |
 | P0-EVT-04 | Organizer kendi event katılımcı listesini görür | 4 | Owner/not-owner attendee-list testleri | ⬜ Bekliyor |
 | P0-EVT-05 | Public event listesi cursor ile sayfalanır | 3,5 | API sözleşmesi + cursor UI testleri | ⬜ Bekliyor |
 | P0-RES-01 | Attendee rezervasyon oluşturur ve iptal eder | 4,5 | Lifecycle integration/E2E | ⬜ Bekliyor |
@@ -88,6 +88,19 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Rate limit | Gerçek Redis Lua sayacı | 5 deneme sonrası `429` + `Retry-After`; key'de ham IP/e-posta yok |
 | Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
 | Compose smoke | Config/build/up + auth HTTP journey + cleanup CLI | `201/200/200/200/204`; backend UID `10001`; cleanup structured log |
+
+## PR 3 kanıt günlüğü
+
+| Kapı | Komut/kanıt | Sonuç |
+|---|---|---|
+| Backend statik kalite | Ruff format/lint ve strict mypy | 66 source file typed; temiz |
+| Event read API | Category, public/owner list-detail ve saldırgan cursor testleri | Stable cursor, cancelled/past görünürlük ve owner-bound cursor geçti |
+| Event lifecycle | Gerçek PostgreSQL create/update/soft-cancel ve ownership testleri | Role, owner-hiding 404, kapasite ve DB-clock kuralları geçti |
+| Timezone | IANA zone, ISO offset, DST gap/fold unit/integration matrisi | Normal zaman ve iki geçerli fold kabul; gap/mismatch/naive reddedildi |
+| Optimistic concurrency | Aynı `expectedVersion` ile iki eşzamanlı `PATCH` | Tam bir `200`, bir `409`; sürüm `2` ve tek update audit'i |
+| Audit atomikliği | Event create sırasında zorlanan audit INSERT hatası | Event satırı da rollback; auditsiz domain commit yok |
+| İndeks planı | Public ve owner cursor SQL'i için kontrollü PostgreSQL `EXPLAIN` | İlgili iki bileşik event indeksi seçildi |
+| OpenAPI | Stable operation ID, ortak error ref ve yalnız `nextCursor` testi | Lokal sözleşme testi geçti |
 
 ## PR kapıları
 
