@@ -163,17 +163,17 @@ jobs:
           curl --fail --silent http://127.0.0.1:8000/ready
           curl --fail --silent http://127.0.0.1:8080/health
 
-      - name: Run P0 browser journey
-        env:
-          E2E_BASE_URL: http://localhost:8080
-        run: pnpm --filter @eventflow/e2e test
-
       - name: Verify repeatable seed
         run: |
           docker compose run --rm seed
           counts="$(docker compose exec -T db psql -U eventflow -d eventflow -tAc \
             'SELECT (SELECT count(*) FROM users), (SELECT count(*) FROM categories), (SELECT count(*) FROM events), (SELECT count(*) FROM reservations);')"
           test "$counts" = '2|6|6|2'
+
+      - name: Run P0 browser journey
+        env:
+          E2E_BASE_URL: http://localhost:8080
+        run: pnpm --filter @eventflow/e2e test
 
       - name: Verify backend logs are JSON
         run: |
