@@ -12,3 +12,18 @@ export const PublicEventDetailPage = lazy(async () => ({
   default: (await import('../features/events/PublicEventDetailPage'))
     .PublicEventDetailPage,
 }))
+
+export const OrganizerEventsPage = lazy(async () => ({
+  default: (await import('../features/organizer/OrganizerEventsPage'))
+    .OrganizerEventsPage,
+}))
+
+export const OrganizerEventFormPage = lazy(async () => ({
+  default: (await import('../features/organizer/OrganizerEventFormPage'))
+    .OrganizerEventFormPage,
+}))
+
+export const OrganizerAttendeesPage = lazy(async () => ({
+  default: (await import('../features/organizer/OrganizerAttendeesPage'))
+    .OrganizerAttendeesPage,
+}))

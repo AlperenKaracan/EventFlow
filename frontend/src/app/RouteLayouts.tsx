@@ -45,6 +45,11 @@ export function RootLayout() {
             <Box sx={{ flexGrow: 1 }} />
             {auth.session.status === 'authenticated' ? (
               <>
+                {auth.session.user.role === 'organizer' ? (
+                  <Button component={Link} to="/organizer/events">
+                    Etkinliklerim
+                  </Button>
+                ) : null}
                 <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>
                   {auth.session.user.fullName}
                 </Typography>
