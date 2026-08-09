@@ -1,4 +1,5 @@
-import { Link, Outlet } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
+import { Link, Outlet, useNavigate } from '@tanstack/react-router'
 import {
   AppBar,
   Box,
@@ -8,7 +9,22 @@ import {
   Typography,
 } from '@mui/material'
 
+import { useAuth } from '../auth/authContext'
+
 export function RootLayout() {
+  const auth = useAuth()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  const handleLogout = async () => {
+    try {
+      await auth.logout()
+    } finally {
+      queryClient.clear()
+      await navigate({ to: '/' })
+    }
+  }
+
   return (
     <Box sx={{ minHeight: '100vh' }}>
       <AppBar position="static" color="inherit" elevation={0}>
@@ -27,12 +43,23 @@ export function RootLayout() {
               EventFlow
             </Typography>
             <Box sx={{ flexGrow: 1 }} />
-            <Button component={Link} to="/login" variant="text">
-              Giriş yap
-            </Button>
-            <Button component={Link} to="/register" variant="contained">
-              Kayıt ol
-            </Button>
+            {auth.session.status === 'authenticated' ? (
+              <>
+                <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>
+                  {auth.session.user.fullName}
+                </Typography>
+                <Button onClick={() => void handleLogout()}>Çıkış yap</Button>
+              </>
+            ) : (
+              <>
+                <Button component={Link} to="/login" variant="text">
+                  Giriş yap
+                </Button>
+                <Button component={Link} to="/register" variant="contained">
+                  Kayıt ol
+                </Button>
+              </>
+            )}
           </Toolbar>
         </Container>
       </AppBar>

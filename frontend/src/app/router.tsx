@@ -4,9 +4,9 @@ import {
   createRouter,
 } from '@tanstack/react-router'
 
-import { PublicEventDetailPage } from '../features/events/PublicEventDetailPage'
 import { PublicEventsPage } from '../features/events/PublicEventsPage'
 import { RouteNotFoundPage } from '../shared/RouteNotFoundPage'
+import { LoginPage, PublicEventDetailPage, RegisterPage } from './lazyPages'
 import { RootLayout, UpcomingRoute } from './RouteLayouts'
 
 const rootRoute = createRootRoute({
@@ -29,9 +29,19 @@ const eventDetailRoute = createRoute({
   },
 })
 
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: LoginPage,
+})
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  component: RegisterPage,
+})
+
 const upcomingPaths = [
-  '/login',
-  '/register',
   '/attendee/reservations',
   '/organizer/events',
   '/organizer/events/new',
@@ -60,6 +70,8 @@ const organizerAttendeesRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   indexRoute,
   eventDetailRoute,
+  loginRoute,
+  registerRoute,
   ...upcomingRoutes,
   organizerEditRoute,
   organizerAttendeesRoute,
