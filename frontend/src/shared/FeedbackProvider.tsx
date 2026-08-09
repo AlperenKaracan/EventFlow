@@ -1,18 +1,7 @@
 import { Alert, Snackbar } from '@mui/material'
-import {
-  createContext,
-  type PropsWithChildren,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from 'react'
+import { type PropsWithChildren, useCallback, useMemo, useState } from 'react'
 
-type FeedbackContextValue = {
-  showSuccess: (message: string) => void
-}
-
-const FeedbackContext = createContext<FeedbackContextValue | null>(null)
+import { FeedbackContext } from './feedback'
 
 export function FeedbackProvider({ children }: PropsWithChildren) {
   const [message, setMessage] = useState<string | null>(null)
@@ -41,12 +30,4 @@ export function FeedbackProvider({ children }: PropsWithChildren) {
       </Snackbar>
     </FeedbackContext.Provider>
   )
-}
-
-export function useFeedback() {
-  const context = useContext(FeedbackContext)
-  if (!context) {
-    throw new Error('useFeedback must be used within FeedbackProvider')
-  }
-  return context
 }
