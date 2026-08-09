@@ -28,27 +28,27 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-DI-03 | Kritik event/reservation işlemleri immutable audit üretir | 1,3,4 | DB trigger + atomiklik testleri | 🟡 Devam ediyor |
 | P0-DI-04 | Eşzamanlı event düzenleme bilinçli conflict üretir | 3,5 | Version 409 integration/E2E | ⬜ Bekliyor |
 | P0-DI-05 | Event silme politikası gerekçeli ve tutarlı | 3,4 | Soft cancel/transition testleri + decision | ⬜ Bekliyor |
-| P0-DI-06 | KVKK silme/anonymization politikası belgeli | 1 | `DECISIONS.md` kararı | 🟡 Devam ediyor |
+| P0-DI-06 | KVKK silme/anonymization politikası belgeli | 1 | `DECISIONS.md` D-014 | ✅ Kanıtlandı |
 | P0-SEC-01 | Login ve reservation endpoint rate limit | 2,4 | Redis 429 + Retry-After testleri | ⬜ Bekliyor |
 | P0-SEC-02 | Security headers ve exact CORS allowlist | 2 | Header/config negatif testleri | ⬜ Bekliyor |
-| P0-INF-01 | Her servis multi-stage Dockerfile kullanır | 1 | Docker build/history kontrolü | 🟡 Devam ediyor |
+| P0-INF-01 | Her servis multi-stage Dockerfile kullanır | 1 | Backend/frontend Docker build ve image inspection | ✅ Kanıtlandı |
 | P0-INF-02 | Compose DB, Redis ve uygulamayı tek komutla başlatır | 1,5 | Config + clean-clone smoke | 🟡 Devam ediyor |
-| P0-INF-03 | Runtime containerlar non-root çalışır | 1 | Image/container UID testi | 🟡 Devam ediyor |
+| P0-INF-03 | Runtime containerlar non-root çalışır | 1 | Image user + runtime UID: backend `10001`, frontend `101` | ✅ Kanıtlandı |
 | P0-INF-04 | Healthcheck ve dependency-aware startup sırası | 1,5 | Compose health/start-order testi | 🟡 Devam ediyor |
-| P0-INF-05 | `.dockerignore` bulunur | 1 | Repository/config kontrolü | 🟡 Devam ediyor |
-| P0-CFG-01 | 12-factor env, eksik zorunlu env için fail-fast | 1 | Config unit/startup testleri | 🟡 Devam ediyor |
+| P0-INF-05 | `.dockerignore` bulunur | 1 | Root `.dockerignore` + Docker build context | ✅ Kanıtlandı |
+| P0-CFG-01 | 12-factor env, eksik zorunlu env için fail-fast | 1 | `test_config.py` ve Compose required-env ifadeleri | ✅ Kanıtlandı |
 | P0-CFG-02 | `.env.example` bütün anahtarları açıklar; secret yok | 1 | Config/doc ve secret scan | 🟡 Devam ediyor |
-| P0-DB-01 | Yalnız versiyonlanmış migration; runtime auto-schema yok | 1 | Alembic smoke + source guard | 🟡 Devam ediyor |
-| P0-DB-02 | Migration container başlangıcında çalışır | 1 | Compose start-order smoke | 🟡 Devam ediyor |
-| P0-DB-03 | Ayrı, idempotent, tekrar çalıştırılabilir seed | 1 | İki ardışık seed testi | 🟡 Devam ediyor |
+| P0-DB-01 | Yalnız versiyonlanmış migration; runtime auto-schema yok | 1 | Alembic twice/check + CI `create_all` source guard | ✅ Kanıtlandı |
+| P0-DB-02 | Migration container başlangıcında çalışır | 1 | Compose migrate one-shot exit `0` ve start-order smoke | ✅ Kanıtlandı |
+| P0-DB-03 | Ayrı, idempotent, tekrar çalıştırılabilir seed | 1 | Integration testi + ikinci Compose seed sayımı `2\|6\|6\|2` | ✅ Kanıtlandı |
 | P0-DB-04 | İndeks kararları bilinçli ve sorgularla ilişkili | 1,3,4 | Migration introspection + EXPLAIN | 🟡 Devam ediyor |
 | P0-API-01 | API `/api/v1` ile versiyonlanır | 1-4 | Route/OpenAPI testleri | 🟡 Devam ediyor |
 | P0-API-02 | Bütün hatalar ortak envelope kullanır | 1-4 | Unit/integration error matrisi | 🟡 Devam ediyor |
 | P0-API-03 | Domain hataları doğru HTTP status döndürür | 2-4 | Error mapping testleri | ⬜ Bekliyor |
 | P0-API-04 | OpenAPI/Swagger mevcuttur | 1,5 | Schema snapshot/generated client | 🟡 Devam ediyor |
-| P0-OBS-01 | Seviyeli structured JSON log | 1 | Log schema/redaction testleri | 🟡 Devam ediyor |
-| P0-OBS-02 | Request/correlation ID header, body ve loglarda | 1 | Propagation/error/log testleri | 🟡 Devam ediyor |
-| P0-OBS-03 | `/health` process, `/ready` dependency anlamını taşır | 1 | Healthy/unready integration testleri | 🟡 Devam ediyor |
+| P0-OBS-01 | Seviyeli structured JSON log | 1 | Unit schema testi + 11 container satırının JSON parse'ı | ✅ Kanıtlandı |
+| P0-OBS-02 | Request/correlation ID header, body ve loglarda | 1 | UUIDv7/preserve/error/log propagation testleri | ✅ Kanıtlandı |
+| P0-OBS-03 | `/health` process, `/ready` dependency anlamını taşır | 1 | Healthy ve dependency-unready integration testleri | ✅ Kanıtlandı |
 | P0-OBS-04 | Loglarda secret/PII yok; print kullanılmaz | 1-5 | Redaction + source scan | 🟡 Devam ediyor |
 | P0-TST-01 | Kritik iş kuralları otomatik testlidir | 1-5 | PR test paketleri | 🟡 Devam ediyor |
 | P0-TST-02 | Kapasite ve zamanlılık concurrency testi zorunlu | 4 | Gerçek PostgreSQL 200-request testi | ⬜ Bekliyor |
@@ -57,7 +57,23 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-GIT-01 | Feature branch + PR; doğrudan main geliştirmesi yok | 1-5 | Branch/PR geçmişi | 🟡 Devam ediyor |
 | P0-GIT-02 | Anlamlı Conventional Commits ve açıklamalı PR’lar | 1-5 | Git log ve PR açıklamaları | 🟡 Devam ediyor |
 | P0-DOC-01 | README kurulum, kullanım, yapı ve bilinçli eksikleri açıklar | 1,5 | Clean-clone doc doğrulaması | 🟡 Devam ediyor |
-| P0-DOC-02 | DECISIONS alternatif/neden/feda formatında aktiftir | 1-5 | Karar kayıtları ve PR diff’i | 🟡 Devam ediyor |
+| P0-DOC-02 | DECISIONS alternatif/neden/feda formatında aktiftir | 1-5 | 19 aktif karar; her biri alternatif/neden/feda içeriyor | ✅ Kanıtlandı |
+
+## PR 1 kanıt günlüğü
+
+| Kapı | Komut/kanıt | Sonuç |
+|---|---|---|
+| Backend statik kalite | Ruff format/lint ve mypy | 41 dosya formatted; 39 source file typed; temiz |
+| Backend test | `uv run pytest --cov=app --cov-report=term-missing` | 16/16 geçti; toplam coverage `%94` |
+| Migration | Disposable PostgreSQL 17 üzerinde `upgrade head` iki kez + `alembic check` | Geçti; pending operation yok |
+| DB bütünlüğü | Constraint/index introspection ve audit UPDATE/DELETE trigger testi | Geçti |
+| Seed | Integration testi ve ikinci Compose seed | Duplicate yok; `2\|6\|6\|2` |
+| Frontend | Peer, format, lint, typecheck, Vitest, production build | Geçti; 1/1 component testi |
+| Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
+| Docker | Backend/frontend build, image user ve runtime UID | Geçti; `10001:10001` ve `101:101` |
+| Compose | Config, dependency-aware up, health/ready, one-shot exit'ler | Geçti; migrate/seed exit `0` |
+| Log şeması | Backend container stdout satırlarını JSON parse | 11/11 geçti |
+| CI workflow | Actionlint + lokal CI eşdeğer komutlar | Sözdizimi ve lokal kapılar geçti; remote run bekleniyor |
 
 ## PR kapıları
 
