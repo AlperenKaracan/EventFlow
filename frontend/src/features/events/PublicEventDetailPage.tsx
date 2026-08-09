@@ -16,6 +16,7 @@ import {
 
 import { fetchPublicEvent } from '../../api/publicEvents'
 import { createReservationIntent, reserveEvent } from '../../api/attendee'
+import { ApiError } from '../../api/errors'
 import { useAuth } from '../../auth/authContext'
 import { ErrorState, LoadingState } from '../../shared/AsyncState'
 import { getCategoryAccent } from './categoryAccent'
@@ -46,12 +47,25 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
 
   if (eventQuery.isPending) return <LoadingState label="Etkinlik yükleniyor" />
   if (eventQuery.isError) {
+    const isUnavailable =
+      eventQuery.error instanceof ApiError &&
+      eventQuery.error.code === 'RESOURCE_NOT_FOUND'
+
     return (
       <Container component="main" maxWidth="md" sx={{ py: 8 }}>
         <ErrorState
           error={eventQuery.error}
-          onRetry={() => void eventQuery.refetch()}
+          title={isUnavailable ? 'Etkinlik artık görüntülenemiyor' : undefined}
+          description={
+            isUnavailable
+              ? 'Etkinlik organizatör tarafından iptal edilmiş veya yayından kaldırılmış olabilir.'
+              : undefined
+          }
+          onRetry={isUnavailable ? undefined : () => void eventQuery.refetch()}
         />
+        <Button component={Link} to="/" sx={{ mt: 2 }}>
+          ← Etkinliklere dön
+        </Button>
       </Container>
     )
   }
