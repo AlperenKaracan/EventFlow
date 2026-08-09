@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
@@ -46,6 +47,79 @@ async def list_active_categories(session: AsyncSession) -> list[CategoryRecord]:
         )
     ).all()
     return [CategoryRecord(id=row.id, slug=row.slug, name=row.name) for row in categories]
+
+
+async def get_active_category(*, session: AsyncSession, category_id: UUID) -> CategoryRecord | None:
+    category = await session.scalar(
+        select(Category).where(
+            Category.id == category_id,
+            Category.is_active.is_(True),
+        )
+    )
+    return (
+        CategoryRecord(id=category.id, slug=category.slug, name=category.name)
+        if category is not None
+        else None
+    )
+
+
+async def get_category(*, session: AsyncSession, category_id: UUID) -> CategoryRecord:
+    category = await session.get(Category, category_id)
+    if category is None:
+        raise RuntimeError("event category disappeared inside transaction")
+    return CategoryRecord(id=category.id, slug=category.slug, name=category.name)
+
+
+async def get_database_now(session: AsyncSession) -> datetime:
+    value = await session.scalar(select(func.now()))
+    if value is None:
+        raise RuntimeError("database clock did not return a value")
+    return value
+
+
+async def add_event(*, session: AsyncSession, event: Event) -> None:
+    session.add(event)
+    await session.flush()
+
+
+async def get_owned_event_for_update(
+    *,
+    session: AsyncSession,
+    event_id: UUID,
+    organizer_id: UUID,
+    expected_version: int,
+) -> Event | None:
+    return cast(
+        Event | None,
+        await session.scalar(
+            select(Event)
+            .where(
+                Event.id == event_id,
+                Event.organizer_id == organizer_id,
+                Event.version == expected_version,
+            )
+            .with_for_update()
+        ),
+    )
+
+
+def event_to_record(*, event: Event, category: CategoryRecord) -> EventRecord:
+    return EventRecord(
+        id=event.id,
+        category=category,
+        title=event.title,
+        description=event.description,
+        location=event.location,
+        starts_at=event.starts_at,
+        timezone=event.timezone,
+        capacity=event.capacity,
+        reserved_count=event.reserved_count,
+        status=event.status,
+        version=event.version,
+        created_at=event.created_at,
+        updated_at=event.updated_at,
+        cancelled_at=event.cancelled_at,
+    )
 
 
 async def list_public_events(
@@ -134,19 +208,7 @@ async def get_owned_event(
 
 
 def _to_event_record(event: Event, category: Category) -> EventRecord:
-    return EventRecord(
-        id=event.id,
+    return event_to_record(
+        event=event,
         category=CategoryRecord(id=category.id, slug=category.slug, name=category.name),
-        title=event.title,
-        description=event.description,
-        location=event.location,
-        starts_at=event.starts_at,
-        timezone=event.timezone,
-        capacity=event.capacity,
-        reserved_count=event.reserved_count,
-        status=event.status,
-        version=event.version,
-        created_at=event.created_at,
-        updated_at=event.updated_at,
-        cancelled_at=event.cancelled_at,
     )

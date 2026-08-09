@@ -51,3 +51,13 @@ def test_timezone_rejects_unknown_iana_name() -> None:
         )
 
     assert captured.value.code == "INVALID_TIMEZONE"
+
+
+def test_timezone_rejects_naive_datetime() -> None:
+    with pytest.raises(AppError) as captured:
+        validate_event_datetime(
+            starts_at=datetime(2035, 5, 12, 19, 0),
+            timezone_name="Europe/Istanbul",
+        )
+
+    assert captured.value.code == "DATETIME_OFFSET_REQUIRED"
