@@ -74,6 +74,41 @@ async def test_categories_and_public_events_use_stable_projections(
     assert all(item["availableCapacity"] >= 0 for item in all_items)
 
 
+async def test_public_cursor_uses_event_id_as_stable_timestamp_tiebreaker(
+    auth_client: AsyncClient,
+) -> None:
+    headers = await register_organizer(auth_client)
+    shared_start = "2030-05-12T19:00:00+03:00"
+    created_ids: list[str] = []
+    for title in ("Cursor Tie Alpha", "Cursor Tie Beta"):
+        response = await auth_client.post(
+            "/api/v1/events",
+            headers=headers,
+            json={
+                "categoryId": str(IDENTITY.technology_category_id),
+                "title": f"{title} {uuid7()}",
+                "description": "Stable tuple pagination proof",
+                "location": "İstanbul",
+                "startsAt": shared_start,
+                "timezone": "Europe/Istanbul",
+                "capacity": 10,
+            },
+        )
+        assert response.status_code == 201, response.text
+        created_ids.append(response.json()["id"])
+
+    first = await auth_client.get("/api/v1/events", params={"limit": 1})
+    assert first.status_code == 200
+    second = await auth_client.get(
+        "/api/v1/events",
+        params={"limit": 1, "cursor": first.json()["nextCursor"]},
+    )
+
+    assert second.status_code == 200
+    paged_ids = [first.json()["items"][0]["id"], second.json()["items"][0]["id"]]
+    assert paged_ids == sorted(created_ids)
+
+
 async def test_public_detail_hides_cancelled_event_and_invalid_cursor(
     auth_client: AsyncClient,
 ) -> None:

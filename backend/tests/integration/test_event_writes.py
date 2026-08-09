@@ -4,6 +4,7 @@ import asyncio
 from typing import cast
 from uuid import uuid7
 
+import pytest
 from fastapi import FastAPI
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import select, text
@@ -58,6 +59,41 @@ async def create_writer_event(
     )
     assert response.status_code == 201, response.text
     return cast(dict[str, object], response.json())
+
+
+async def install_event_audit_rejection(app: FastAPI) -> None:
+    async with app.state.db_engine.begin() as connection:
+        await connection.execute(
+            text(
+                """
+                CREATE FUNCTION reject_test_event_audit_insert()
+                RETURNS trigger
+                LANGUAGE plpgsql
+                AS $$
+                BEGIN
+                    RAISE EXCEPTION 'forced event audit failure';
+                END;
+                $$
+                """
+            )
+        )
+        await connection.execute(
+            text(
+                """
+                CREATE TRIGGER reject_test_event_audit_insert
+                BEFORE INSERT ON audit_logs
+                FOR EACH ROW EXECUTE FUNCTION reject_test_event_audit_insert()
+                """
+            )
+        )
+
+
+async def remove_event_audit_rejection(app: FastAPI) -> None:
+    async with app.state.db_engine.begin() as connection:
+        await connection.execute(
+            text("DROP TRIGGER IF EXISTS reject_test_event_audit_insert ON audit_logs")
+        )
+        await connection.execute(text("DROP FUNCTION IF EXISTS reject_test_event_audit_insert()"))
 
 
 async def test_create_event_uses_auth_identity_and_same_transaction_audit(
@@ -168,8 +204,9 @@ async def test_update_increments_version_audits_and_rejects_stale_edit(
     assert audits[-1].changes["after"]["version"] == 2
 
 
+@pytest.mark.parametrize("attempt", range(5))
 async def test_concurrent_updates_accept_exactly_one_expected_version(
-    auth_client: AsyncClient, auth_app: object
+    auth_client: AsyncClient, auth_app: object, attempt: int
 ) -> None:
     _user, headers = await register_writer(auth_client)
     created = await create_writer_event(auth_client, headers)
@@ -178,12 +215,12 @@ async def test_concurrent_updates_accept_exactly_one_expected_version(
     first, second = await asyncio.gather(
         auth_client.patch(
             f"/api/v1/events/{event_id}",
-            json={"expectedVersion": 1, "title": "Concurrent Alpha"},
+            json={"expectedVersion": 1, "title": f"Concurrent Alpha {attempt}"},
             headers=headers,
         ),
         auth_client.patch(
             f"/api/v1/events/{event_id}",
-            json={"expectedVersion": 1, "title": "Concurrent Beta"},
+            json={"expectedVersion": 1, "title": f"Concurrent Beta {attempt}"},
             headers=headers,
         ),
     )
@@ -205,8 +242,54 @@ async def test_concurrent_updates_accept_exactly_one_expected_version(
         ).all()
     assert event is not None
     assert event.version == 2
-    assert event.title in {"Concurrent Alpha", "Concurrent Beta"}
+    assert event.title in {f"Concurrent Alpha {attempt}", f"Concurrent Beta {attempt}"}
     assert len(update_audits) == 1
+
+
+@pytest.mark.parametrize("attempt", range(5))
+async def test_concurrent_update_and_cancel_commit_exactly_one_mutation(
+    auth_client: AsyncClient, auth_app: object, attempt: int
+) -> None:
+    _user, headers = await register_writer(auth_client)
+    created = await create_writer_event(auth_client, headers)
+    event_id = created["id"]
+
+    updated, cancelled = await asyncio.gather(
+        auth_client.patch(
+            f"/api/v1/events/{event_id}",
+            json={"expectedVersion": 1, "title": f"Race Update Winner {attempt}"},
+            headers=headers,
+        ),
+        auth_client.delete(
+            f"/api/v1/events/{event_id}",
+            params={"expectedVersion": 1},
+            headers=headers,
+        ),
+    )
+
+    statuses = {updated.status_code, cancelled.status_code}
+    assert 409 in statuses
+    assert statuses & {200, 204}
+    conflict = updated if updated.status_code == 409 else cancelled
+    assert conflict.json()["error"]["code"] == "EVENT_VERSION_CONFLICT"
+
+    app = cast(FastAPI, auth_app)
+    async with app.state.session_factory() as session:
+        event = await session.get(Event, event_id)
+        mutation_audits = (
+            await session.scalars(
+                select(AuditLog).where(
+                    AuditLog.resource_id == event_id,
+                    AuditLog.action.in_(("event.updated", "event.cancelled")),
+                )
+            )
+        ).all()
+    assert event is not None
+    assert event.version == 2
+    assert len(mutation_audits) == 1
+    assert mutation_audits[0].action == (
+        "event.updated" if updated.status_code == 200 else "event.cancelled"
+    )
 
 
 async def test_update_hides_other_owner_and_blocks_capacity_and_started_event(
@@ -271,6 +354,11 @@ async def test_cancel_is_soft_versioned_audited_and_publicly_hidden(
         params={"expectedVersion": 1},
         headers=headers,
     )
+    inactive = await auth_client.patch(
+        f"/api/v1/events/{event_id}",
+        json={"expectedVersion": 2, "title": "Cannot Revive"},
+        headers=headers,
+    )
     owner_detail = await auth_client.get(f"/api/v1/me/events/{event_id}", headers=headers)
     public_detail = await auth_client.get(f"/api/v1/events/{event_id}")
 
@@ -278,6 +366,8 @@ async def test_cancel_is_soft_versioned_audited_and_publicly_hidden(
     assert cancelled.content == b""
     assert stale.status_code == 409
     assert stale.json()["error"]["code"] == "EVENT_VERSION_CONFLICT"
+    assert inactive.status_code == 409
+    assert inactive.json()["error"]["code"] == "EVENT_NOT_ACTIVE"
     assert owner_detail.status_code == 200
     assert owner_detail.json()["status"] == "CANCELLED"
     assert owner_detail.json()["version"] == 2
@@ -301,30 +391,7 @@ async def test_event_create_rolls_back_when_audit_insert_fails(
     _user, headers = await register_writer(auth_client)
     app = cast(FastAPI, auth_app)
     title = f"Rollback Event {uuid7()}"
-    async with app.state.db_engine.begin() as connection:
-        await connection.execute(
-            text(
-                """
-                CREATE FUNCTION reject_test_event_audit_insert()
-                RETURNS trigger
-                LANGUAGE plpgsql
-                AS $$
-                BEGIN
-                    RAISE EXCEPTION 'forced event audit failure';
-                END;
-                $$
-                """
-            )
-        )
-        await connection.execute(
-            text(
-                """
-                CREATE TRIGGER reject_test_event_audit_insert
-                BEFORE INSERT ON audit_logs
-                FOR EACH ROW EXECUTE FUNCTION reject_test_event_audit_insert()
-                """
-            )
-        )
+    await install_event_audit_rejection(app)
     try:
         transport = ASGITransport(app=app, raise_app_exceptions=False)
         async with AsyncClient(transport=transport, base_url="http://testserver") as client:
@@ -336,14 +403,55 @@ async def test_event_create_rolls_back_when_audit_insert_fails(
         assert response.status_code == 500
         assert response.json()["error"]["code"] == "INTERNAL_ERROR"
     finally:
-        async with app.state.db_engine.begin() as connection:
-            await connection.execute(
-                text("DROP TRIGGER IF EXISTS reject_test_event_audit_insert ON audit_logs")
-            )
-            await connection.execute(
-                text("DROP FUNCTION IF EXISTS reject_test_event_audit_insert()")
-            )
+        await remove_event_audit_rejection(app)
 
     async with app.state.session_factory() as session:
         event_count = await session.scalar(select(Event).where(Event.title == title).limit(1))
     assert event_count is None
+
+
+async def test_event_update_and_cancel_roll_back_when_audit_insert_fails(
+    auth_client: AsyncClient, auth_app: object
+) -> None:
+    _user, headers = await register_writer(auth_client)
+    update_target = await create_writer_event(auth_client, headers, title="Rollback Update")
+    cancel_target = await create_writer_event(auth_client, headers, title="Rollback Cancel")
+    app = cast(FastAPI, auth_app)
+    await install_event_audit_rejection(app)
+    try:
+        transport = ASGITransport(app=app, raise_app_exceptions=False)
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            update_response = await client.patch(
+                f"/api/v1/events/{update_target['id']}",
+                json={"expectedVersion": 1, "title": "Must Roll Back"},
+                headers=headers,
+            )
+            cancel_response = await client.delete(
+                f"/api/v1/events/{cancel_target['id']}",
+                params={"expectedVersion": 1},
+                headers=headers,
+            )
+        assert update_response.status_code == 500
+        assert cancel_response.status_code == 500
+    finally:
+        await remove_event_audit_rejection(app)
+
+    async with app.state.session_factory() as session:
+        updated_event = await session.get(Event, update_target["id"])
+        cancelled_event = await session.get(Event, cancel_target["id"])
+        failed_audits = (
+            await session.scalars(
+                select(AuditLog).where(
+                    AuditLog.resource_id.in_((update_target["id"], cancel_target["id"])),
+                    AuditLog.action.in_(("event.updated", "event.cancelled")),
+                )
+            )
+        ).all()
+    assert updated_event is not None
+    assert updated_event.title == "Rollback Update"
+    assert updated_event.version == 1
+    assert cancelled_event is not None
+    assert cancelled_event.status.value == "ACTIVE"
+    assert cancelled_event.cancelled_at is None
+    assert cancelled_event.version == 1
+    assert failed_audits == []
