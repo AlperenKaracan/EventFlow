@@ -1,0 +1,41 @@
+# Local requirements source (redistribution permission is unknown)
+Full-Stack-MidLevel-Case1.pdf
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+dist/
+build/
+*.egg-info/
+
+# Node and frontend
+node_modules/
+.pnpm-store/
+frontend/dist/
+coverage/
+playwright-report/
+test-results/
+
+# IDE and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Local temporary and generated artifacts
+tmp/
+*.log
+
