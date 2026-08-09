@@ -1,0 +1,17 @@
+{
+  "name": "eventflow",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.16.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "scripts": {
+    "build": "pnpm --filter @eventflow/frontend build",
+    "format": "pnpm --recursive format",
+    "format:check": "pnpm --recursive format:check",
+    "lint": "pnpm --recursive lint",
+    "test": "pnpm --filter @eventflow/frontend test",
+    "typecheck": "pnpm --recursive typecheck"
+  }
+}

@@ -10,4 +10,3 @@
 - API list responses expose only `nextCursor`. Implement backward navigation with route-level `CursorPagerState.cursors` history.
 - Reset cursor history to `[null]` when filters, sort, limit, or a list-ordering mutation changes.
 - Keep UI copy and validation messages in Turkish and maintain keyboard, label, contrast, and responsive accessibility.
-

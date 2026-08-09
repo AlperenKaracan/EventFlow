@@ -6,4 +6,3 @@
 - Capture trace and screenshot artifacts on failure.
 - Keep database concurrency proofs in backend PostgreSQL integration tests, not browser tests.
 - Do not hide flakes with unconditional retries.
-
