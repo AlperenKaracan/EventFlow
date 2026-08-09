@@ -49,7 +49,11 @@ export function RootLayout() {
                   <Button component={Link} to="/organizer/events">
                     Etkinliklerim
                   </Button>
-                ) : null}
+                ) : (
+                  <Button component={Link} to="/attendee/reservations">
+                    Rezervasyonlarım
+                  </Button>
+                )}
                 <Typography sx={{ display: { xs: 'none', sm: 'block' } }}>
                   {auth.session.user.fullName}
                 </Typography>

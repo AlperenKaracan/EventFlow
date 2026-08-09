@@ -27,3 +27,8 @@ export const OrganizerAttendeesPage = lazy(async () => ({
   default: (await import('../features/organizer/OrganizerAttendeesPage'))
     .OrganizerAttendeesPage,
 }))
+
+export const ReservationsPage = lazy(async () => ({
+  default: (await import('../features/attendee/ReservationsPage'))
+    .ReservationsPage,
+}))
