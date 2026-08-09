@@ -62,6 +62,13 @@ export function ReservationsPage() {
 
   return (
     <Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 7 } }}>
+      <Typography
+        component="p"
+        color="primary.main"
+        sx={{ fontSize: '0.78rem', fontWeight: 850, letterSpacing: '0.12em' }}
+      >
+        KATILIMCI ALANI
+      </Typography>
       <Typography component="h1" variant="h2">
         Rezervasyonlarım
       </Typography>
@@ -123,8 +130,12 @@ export function ReservationsPage() {
           }}
         >
           {reservationsQuery.data.items.map((reservation) => (
-            <Card key={reservation.id} variant="outlined">
-              <CardContent>
+            <Card
+              key={reservation.id}
+              variant="outlined"
+              sx={{ display: 'flex', flexDirection: 'column', minHeight: 220 }}
+            >
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
                 <Chip
                   label={statusLabels[reservation.status]}
                   color={
@@ -146,7 +157,14 @@ export function ReservationsPage() {
                   {reservation.event.location}
                 </Typography>
               </CardContent>
-              <CardActions>
+              <CardActions
+                sx={{
+                  borderColor: 'divider',
+                  borderTop: '1px solid',
+                  px: 2.25,
+                  py: 1.5,
+                }}
+              >
                 <Link
                   to="/events/$eventId"
                   params={{ eventId: reservation.event.id }}

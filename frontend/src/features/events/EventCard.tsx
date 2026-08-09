@@ -82,7 +82,14 @@ export function EventCard({ event }: { event: PublicEventResponse }) {
           {event.location}
         </Typography>
       </CardContent>
-      <CardActions sx={{ px: 2.25, pb: 2.25 }}>
+      <CardActions
+        sx={{
+          borderColor: 'divider',
+          borderTop: '1px solid',
+          px: 2.25,
+          py: 1.6,
+        }}
+      >
         <Link to="/events/$eventId" params={{ eventId: event.id }}>
           <Button component="span" variant="outlined">
             Ayrıntıları gör →

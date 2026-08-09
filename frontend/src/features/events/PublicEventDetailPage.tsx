@@ -9,6 +9,7 @@ import {
   Chip,
   Container,
   Divider,
+  LinearProgress,
   Stack,
   Typography,
 } from '@mui/material'
@@ -17,6 +18,7 @@ import { fetchPublicEvent } from '../../api/publicEvents'
 import { createReservationIntent, reserveEvent } from '../../api/attendee'
 import { useAuth } from '../../auth/authContext'
 import { ErrorState, LoadingState } from '../../shared/AsyncState'
+import { getCategoryAccent } from './categoryAccent'
 
 const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
   dateStyle: 'full',
@@ -55,13 +57,31 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
   }
 
   const event = eventQuery.data
+  const accent = getCategoryAccent(event.category.slug)
+  const occupancy = Math.min(
+    100,
+    Math.round((event.reservedCount / event.capacity) * 100),
+  )
 
   return (
     <Container component="main" maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
       <Button component={Link} to="/" sx={{ mb: 3 }}>
         ← Etkinliklere dön
       </Button>
-      <Card variant="outlined">
+      <Card
+        variant="outlined"
+        sx={{
+          overflow: 'hidden',
+          position: 'relative',
+          '&::before': {
+            backgroundColor: accent.foreground,
+            content: '""',
+            height: 4,
+            inset: '0 0 auto',
+            position: 'absolute',
+          },
+        }}
+      >
         <CardContent sx={{ p: { xs: 3, md: 5 } }}>
           <Stack
             direction="row"
@@ -69,8 +89,12 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
           >
             <Chip
               label={event.category.name}
-              color="primary"
               variant="outlined"
+              sx={{
+                backgroundColor: accent.background,
+                borderColor: accent.border,
+                color: accent.foreground,
+              }}
             />
             <Chip
               label={
@@ -81,7 +105,19 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
               color={event.availableCapacity > 0 ? 'success' : 'error'}
             />
           </Stack>
-          <Typography component="h1" variant="h1" sx={{ mt: 3 }}>
+          <Typography
+            component="p"
+            color="text.secondary"
+            sx={{
+              fontSize: '0.76rem',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              mt: 4,
+            }}
+          >
+            ETKİNLİK DETAYI
+          </Typography>
+          <Typography component="h1" variant="h2" sx={{ mt: 1 }}>
             {event.title}
           </Typography>
           <Stack sx={{ gap: 1, mt: 3 }}>
@@ -104,6 +140,12 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
             <Typography variant="body2" color="text.secondary">
               {event.reservedCount} / {event.capacity} yer ayrıldı
             </Typography>
+            <LinearProgress
+              aria-label="Doluluk oranı"
+              value={occupancy}
+              variant="determinate"
+              sx={{ borderRadius: 999, height: 6, mt: 1.25 }}
+            />
           </Box>
           <Box sx={{ mt: 4 }}>
             {reserveMutation.isSuccess ? (

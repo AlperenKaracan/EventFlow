@@ -44,10 +44,25 @@ export function OrganizerEventsPage() {
   return (
     <Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 7 } }}>
       <Stack
-        direction="row"
-        sx={{ alignItems: 'center', gap: 2, justifyContent: 'space-between' }}
+        direction={{ xs: 'column', sm: 'row' }}
+        sx={{
+          alignItems: { xs: 'stretch', sm: 'end' },
+          gap: 3,
+          justifyContent: 'space-between',
+        }}
       >
         <Box>
+          <Typography
+            component="p"
+            color="primary.main"
+            sx={{
+              fontSize: '0.78rem',
+              fontWeight: 850,
+              letterSpacing: '0.12em',
+            }}
+          >
+            ORGANİZATÖR PANELİ
+          </Typography>
           <Typography component="h1" variant="h2">
             Etkinliklerim
           </Typography>
@@ -85,8 +100,12 @@ export function OrganizerEventsPage() {
           }}
         >
           {eventsQuery.data.items.map((event) => (
-            <Card key={event.id} variant="outlined">
-              <CardContent>
+            <Card
+              key={event.id}
+              variant="outlined"
+              sx={{ display: 'flex', flexDirection: 'column', minHeight: 220 }}
+            >
+              <CardContent sx={{ flexGrow: 1, p: 3 }}>
                 <Stack
                   direction="row"
                   sx={{ gap: 1, justifyContent: 'space-between' }}
@@ -96,7 +115,7 @@ export function OrganizerEventsPage() {
                     color={event.status === 'ACTIVE' ? 'success' : 'default'}
                     size="small"
                   />
-                  <Typography variant="caption">
+                  <Typography color="text.secondary" variant="caption">
                     Sürüm {event.version}
                   </Typography>
                 </Stack>
@@ -107,11 +126,31 @@ export function OrganizerEventsPage() {
                 >
                   {event.title}
                 </Typography>
-                <Typography color="text.secondary">
-                  {event.reservedCount} / {event.capacity} rezervasyon
-                </Typography>
+                <Box
+                  sx={{
+                    alignItems: 'baseline',
+                    display: 'flex',
+                    gap: 0.75,
+                    mt: 2.5,
+                  }}
+                >
+                  <Typography sx={{ fontSize: '1.55rem', fontWeight: 850 }}>
+                    {event.reservedCount}
+                  </Typography>
+                  <Typography color="text.secondary" variant="body2">
+                    / {event.capacity} rezervasyon
+                  </Typography>
+                </Box>
               </CardContent>
-              <CardActions sx={{ flexWrap: 'wrap' }}>
+              <CardActions
+                sx={{
+                  borderColor: 'divider',
+                  borderTop: '1px solid',
+                  flexWrap: 'wrap',
+                  px: 2.25,
+                  py: 1.5,
+                }}
+              >
                 <Link
                   to="/organizer/events/$eventId/edit"
                   params={{ eventId: event.id }}
