@@ -1,12 +1,5 @@
 import { Link } from '@tanstack/react-router'
-import {
-  Box,
-  Card,
-  CardContent,
-  Chip,
-  Container,
-  Typography,
-} from '@mui/material'
+import { Box, Card, CardContent, Container, Typography } from '@mui/material'
 import type { PropsWithChildren } from 'react'
 
 export function AuthFormLayout({
@@ -20,70 +13,38 @@ export function AuthFormLayout({
   footer: 'login' | 'register'
 }>) {
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 7 } }}>
+    <Container component="main" maxWidth="sm" sx={{ py: { xs: 5, md: 9 } }}>
       <Box
         sx={{
-          alignItems: 'stretch',
-          display: 'grid',
-          gap: 3,
-          gridTemplateColumns: {
-            xs: '1fr',
-            md: 'minmax(0, 1fr) minmax(420px, .8fr)',
-          },
+          mx: 'auto',
+          width: '100%',
         }}
       >
-        <Box
-          sx={{
-            background:
-              'linear-gradient(145deg, #172554, #4f46e5 60%, #0f766e)',
-            borderRadius: 4,
-            color: 'common.white',
-            display: { xs: 'none', md: 'flex' },
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            minHeight: 600,
-            overflow: 'hidden',
-            p: 6,
-            position: 'relative',
-          }}
-        >
-          <Box sx={{ position: 'relative', zIndex: 1 }}>
-            <Chip
-              label="Etkinlikler, tek akışta"
-              sx={{ bgcolor: 'rgba(255,255,255,.14)', color: 'white' }}
-            />
-            <Typography
-              component="p"
-              variant="h2"
-              sx={{ mt: 3, maxWidth: 520 }}
-            >
-              Planla, paylaş ve topluluğunu büyüt.
-            </Typography>
-            <Typography
-              sx={{ color: 'rgba(255,255,255,.75)', mt: 2, maxWidth: 480 }}
-            >
-              EventFlow; organizatörler ve katılımcılar için güvenli, yalın ve
-              hızlı bir etkinlik deneyimi sunar.
-            </Typography>
-          </Box>
+        <Box sx={{ mb: 3.5, textAlign: 'center' }}>
           <Typography
-            sx={{ color: 'rgba(255,255,255,.7)', position: 'relative' }}
+            component="p"
+            color="primary.main"
+            sx={{
+              fontSize: '0.78rem',
+              fontWeight: 850,
+              letterSpacing: '0.12em',
+            }}
           >
-            Güvenli rezervasyon · Şeffaf kontenjan · Kolay yönetim
+            EVENTFLOW HESABI
+          </Typography>
+          <Typography component="h1" variant="h2" sx={{ mt: 1 }}>
+            {title}
+          </Typography>
+          <Typography color="text.secondary" sx={{ mt: 1.25 }}>
+            {description}
           </Typography>
         </Box>
-        <Card variant="outlined" sx={{ alignSelf: 'center', width: '100%' }}>
-          <CardContent sx={{ p: { xs: 3, sm: 5 } }}>
-            <Typography component="h1" variant="h2">
-              {title}
-            </Typography>
-            <Typography color="text.secondary" sx={{ mt: 1, mb: 4 }}>
-              {description}
-            </Typography>
+        <Card variant="outlined" sx={{ width: '100%' }}>
+          <CardContent sx={{ p: { xs: 3, sm: 4.5 } }}>
             {children}
             <Typography
               color="text.secondary"
-              sx={{ mt: 3, textAlign: 'center' }}
+              sx={{ mt: 3.5, textAlign: 'center' }}
             >
               {footer === 'login'
                 ? 'Hesabınız yok mu? '
