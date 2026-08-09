@@ -3,12 +3,16 @@ from __future__ import annotations
 from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request
+from fastapi import APIRouter, Depends, Query, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, RequireRole
 from app.reservations.schemas import EventAttendeePage, ReservationHistoryPage
-from app.reservations.service import get_event_attendee_page, get_reservation_history_page
+from app.reservations.service import (
+    cancel_reservation,
+    get_event_attendee_page,
+    get_reservation_history_page,
+)
 from app.shared.config import Settings
 from app.shared.database import get_session
 from app.shared.errors import ErrorEnvelope
@@ -71,4 +75,26 @@ async def event_attendees(
         limit=limit,
         raw_cursor=cursor,
         settings=cast(Settings, request.app.state.settings),
+    )
+
+
+@router.delete(
+    "/api/v1/reservations/{reservation_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="cancelReservation",
+    responses={
+        401: {"model": ErrorEnvelope, "description": "Bearer token is invalid"},
+        404: {"model": ErrorEnvelope, "description": "Reservation is missing or inaccessible"},
+        409: {"model": ErrorEnvelope, "description": "Event lifecycle conflict"},
+    },
+)
+async def cancel_attendee_reservation(
+    reservation_id: UUID,
+    current_user: CurrentUser,
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> None:
+    await cancel_reservation(
+        session=session,
+        reservation_id=reservation_id,
+        attendee_id=current_user.id,
     )
