@@ -61,30 +61,53 @@ export function EmptyState({
 export function ErrorState({
   error,
   onRetry,
+  title,
+  description,
 }: {
   error: unknown
-  onRetry: () => void
+  onRetry?: () => void
+  title?: string
+  description?: string
 }) {
   const apiError = error instanceof ApiError ? error : undefined
+  const knownError = apiError?.code ? friendlyErrors[apiError.code] : undefined
+  const visibleTitle = title ?? knownError?.title ?? 'İşlem tamamlanamadı'
+  const visibleDescription =
+    description ??
+    knownError?.description ??
+    apiError?.message ??
+    'Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin.'
 
   return (
     <Alert
       severity="error"
       action={
-        <Button color="inherit" onClick={onRetry}>
-          Tekrar dene
-        </Button>
+        onRetry ? (
+          <Button color="inherit" onClick={onRetry}>
+            Tekrar dene
+          </Button>
+        ) : undefined
       }
     >
-      <Typography sx={{ fontWeight: 700 }}>İstek tamamlanamadı</Typography>
-      <Typography variant="body2">
-        {apiError?.message ?? 'Beklenmeyen bir hata oluştu.'}
-      </Typography>
-      {apiError?.requestId ? (
-        <Typography variant="caption" component="p" sx={{ mt: 1 }}>
-          İstek kimliği: <code>{apiError.requestId}</code>
-        </Typography>
-      ) : null}
+      <Typography sx={{ fontWeight: 700 }}>{visibleTitle}</Typography>
+      <Typography variant="body2">{visibleDescription}</Typography>
     </Alert>
   )
+}
+
+const friendlyErrors: Record<string, { title: string; description: string }> = {
+  EVENT_FULL: {
+    title: 'Etkinlikte yer kalmadı',
+    description:
+      'Bu etkinliğin kontenjanı dolu. Daha sonra yeniden kontrol edebilir veya başka bir etkinlik seçebilirsiniz.',
+  },
+  RESOURCE_NOT_FOUND: {
+    title: 'İçerik artık kullanılamıyor',
+    description:
+      'İçerik iptal edilmiş, kaldırılmış veya erişiminize kapatılmış olabilir.',
+  },
+  RATE_LIMIT_EXCEEDED: {
+    title: 'Çok fazla işlem yapıldı',
+    description: 'Kısa bir süre bekleyip yeniden deneyin.',
+  },
 }
