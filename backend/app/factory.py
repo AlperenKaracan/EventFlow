@@ -12,6 +12,7 @@ from app.events.router import categories_router, events_router
 from app.observability.logging import configure_logging
 from app.observability.middleware import RequestContextMiddleware
 from app.observability.router import router as observability_router
+from app.reservations.router import router as reservations_router
 from app.shared.config import Settings, load_settings
 from app.shared.errors import register_exception_handlers
 from app.shared.security_middleware import ExactCORSMiddleware, SecurityHeadersMiddleware
@@ -66,5 +67,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(auth_router)
     app.include_router(categories_router)
     app.include_router(events_router)
+    app.include_router(reservations_router)
     app.include_router(observability_router)
     return app
