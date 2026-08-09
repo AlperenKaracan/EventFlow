@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from uuid import UUID
 
 from sqlalchemy import delete, exists, select, update
 from sqlalchemy.exc import IntegrityError
@@ -18,6 +19,7 @@ from app.auth.security import (
     create_refresh_token,
     create_token_family_id,
     hash_password,
+    hash_refresh_token,
     password_needs_rehash,
     verify_password,
 )
@@ -96,7 +98,7 @@ async def authenticate_user(
 
 
 async def _revoke_token_family(
-    *, session: AsyncSession, family_id: object, revoked_at: datetime
+    *, session: AsyncSession, family_id: UUID, revoked_at: datetime
 ) -> None:
     await session.execute(
         update(RefreshToken)
@@ -112,8 +114,6 @@ async def _revoke_token_family(
 async def rotate_refresh_token(
     *, raw_token: str, session: AsyncSession, settings: Settings
 ) -> AuthenticatedSession:
-    from app.auth.security import hash_refresh_token
-
     now = datetime.now(tz=UTC)
     current = await session.scalar(
         select(RefreshToken)
@@ -166,8 +166,6 @@ async def rotate_refresh_token(
 
 
 async def revoke_refresh_token_family(*, raw_token: str, session: AsyncSession) -> None:
-    from app.auth.security import hash_refresh_token
-
     token = await session.scalar(
         select(RefreshToken)
         .where(RefreshToken.token_hash == hash_refresh_token(raw_token))

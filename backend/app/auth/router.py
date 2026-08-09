@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Annotated, cast
+from typing import Annotated, Any, cast
 
 from fastapi import APIRouter, Depends, Request, Response, status
 from redis.asyncio import Redis
@@ -18,12 +18,28 @@ from app.auth.service import (
 )
 from app.shared.config import Settings
 from app.shared.database import get_session
-from app.shared.errors import AppError
+from app.shared.errors import AppError, ErrorEnvelope
 
 REFRESH_COOKIE_NAME = "eventflow_refresh"
 REFRESH_COOKIE_PATH = "/api/v1/auth"
 
 router = APIRouter(prefix="/api/v1/auth", tags=["auth"])
+
+VALIDATION_RESPONSE: dict[int | str, dict[str, Any]] = {
+    422: {"model": ErrorEnvelope, "description": "Validation failed"}
+}
+REGISTER_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = VALIDATION_RESPONSE | {
+    409: {"model": ErrorEnvelope, "description": "Email is already registered"},
+}
+LOGIN_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = VALIDATION_RESPONSE | {
+    401: {"model": ErrorEnvelope, "description": "Credentials are invalid"},
+    429: {"model": ErrorEnvelope, "description": "Login rate limit exceeded"},
+    503: {"model": ErrorEnvelope, "description": "Rate-limit storage unavailable"},
+}
+REFRESH_ERROR_RESPONSES: dict[int | str, dict[str, Any]] = {
+    401: {"model": ErrorEnvelope, "description": "Refresh token is invalid"},
+    403: {"model": ErrorEnvelope, "description": "Request origin is not allowed"},
+}
 
 
 def _set_refresh_cookie(response: Response, *, raw_token: str, settings: Settings) -> None:
@@ -63,6 +79,8 @@ def _require_cookie_origin(request: Request, settings: Settings) -> None:
     response_model=UserResponse,
     response_model_by_alias=True,
     status_code=status.HTTP_201_CREATED,
+    operation_id="registerUser",
+    responses=REGISTER_ERROR_RESPONSES,
 )
 async def register(
     payload: RegisterRequest,
@@ -72,7 +90,13 @@ async def register(
     return UserResponse.from_user(user)
 
 
-@router.post("/login", response_model=LoginResponse, response_model_by_alias=True)
+@router.post(
+    "/login",
+    response_model=LoginResponse,
+    response_model_by_alias=True,
+    operation_id="loginUser",
+    responses=LOGIN_ERROR_RESPONSES,
+)
 async def login(
     payload: LoginRequest,
     request: Request,
@@ -101,12 +125,24 @@ async def login(
     )
 
 
-@router.get("/me", response_model=UserResponse, response_model_by_alias=True)
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    response_model_by_alias=True,
+    operation_id="getCurrentUser",
+    responses={401: {"model": ErrorEnvelope, "description": "Bearer token is invalid"}},
+)
 async def me(current_user: CurrentUser) -> UserResponse:
     return UserResponse.from_user(current_user)
 
 
-@router.post("/refresh", response_model=LoginResponse, response_model_by_alias=True)
+@router.post(
+    "/refresh",
+    response_model=LoginResponse,
+    response_model_by_alias=True,
+    operation_id="refreshSession",
+    responses=REFRESH_ERROR_RESPONSES,
+)
 async def refresh(
     request: Request,
     response: Response,
@@ -131,7 +167,12 @@ async def refresh(
     )
 
 
-@router.post("/logout", status_code=status.HTTP_204_NO_CONTENT)
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    operation_id="logoutUser",
+    responses={403: {"model": ErrorEnvelope, "description": "Request origin is not allowed"}},
+)
 async def logout(
     request: Request,
     response: Response,

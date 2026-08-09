@@ -6,9 +6,21 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.shared.request_context import REQUEST_ID_HEADER, get_request_id
+
+
+class ErrorBody(BaseModel):
+    code: str
+    message: str
+    request_id: str = Field(serialization_alias="requestId")
+    details: list[dict[str, Any]]
+
+
+class ErrorEnvelope(BaseModel):
+    error: ErrorBody
 
 
 @dataclass(slots=True)
