@@ -3,6 +3,7 @@
 > Ana gereksinim kaynağı: `Full-Stack-MidLevel-Case1.pdf`
 >
 > Bu belge ürün, backend, frontend, veri bütünlüğü, güvenlik, gözlemlenebilirlik, Docker, test, CI, GitHub ve dokümantasyon teslimini tek uygulama planında birleştirir.
+>
 ## 1. Teslim Hedefi ve Kapsam
 
 ### 1.1 Başarı tanımı

@@ -5,4 +5,3 @@
 - Restrict Loki labels to low-cardinality fields such as service, environment, level, and route template.
 - Observability failures must never block domain transactions.
 - Provision datasources and dashboards from version-controlled files; do not depend on manual UI setup.
-

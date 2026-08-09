@@ -14,4 +14,3 @@
 - Idempotency snapshots exclude correlation metadata. Replay injects the current `X-Request-ID`, keeps error-body `requestId` equal to it, and returns the original owner ID only as `Idempotency-Original-Request-ID`.
 - Organizer management detail uses owner-scoped `GET /api/v1/me/events/{eventId}`, never public detail.
 - Event create/PATCH must validate ISO offset against the selected IANA zone at the same instant, including DST gaps and folds.
-

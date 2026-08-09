@@ -1,0 +1,12 @@
+{
+  "config": {
+    "MD013": false,
+    "MD024": {
+      "siblings_only": true,
+    },
+    "MD029": false,
+    "MD033": false,
+    "MD060": false,
+  },
+  "ignores": ["**/node_modules/**", "backend/.venv/**", "tmp/**"],
+}

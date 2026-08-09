@@ -29,4 +29,3 @@ These rules apply to the entire repository. More specific nested `AGENTS.md` fil
 - Use Conventional Commits; each commit must contain one coherent logical change.
 - Run relevant format, lint, type, test, and build checks before each commit.
 - Keep `docs/P0_ACCEPTANCE_MATRIX.md` honest: never mark evidence green for a command that was not run.
-

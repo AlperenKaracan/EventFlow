@@ -68,4 +68,3 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ⬜ Bekliyor |
 | 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | ⬜ Bekliyor |
 | 5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış | ⬜ Bekliyor |
-

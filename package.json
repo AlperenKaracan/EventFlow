@@ -6,11 +6,16 @@
   "engines": {
     "node": ">=22.0.0"
   },
+  "devDependencies": {
+    "markdownlint-cli2": "0.23.2",
+    "prettier": "3.9.6"
+  },
   "scripts": {
     "build": "pnpm --filter @eventflow/frontend build",
-    "format": "pnpm --recursive format",
-    "format:check": "pnpm --recursive format:check",
-    "lint": "pnpm --recursive lint",
+    "format": "prettier --write package.json .markdownlint-cli2.jsonc .github/workflows/*.yml && pnpm --recursive format",
+    "format:check": "prettier --check package.json .markdownlint-cli2.jsonc .github/workflows/*.yml && pnpm --recursive format:check",
+    "lint": "pnpm lint:markdown && pnpm --recursive lint",
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\"",
     "test": "pnpm --filter @eventflow/frontend test",
     "typecheck": "pnpm --recursive typecheck"
   }
