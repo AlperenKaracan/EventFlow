@@ -134,8 +134,8 @@ jobs:
 
       - name: Verify image users
         run: |
-          test "$(docker image inspect eventflow-backend:pr1 --format '{{.Config.User}}')" = '10001:10001'
-          test "$(docker image inspect eventflow-frontend:pr1 --format '{{.Config.User}}')" = '101:101'
+          test "$(docker image inspect eventflow-backend:local --format '{{.Config.User}}')" = '10001:10001'
+          test "$(docker image inspect eventflow-frontend:local --format '{{.Config.User}}')" = '101:101'
 
       - name: Start dependency-aware stack
         run: docker compose up -d --wait --wait-timeout 120

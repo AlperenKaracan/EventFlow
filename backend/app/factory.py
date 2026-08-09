@@ -5,13 +5,15 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.auth.router import router as auth_router
 from app.observability.logging import configure_logging
 from app.observability.middleware import RequestContextMiddleware
 from app.observability.router import router as observability_router
 from app.shared.config import Settings, load_settings
 from app.shared.errors import register_exception_handlers
+from app.shared.security_middleware import ExactCORSMiddleware, SecurityHeadersMiddleware
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -32,6 +34,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             decode_responses=True,
         )
         app.state.db_engine = db_engine
+        app.state.session_factory = async_sessionmaker(
+            db_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
         app.state.redis = redis_client
         try:
             yield
@@ -48,7 +55,13 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
     app.state.settings = active_settings
     app.state.logger = logger
+    app.add_middleware(
+        ExactCORSMiddleware,
+        allowed_origins=active_settings.cors_origins,
+    )
+    app.add_middleware(SecurityHeadersMiddleware, settings=active_settings)
     app.add_middleware(RequestContextMiddleware, logger=logger)
     register_exception_handlers(app)
+    app.include_router(auth_router)
     app.include_router(observability_router)
     return app

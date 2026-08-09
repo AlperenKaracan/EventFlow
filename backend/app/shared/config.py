@@ -21,8 +21,11 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     REDIS_URL: str
     JWT_SECRET: SecretStr = Field(min_length=32)
+    JWT_ISSUER: str = Field(min_length=1, max_length=200)
+    JWT_AUDIENCE: str = Field(min_length=1, max_length=200)
     ACCESS_TOKEN_TTL_MINUTES: int = Field(gt=0, le=60)
     REFRESH_TOKEN_TTL_DAYS: int = Field(gt=0, le=30)
+    REFRESH_TOKEN_REVOKED_RETENTION_DAYS: int = Field(ge=1, le=90)
     CORS_ALLOWED_ORIGINS: str
     LOG_LEVEL: Literal["DEBUG", "INFO", "WARNING", "ERROR"]
     LOGIN_RATE_LIMIT_PER_MINUTE: int = Field(gt=0)

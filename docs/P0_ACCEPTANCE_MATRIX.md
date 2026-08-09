@@ -6,7 +6,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 
 | ID | PDF P0 gereksinimi | Sahip PR | Otomatik/manüel kanıt | Durum |
 |---|---|---:|---|---|
-| P0-ID-01 | Kayıt ve giriş; organizer/attendee rolleri | 2 | Auth integration ve role testleri | ⬜ Bekliyor |
+| P0-ID-01 | Kayıt ve giriş; organizer/attendee rolleri | 2 | Auth integration ve role testleri | ✅ Kanıtlandı |
 | P0-ID-02 | Her endpointte server-side yetkilendirme | 2-4 | Role/capability negatif matrisi | ⬜ Bekliyor |
 | P0-ID-03 | IDOR koruması ve kaynak varlığını gizleyen 404 | 2-4 | Ownership-scoped saldırgan testleri | ⬜ Bekliyor |
 | P0-EVT-01 | Organizer yalnız kendi eventini oluşturur/günceller/iptal eder | 3 | Event lifecycle + ownership testleri | ⬜ Bekliyor |
@@ -29,8 +29,8 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-DI-04 | Eşzamanlı event düzenleme bilinçli conflict üretir | 3,5 | Version 409 integration/E2E | ⬜ Bekliyor |
 | P0-DI-05 | Event silme politikası gerekçeli ve tutarlı | 3,4 | Soft cancel/transition testleri + decision | ⬜ Bekliyor |
 | P0-DI-06 | KVKK silme/anonymization politikası belgeli | 1 | `DECISIONS.md` D-014 | ✅ Kanıtlandı |
-| P0-SEC-01 | Login ve reservation endpoint rate limit | 2,4 | Redis 429 + Retry-After testleri | ⬜ Bekliyor |
-| P0-SEC-02 | Security headers ve exact CORS allowlist | 2 | Header/config negatif testleri | ⬜ Bekliyor |
+| P0-SEC-01 | Login ve reservation endpoint rate limit | 2,4 | Redis 429 + Retry-After testleri | 🟡 Devam ediyor |
+| P0-SEC-02 | Security headers ve exact CORS allowlist | 2 | Header/config negatif testleri | ✅ Kanıtlandı |
 | P0-INF-01 | Her servis multi-stage Dockerfile kullanır | 1 | Backend/frontend Docker build ve image inspection | ✅ Kanıtlandı |
 | P0-INF-02 | Compose DB, Redis ve uygulamayı tek komutla başlatır | 1,5 | Config + clean-clone smoke | 🟡 Devam ediyor |
 | P0-INF-03 | Runtime containerlar non-root çalışır | 1 | Image user + runtime UID: backend `10001`, frontend `101` | ✅ Kanıtlandı |
@@ -75,12 +75,26 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Log şeması | Backend container stdout satırlarını JSON parse | 11/11 geçti |
 | CI workflow | Actionlint + [GitHub Actions run #2](https://github.com/AlperenKaracan/EventFlow/actions/runs/31323243906) | Backend, frontend ve Compose job'ları geçti |
 
+## PR 2 kanıt günlüğü
+
+| Kapı | Komut/kanıt | Sonuç |
+|---|---|---|
+| Backend statik kalite | Ruff format/lint ve strict mypy | 57 dosya formatted; 55 source file typed; temiz |
+| Backend test | `uv run pytest --cov=app --cov-report=term-missing` | 45/45 geçti; toplam coverage `%93` |
+| Auth API | Gerçek PostgreSQL/Redis register/login/me/refresh/logout testleri | Başarı, duplicate, invalid credential, cookie ve Origin yolları geçti |
+| Refresh saldırı yarışı | Aynı token ve eski-token/successor eşzamanlı refresh testleri | Advisory family lock + row lock; replay sonrası aktif family üyesi yok |
+| Authorization/IDOR | Forged/changed claim ve HTTP 401/403/404 saldırı matrisi | Geçti; UUID tabanlı erişim resource-hiding 404 |
+| Browser güvenliği | Exact CORS preflight, CSP/security header ve production HSTS testleri | Geçti |
+| Rate limit | Gerçek Redis Lua sayacı | 5 deneme sonrası `429` + `Retry-After`; key'de ham IP/e-posta yok |
+| Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
+| Compose smoke | Config/build/up + auth HTTP journey + cleanup CLI | `201/200/200/200/204`; backend UID `10001`; cleanup structured log |
+
 ## PR kapıları
 
 | PR | Kapanış koşulu | Durum |
 |---:|---|---|
 | 1 | Foundation, schema, migration/seed, ortak HTTP/observability altyapısı ve CI kabul kriterleri yeşil | ✅ Kanıtlandı |
-| 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ⬜ Bekliyor |
+| 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ✅ Kanıtlandı |
 | 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ⬜ Bekliyor |
 | 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | ⬜ Bekliyor |
 | 5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış | ⬜ Bekliyor |

@@ -100,7 +100,7 @@ Neyi feda ettim: Audit düzeltmesi yerinde update ile yapılamaz; düzeltici yen
 
 ## D-009 — Kısa ömürlü access JWT ve opaque rotating refresh token
 
-Durum: Persistence PR 1'de; auth akışı PR 2'de.
+Durum: PR 2'de uygulandı; access/refresh ve saldırgan integration testleriyle kanıtlandı.
 
 Karar: Access credential kısa ömürlü JWT; refresh credential yüksek entropili opaque token olacak, yalnız SHA-256 hash'i saklanacak ve her kullanımdan sonra rotate edilecek.
 
@@ -112,7 +112,7 @@ Neyi feda ettim: Rotation transaction ve frontend single-flight bootstrap karma�
 
 ## D-010 — Redis yalnız rate limiting state'i için
 
-Durum: Compose PR 1'de; login/reservation limitleri PR 2/4'te.
+Durum: Compose PR 1'de; login limiti PR 2'de uygulandı, reservation limiti PR 4'te.
 
 Karar: Redis, IP+normalized-email login ve authenticated-user reservation rate limit sayaçlarını paylaşacak; domain cache veya doğruluk kaynağı olmayacak.
 
@@ -184,9 +184,9 @@ Neyi feda ettim: Request ID araması label lookup kadar ucuz değildir; producti
 
 ## D-016 — Refresh token family, kilit ve replay revoke
 
-Durum: Constraint/index'ler PR 1'de; transaction, concurrent test ve cleanup PR 2'de.
+Durum: PR 2'de satır kilitli transaction, concurrent replay testi ve aktif-family güvenli cleanup ile uygulandı.
 
-Karar: Her login yeni `family_id` başlatacak; rotation eski token satırını kilitleyip nullable self-FK `replaced_by_id` zinciri kuracak. Eski token replay'i aynı family'nin bütün aktif tokenlarını revoke edecek.
+Karar: Her login yeni `family_id` başlatacak; rotation önce transaction advisory lock ile family'yi, sonra eski token satırını kilitleyip nullable self-FK `replaced_by_id` zinciri kuracak. Eski token replay'i aynı family'nin bütün aktif tokenlarını revoke edecek.
 
 Değerlendirdiğim alternatifler: Her tokenı bağımsız revoke; reuse detection olmadan rotation; Redis session; replacement zinciri olmadan tek current-token alanı.
 

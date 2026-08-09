@@ -6,9 +6,21 @@ from typing import Any
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.shared.request_context import REQUEST_ID_HEADER, get_request_id
+
+
+class ErrorBody(BaseModel):
+    code: str
+    message: str
+    request_id: str = Field(serialization_alias="requestId")
+    details: list[dict[str, Any]]
+
+
+class ErrorEnvelope(BaseModel):
+    error: ErrorBody
 
 
 @dataclass(slots=True)
@@ -17,6 +29,7 @@ class AppError(Exception):
     code: str
     message: str
     details: list[dict[str, Any]] = field(default_factory=list)
+    headers: dict[str, str] = field(default_factory=dict)
 
 
 def error_payload(
@@ -33,9 +46,16 @@ def error_payload(
 
 
 def error_response(
-    *, status_code: int, code: str, message: str, details: list[dict[str, Any]] | None = None
+    *,
+    status_code: int,
+    code: str,
+    message: str,
+    details: list[dict[str, Any]] | None = None,
+    headers: dict[str, str] | None = None,
 ) -> JSONResponse:
     request_id = get_request_id()
+    response_headers = {REQUEST_ID_HEADER: request_id}
+    response_headers.update(headers or {})
     return JSONResponse(
         status_code=status_code,
         content={
@@ -46,7 +66,7 @@ def error_response(
                 "details": details or [],
             }
         },
-        headers={REQUEST_ID_HEADER: request_id},
+        headers=response_headers,
     )
 
 
@@ -58,6 +78,7 @@ def register_exception_handlers(app: FastAPI) -> None:
             code=exc.code,
             message=exc.message,
             details=exc.details,
+            headers=exc.headers,
         )
 
     @app.exception_handler(StarletteHTTPException)
