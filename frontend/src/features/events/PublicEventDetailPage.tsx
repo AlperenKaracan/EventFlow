@@ -1,7 +1,8 @@
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import {
   Box,
+  Alert,
   Button,
   Card,
   CardContent,
@@ -13,6 +14,8 @@ import {
 } from '@mui/material'
 
 import { fetchPublicEvent } from '../../api/publicEvents'
+import { createReservationIntent, reserveEvent } from '../../api/attendee'
+import { useAuth } from '../../auth/authContext'
 import { ErrorState, LoadingState } from '../../shared/AsyncState'
 
 const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
@@ -21,9 +24,22 @@ const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
 })
 
 export function PublicEventDetailPage({ eventId }: { eventId: string }) {
+  const auth = useAuth()
+  const queryClient = useQueryClient()
   const eventQuery = useQuery({
     queryKey: ['public-event', eventId],
     queryFn: () => fetchPublicEvent(eventId),
+  })
+  const reserveMutation = useMutation({
+    mutationFn: reserveEvent,
+    retry: 1,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({
+        queryKey: ['public-event', eventId],
+      })
+      await queryClient.invalidateQueries({ queryKey: ['public-events'] })
+      await queryClient.invalidateQueries({ queryKey: ['my-reservations'] })
+    },
   })
 
   if (eventQuery.isPending) return <LoadingState label="Etkinlik yükleniyor" />
@@ -88,6 +104,46 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
             <Typography variant="body2" color="text.secondary">
               {event.reservedCount} / {event.capacity} yer ayrıldı
             </Typography>
+          </Box>
+          <Box sx={{ mt: 4 }}>
+            {reserveMutation.isSuccess ? (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                Yeriniz ayrıldı. Rezervasyonlarınızdan yönetebilirsiniz.
+              </Alert>
+            ) : null}
+            {reserveMutation.isError ? (
+              <ErrorState
+                error={reserveMutation.error}
+                onRetry={() => {
+                  if (reserveMutation.variables)
+                    reserveMutation.mutate(reserveMutation.variables)
+                }}
+              />
+            ) : null}
+            {auth.session.status === 'anonymous' ? (
+              <Button component={Link} to="/login" variant="contained">
+                Yer ayırmak için giriş yap
+              </Button>
+            ) : auth.session.status === 'authenticated' &&
+              auth.session.user.role === 'attendee' ? (
+              <Button
+                variant="contained"
+                disabled={
+                  event.availableCapacity === 0 ||
+                  reserveMutation.isPending ||
+                  reserveMutation.isSuccess
+                }
+                onClick={() =>
+                  reserveMutation.mutate(createReservationIntent(event.id))
+                }
+              >
+                {event.availableCapacity === 0
+                  ? 'Kontenjan dolu'
+                  : reserveMutation.isPending
+                    ? 'Yer ayrılıyor…'
+                    : 'Yer ayır'}
+              </Button>
+            ) : null}
           </Box>
         </CardContent>
       </Card>

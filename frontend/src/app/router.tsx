@@ -13,7 +13,8 @@ import {
   OrganizerEventEditRoute,
   OrganizerEventsRoute,
 } from './OrganizerRoutes'
-import { RootLayout, UpcomingRoute } from './RouteLayouts'
+import { RootLayout } from './RouteLayouts'
+import { ReservationsRoute } from './AttendeeRoutes'
 
 const rootRoute = createRootRoute({
   component: RootLayout,
@@ -47,15 +48,11 @@ const registerRoute = createRoute({
   component: RegisterPage,
 })
 
-const upcomingPaths = ['/attendee/reservations'] as const
-
-const upcomingRoutes = upcomingPaths.map((path) =>
-  createRoute({
-    getParentRoute: () => rootRoute,
-    path,
-    component: UpcomingRoute,
-  }),
-)
+const reservationsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/attendee/reservations',
+  component: ReservationsRoute,
+})
 
 const organizerEventsRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -92,7 +89,7 @@ const routeTree = rootRoute.addChildren([
   eventDetailRoute,
   loginRoute,
   registerRoute,
-  ...upcomingRoutes,
+  reservationsRoute,
   organizerEventsRoute,
   organizerCreateRoute,
   organizerEditRoute,

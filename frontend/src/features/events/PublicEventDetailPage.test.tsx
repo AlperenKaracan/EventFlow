@@ -12,6 +12,7 @@ import { beforeEach, vi } from 'vitest'
 import { ApiError } from '../../api/errors'
 import type { PublicEventResponse } from '../../api/generated'
 import { fetchPublicEvent } from '../../api/publicEvents'
+import { AuthContext } from '../../auth/authContext'
 import { PublicEventDetailPage } from './PublicEventDetailPage'
 
 vi.mock('../../api/publicEvents', () => ({ fetchPublicEvent: vi.fn() }))
@@ -46,7 +47,16 @@ function renderDetail() {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
+      <AuthContext.Provider
+        value={{
+          session: { status: 'anonymous', user: null },
+          login: () => Promise.reject(new Error('not used')),
+          logout: () => Promise.resolve(),
+          register: () => Promise.reject(new Error('not used')),
+        }}
+      >
+        <RouterProvider router={router} />
+      </AuthContext.Provider>
     </QueryClientProvider>,
   )
 }
