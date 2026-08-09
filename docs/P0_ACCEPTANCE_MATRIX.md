@@ -105,6 +105,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Frontend/workspace regresyonu | Peer, format, Markdownlint, ESLint, typecheck, Vitest, build | Geçti; 1/1 component testi ve production build yeşil |
 | Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
 | Compose lifecycle smoke | Build + dependency-aware up + gerçek HTTP create/update/detail/cancel | Migrate/seed exit `0`; `201/200/200/204/404`; backend UID `10001` |
+| Remote CI | [GitHub Actions run #12](https://github.com/AlperenKaracan/EventFlow/actions/runs/31327179809) | Backend, frontend ve Compose job'ları geçti |
 
 ## PR kapıları
 
@@ -112,6 +113,6 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 |---:|---|---|
 | 1 | Foundation, schema, migration/seed, ortak HTTP/observability altyapısı ve CI kabul kriterleri yeşil | ✅ Kanıtlandı |
 | 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ✅ Kanıtlandı |
-| 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ⬜ Bekliyor |
+| 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ✅ Kanıtlandı |
 | 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | ⬜ Bekliyor |
 | 5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış | ⬜ Bekliyor |
