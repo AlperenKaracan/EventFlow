@@ -109,7 +109,8 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
     name: 'Etkinlik başka bir yerde güncellendi',
   })
   await expect(conflictDialog).toBeVisible()
-  await expect(conflictDialog.getByText(/İstek kimliği:/)).toBeVisible()
+  await expect(conflictDialog.getByText(/Kaydınız uygulanmadı/)).toBeVisible()
+  await expect(conflictDialog.getByText(/İstek kimliği:/)).toHaveCount(0)
   await conflictDialog
     .getByRole('button', { name: 'Güncel veriyi yükle' })
     .click()
@@ -154,8 +155,8 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   ).toBeVisible()
   await page.goto('/attendee/reservations')
   await page.getByRole('button', { name: 'Yeniden yer ayır' }).click()
-  await expect(page.getByText('İstek tamamlanamadı')).toBeVisible()
-  await expect(page.getByText(/İstek kimliği:/)).toBeVisible()
+  await expect(page.getByText('Etkinlikte yer kalmadı')).toBeVisible()
+  await expect(page.getByText(/İstek kimliği:/)).toHaveCount(0)
 
   await page.goto('/organizer/events')
   await expect(
@@ -177,4 +178,35 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   const dialog = page.getByRole('dialog', { name: 'Etkinliği iptal et' })
   await dialog.getByRole('button', { name: 'İptal et' }).click()
   await expect(page.getByText('İptal edildi')).toBeVisible()
+
+  const cancelledEventCard = page.locator('.MuiCard-root').filter({
+    hasText: updatedTitle,
+  })
+  await cancelledEventCard.getByRole('button', { name: 'Görüntüle' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'İptal edilen etkinlik' }),
+  ).toBeVisible()
+  await expect(page.getByText(/bilgileri artık değiştirilemez/)).toBeVisible()
+  await expect(page.getByLabel('Başlık')).toBeDisabled()
+  await expect(
+    page.getByRole('button', { name: 'İptal edildi' }),
+  ).toBeDisabled()
+
+  await logout(page)
+  await login(page, attendeeTwo.email)
+  await page.goto('/attendee/reservations')
+  const cancelledReservationCard = page.locator('.MuiCard-root').filter({
+    hasText: updatedTitle,
+  })
+  await expect(
+    cancelledReservationCard.getByText(/Organizatör bu etkinliği iptal etti/),
+  ).toBeVisible()
+  await expect(
+    cancelledReservationCard.getByRole('button', {
+      name: 'Etkinlik iptal edildi',
+    }),
+  ).toBeDisabled()
+  await expect(
+    cancelledReservationCard.getByRole('link', { name: 'Etkinlik' }),
+  ).toHaveCount(0)
 })

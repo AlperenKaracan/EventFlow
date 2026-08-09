@@ -105,7 +105,7 @@ describe('PublicEventsPage', () => {
     expect(
       await screen.findByText('Etkinlikler alınamadı.'),
     ).toBeInTheDocument()
-    expect(screen.getByText(/req-public-42/)).toBeInTheDocument()
+    expect(screen.queryByText(/req-public-42/)).not.toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Tekrar dene' }))
 
     await waitFor(() =>

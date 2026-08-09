@@ -79,14 +79,27 @@ describe('PublicEventDetailPage', () => {
     expect(fetchPublicEvent).toHaveBeenCalledWith('event-1')
   })
 
-  it('renders the backend request ID on failure', async () => {
+  it('explains an unavailable event without exposing a request ID', async () => {
     vi.mocked(fetchPublicEvent).mockRejectedValue(
-      new ApiError('Etkinlik bulunamadı.', { requestId: 'req-detail-404' }),
+      new ApiError('İstenen kaynak bulunamadı.', {
+        code: 'RESOURCE_NOT_FOUND',
+        requestId: 'req-detail-404',
+      }),
     )
 
     renderDetail()
 
-    expect(await screen.findByText('Etkinlik bulunamadı.')).toBeInTheDocument()
-    expect(screen.getByText(/req-detail-404/)).toBeInTheDocument()
+    expect(
+      await screen.findByText('Etkinlik artık görüntülenemiyor'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Etkinlik organizatör tarafından iptal edilmiş veya yayından kaldırılmış olabilir.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/req-detail-404/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Tekrar dene' }),
+    ).not.toBeInTheDocument()
   })
 })
