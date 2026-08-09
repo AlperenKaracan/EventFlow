@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from redis.asyncio import Redis
-from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.observability.logging import configure_logging
 from app.observability.middleware import RequestContextMiddleware
@@ -32,6 +32,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             decode_responses=True,
         )
         app.state.db_engine = db_engine
+        app.state.session_factory = async_sessionmaker(
+            db_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+        )
         app.state.redis = redis_client
         try:
             yield
