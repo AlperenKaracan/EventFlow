@@ -157,6 +157,10 @@ true` ve `Idempotency-Original-Request-ID` taşır. Her denemenin `X-Request-ID`
 aittir; hata body `requestId` alanı güncel header ile aynıdır. Beklenmedik 5xx snapshot'a alınmaz ve
 transaction bütünüyle rollback edilir.
 
+Idempotency kayıtları varsayılan 24 saat tutulur. Süresi dolan `COMPLETED` veya anormal biçimde
+kalıcı olmuş `PROCESSING` kayıtlar `python -m app.idempotency.cleanup` komutuyla güvenle ve tekrar
+çalıştırılabilir biçimde temizlenir; retention süresi içindeki kayıtlar silinmez.
+
 ### `DELETE /api/v1/reservations/{reservationId}`
 
 Yalnız reservation sahibi iptal edebilir; bulunmayan ve erişilemeyen UUID aynı `404
