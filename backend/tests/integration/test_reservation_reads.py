@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+from typing import cast
 from uuid import uuid7
 
+from fastapi import FastAPI
 from httpx import AsyncClient
+from sqlalchemy import text
 
 from app.seed import IDENTITY
 
@@ -184,3 +187,45 @@ async def test_reservation_read_openapi_contract(client: AsyncClient) -> None:
         attendees["responses"]["404"]["content"]["application/json"]["schema"]["$ref"]
         == "#/components/schemas/ErrorEnvelope"
     )
+
+
+async def test_reservation_list_queries_use_composite_cursor_indexes(
+    auth_app: object,
+) -> None:
+    app = cast(FastAPI, auth_app)
+    async with app.state.session_factory() as session:
+        await session.execute(text("SET LOCAL enable_seqscan = off"))
+        attendee_plan = (
+            await session.execute(
+                text(
+                    """
+                    EXPLAIN (FORMAT TEXT, COSTS OFF)
+                    SELECT reservations.id
+                    FROM reservations
+                    WHERE reservations.attendee_id = :attendee_id
+                    ORDER BY reservations.created_at DESC, reservations.id DESC
+                    LIMIT 20
+                    """
+                ),
+                {"attendee_id": IDENTITY.attendee_id},
+            )
+        ).scalars().all()
+        event_plan = (
+            await session.execute(
+                text(
+                    """
+                    EXPLAIN (FORMAT TEXT, COSTS OFF)
+                    SELECT reservations.id
+                    FROM reservations
+                    WHERE reservations.event_id = :event_id
+                      AND reservations.status = 'ACTIVE'
+                    ORDER BY reservations.created_at ASC, reservations.id ASC
+                    LIMIT 20
+                    """
+                ),
+                {"event_id": IDENTITY.istanbul_event_id},
+            )
+        ).scalars().all()
+
+    assert "ix_reservations_attendee_id_created_at_id" in "\n".join(attendee_plan)
+    assert "ix_reservations_event_id_status_created_at" in "\n".join(event_plan)
