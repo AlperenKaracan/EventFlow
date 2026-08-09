@@ -162,6 +162,11 @@ jobs:
           curl --fail --silent http://127.0.0.1:8000/health
           curl --fail --silent http://127.0.0.1:8000/ready
           curl --fail --silent http://127.0.0.1:8080/health
+          frontend_headers="$(curl --fail --silent --show-error --dump-header - --output /dev/null http://127.0.0.1:8080/)"
+          grep --ignore-case --quiet '^content-security-policy:' <<< "$frontend_headers"
+          grep --ignore-case --quiet '^x-content-type-options: nosniff' <<< "$frontend_headers"
+          grep --ignore-case --quiet '^x-frame-options: DENY' <<< "$frontend_headers"
+          grep --ignore-case --quiet '^referrer-policy: no-referrer' <<< "$frontend_headers"
 
       - name: Verify repeatable seed
         run: |
