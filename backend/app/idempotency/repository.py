@@ -32,9 +32,7 @@ async def claim_idempotency_key(
             created_at=func.now(),
             expires_at=func.now() + IDEMPOTENCY_RETENTION,
         )
-        .on_conflict_do_nothing(
-            constraint="uq_idempotency_records_user_operation_key"
-        )
+        .on_conflict_do_nothing(constraint="uq_idempotency_records_user_operation_key")
         .returning(IdempotencyRecord)
     )
     return cast(IdempotencyRecord | None, await session.scalar(statement))

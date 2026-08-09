@@ -28,9 +28,7 @@ async def assert_create_fully_rolled_back(
         event = await session.get(Event, event_id)
         assert event is not None
         reservation_count = await session.scalar(
-            select(func.count())
-            .select_from(Reservation)
-            .where(Reservation.event_id == event_id)
+            select(func.count()).select_from(Reservation).where(Reservation.event_id == event_id)
         )
         audit_count = await session.scalar(
             select(func.count())
