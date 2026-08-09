@@ -116,4 +116,61 @@ Organizer yönetim ekranı için status, version ve lifecycle tarihlerini içere
 
 Create/update/cancel başarılarında `event.created`, `event.updated` veya `event.cancelled` audit satırı domain değişikliğiyle aynı PostgreSQL transaction'ında yazılır.
 
-Reservation endpoint sözleşmeleri PR 4'te bu belgeye eklenecektir.
+## Reservation endpointleri
+
+### `POST /api/v1/events/{eventId}/reservations`
+
+Yalnız attendee bearer token ile çağrılır ve `Idempotency-Key` header'ı zorunludur. Anahtar
+`[A-Za-z0-9._:-]` karakterlerinden oluşur ve 1-200 karakter uzunluğundadır. Aynı kullanıcının
+aynı anahtarı farklı event için kullanması `409 IDEMPOTENCY_KEY_REUSED` döndürür. Redis limiti
+transaction başlamadan uygulanır; limit aşımı `429 RATE_LIMIT_EXCEEDED` ve `Retry-After`, Redis
+erişilemezliği fail-closed `503 RATE_LIMIT_UNAVAILABLE` üretir.
+
+Başarılı yeni rezervasyon ve iptal edilmiş kaydın yeniden etkinleştirilmesi `201` döndürür:
+
+```json
+{
+  "id": "019...",
+  "eventId": "019...",
+  "attendeeId": "019...",
+  "status": "ACTIVE",
+  "createdAt": "2036-01-01T09:00:00Z",
+  "updatedAt": "2036-01-01T09:00:00Z",
+  "cancelledAt": null
+}
+```
+
+Transaction sırası şöyledir:
+
+1. `(user_id, operation, key)` idempotency satırı atomik insert ile sahiplenilir.
+2. Kaybeden istek committed satırı kilitleyip request hash ve state'i doğrular.
+3. Sahip istek event satırını `FOR UPDATE` ile kilitler ve DB saatine göre lifecycle kontrolü yapar.
+4. Attendee/event reservation satırı event'ten sonra kilitlenir.
+5. Aktif kayıt `409 ALREADY_RESERVED`, dolu event `409 EVENT_FULL`, başlamış event
+   `409 EVENT_STARTED` üretir. Bu deterministik sonuçlar replay için saklanır.
+6. İptal edilmiş kayıt yeniden etkinleştirilir veya yeni kayıt savepoint içinde insert edilir.
+7. `reserved_count`, reservation audit ve request ID içermeyen semantic response snapshot aynı
+   transaction'da yazılır; tek commit ile görünür olur.
+
+Aynı anahtar ve aynı istek status ile semantic body'yi replay eder. Replay `Idempotent-Replayed:
+true` ve `Idempotency-Original-Request-ID` taşır. Her denemenin `X-Request-ID` değeri kendisine
+aittir; hata body `requestId` alanı güncel header ile aynıdır. Beklenmedik 5xx snapshot'a alınmaz ve
+transaction bütünüyle rollback edilir.
+
+### `DELETE /api/v1/reservations/{reservationId}`
+
+Yalnız reservation sahibi iptal edebilir; bulunmayan ve erişilemeyen UUID aynı `404
+RESOURCE_NOT_FOUND` sonucunu üretir. İptal idempotent `204`'tür. Kilit sırası non-locking,
+ownership-scoped event ID lookup sonrasında `event -> reservation -> audit` şeklindedir. Başlamış
+event `409 EVENT_STARTED` döndürür.
+
+### `GET /api/v1/me/reservations`
+
+Attendee'nin aktif ve iptal edilmiş geçmişini `(createdAt DESC, id DESC)` sırasıyla imzalı
+`limit/cursor` sözleşmesiyle döndürür. Genel attendee capability yoksa `403` döner.
+
+### `GET /api/v1/events/{eventId}/attendees`
+
+Yalnız event sahibi organizer aktif attendee listesini görebilir. Başka owner, başka rol ve eksik
+UUID aynı `404 RESOURCE_NOT_FOUND` envelope'unu döndürür. Sayfalama `(reservedAt ASC,
+reservationId ASC)` imzalı cursor'ıyla yapılır.

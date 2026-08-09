@@ -28,7 +28,7 @@ Neyi feda ettim: Lokal geliştirme için gerçek PostgreSQL gerekir; async trans
 
 ## D-003 — Event row lock ve `reserved_count`
 
-Durum: Şema PR 1'de; writer ve concurrency kanıtı PR 4'te.
+Durum: Şema PR 1'de; event-first create/reactivate/cancel writer'ları PR 4'te uygulandı, 200 istek kapasite kanıtı PR 4 kapanış kapısında çalıştırılacak.
 
 Karar: Rezervasyon writer'ları event satırını `FOR UPDATE` ile serialization point yapacak; kapasite `events.reserved_count` üzerinden aynı transaction'da güncellenecek.
 
@@ -40,7 +40,7 @@ Neyi feda ettim: Popüler tek event satırında write contention oluşur; çok b
 
 ## D-004 — Idempotency tablosu ve doğal unique anahtar
 
-Durum: Şema PR 1'de; owner/conflict/replay algoritması PR 4'te.
+Durum: Şema PR 1'de; atomik owner/conflict/replay algoritması ve rollback takeover testi PR 4'te uygulandı.
 
 Karar: Idempotency sahipliği `(user_id, operation, key)` unique constraint'iyle PostgreSQL'de claim edilecek; request hash, state ve semantic response snapshot aynı transaction sınırında tutulacak.
 
@@ -196,7 +196,7 @@ Neyi feda ettim: Normal concurrent refresh'lerden biri replay alarmına dönüş
 
 ## D-017 — Idempotency snapshot ve request ID ayrımı
 
-Durum: Şema PR 1'de; replay uygulaması PR 4'te.
+Durum: Şema PR 1'de; request-ID-free snapshot, güncel replay ID enjeksiyonu ve original ID header'ı PR 4'te uygulandı.
 
 Karar: Stored response snapshot request/correlation ID içermeyecek. Her replay güncel `X-Request-ID` değerini header ve hata body'sine enjekte edecek; ilk owner ID yalnız `Idempotency-Original-Request-ID` header'ında korunacak.
 
