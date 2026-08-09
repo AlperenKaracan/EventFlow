@@ -75,12 +75,26 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Log şeması | Backend container stdout satırlarını JSON parse | 11/11 geçti |
 | CI workflow | Actionlint + [GitHub Actions run #2](https://github.com/AlperenKaracan/EventFlow/actions/runs/31323243906) | Backend, frontend ve Compose job'ları geçti |
 
+## PR 2 kanıt günlüğü
+
+| Kapı | Komut/kanıt | Sonuç |
+|---|---|---|
+| Backend statik kalite | Ruff format/lint ve strict mypy | 57 dosya formatted; 55 source file typed; temiz |
+| Backend test | `uv run pytest --cov=app --cov-report=term-missing` | 45/45 geçti; toplam coverage `%93` |
+| Auth API | Gerçek PostgreSQL/Redis register/login/me/refresh/logout testleri | Başarı, duplicate, invalid credential, cookie ve Origin yolları geçti |
+| Refresh saldırı yarışı | Aynı token ve eski-token/successor eşzamanlı refresh testleri | Advisory family lock + row lock; replay sonrası aktif family üyesi yok |
+| Authorization/IDOR | Forged/changed claim ve HTTP 401/403/404 saldırı matrisi | Geçti; UUID tabanlı erişim resource-hiding 404 |
+| Browser güvenliği | Exact CORS preflight, CSP/security header ve production HSTS testleri | Geçti |
+| Rate limit | Gerçek Redis Lua sayacı | 5 deneme sonrası `429` + `Retry-After`; key'de ham IP/e-posta yok |
+| Dependency audit | `pip-audit`, `pnpm audit --prod --audit-level high` | Bilinen açık yok |
+| Compose smoke | Config/build/up + auth HTTP journey + cleanup CLI | `201/200/200/200/204`; backend UID `10001`; cleanup structured log |
+
 ## PR kapıları
 
 | PR | Kapanış koşulu | Durum |
 |---:|---|---|
 | 1 | Foundation, schema, migration/seed, ortak HTTP/observability altyapısı ve CI kabul kriterleri yeşil | ✅ Kanıtlandı |
-| 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ⬜ Bekliyor |
+| 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ✅ Kanıtlandı |
 | 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ⬜ Bekliyor |
 | 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | ⬜ Bekliyor |
 | 5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış | ⬜ Bekliyor |

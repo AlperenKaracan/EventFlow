@@ -24,7 +24,7 @@ x-backend-service: &backend-service
     context: .
     dockerfile: backend/Dockerfile
     target: runtime
-  image: eventflow-backend:pr1
+  image: eventflow-backend:local
   environment: *backend-environment
   init: true
   restart: "no"
@@ -108,7 +108,7 @@ services:
       context: .
       dockerfile: frontend/Dockerfile
       target: runtime
-    image: eventflow-frontend:pr1
+    image: eventflow-frontend:local
     depends_on:
       backend:
         condition: service_healthy
