@@ -127,6 +127,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Compose smoke | Rebuild/up, migrate/seed, health, UIDs ve deployed HTTP lifecycle | Healthy; `10001/101`; `201/409/204/403/404` matrisi geçti |
 | Container invariant/cleanup | Global SQL invariant ve idempotency cleanup CLI | Mismatch `0`; cleanup structured log ve tekrar çalıştırmada `0 deleted` |
 | Container log şeması | Rebuild sonrası backend stdout satırlarını JSON parse | `53/53` satır geçerli JSON; secret/PII alanı yok |
+| Remote CI | [GitHub Actions run #21](https://github.com/AlperenKaracan/EventFlow/actions/runs/31330453804) | Backend, frontend ve temiz Compose job'ları geçti |
 
 ## PR kapıları
 
@@ -135,5 +136,5 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | 1 | Foundation, schema, migration/seed, ortak HTTP/observability altyapısı ve CI kabul kriterleri yeşil | ✅ Kanıtlandı |
 | 2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil | ✅ Kanıtlandı |
 | 3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil | ✅ Kanıtlandı |
-| 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | 🟡 Devam ediyor |
+| 4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil | ✅ Kanıtlandı |
 | 5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış | ⬜ Bekliyor |
