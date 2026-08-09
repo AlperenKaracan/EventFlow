@@ -11,6 +11,7 @@ from testcontainers.community.postgres import PostgresContainer
 from testcontainers.community.redis import RedisContainer
 
 from app.factory import create_app
+from app.seed import seed_database
 from app.shared.config import Settings
 
 POSTGRES_IMAGE = "postgres:17.6-alpine"
@@ -41,6 +42,16 @@ def migrated_postgres_url(postgres_url: str) -> str:
 
 
 @pytest.fixture(scope="session")
+async def seeded_postgres_url(migrated_postgres_url: str) -> str:
+    await seed_database(
+        migrated_postgres_url,
+        organizer_password="OrganizerDemo123!",
+        attendee_password="AttendeeDemo123!",
+    )
+    return migrated_postgres_url
+
+
+@pytest.fixture(scope="session")
 def redis_url() -> Iterator[str]:
     with RedisContainer(REDIS_IMAGE) as redis:
         host = redis.get_container_host_ip()
@@ -49,10 +60,10 @@ def redis_url() -> Iterator[str]:
 
 
 @pytest.fixture
-def integration_settings(migrated_postgres_url: str, redis_url: str) -> Settings:
+def integration_settings(seeded_postgres_url: str, redis_url: str) -> Settings:
     return Settings(
         APP_ENV="test",
-        DATABASE_URL=migrated_postgres_url,
+        DATABASE_URL=seeded_postgres_url,
         REDIS_URL=redis_url,
         JWT_SECRET="integration-test-secret-that-is-at-least-32-characters",
         JWT_ISSUER="eventflow-integration-api",
