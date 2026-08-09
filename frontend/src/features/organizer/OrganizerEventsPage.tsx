@@ -155,7 +155,9 @@ export function OrganizerEventsPage() {
                   to="/organizer/events/$eventId/edit"
                   params={{ eventId: event.id }}
                 >
-                  <Button component="span">Düzenle</Button>
+                  <Button component="span">
+                    {event.status === 'ACTIVE' ? 'Düzenle' : 'Görüntüle'}
+                  </Button>
                 </Link>
                 <Link
                   to="/organizer/events/$eventId/attendees"

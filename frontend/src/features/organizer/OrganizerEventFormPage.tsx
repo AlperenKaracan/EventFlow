@@ -6,6 +6,7 @@ import {
   Autocomplete,
   Box,
   Button,
+  Chip,
   Container,
   Dialog,
   DialogActions,
@@ -79,6 +80,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
     },
   })
   const title = useWatch({ control: form.control, name: 'title' })
+  const isCancelled = eventQuery.data?.status === 'CANCELLED'
 
   useEffect(() => {
     if (!eventQuery.data) return
@@ -98,6 +100,11 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
 
   const mutation = useMutation({
     mutationFn: async (values: EventFormValues) => {
+      if (isCancelled) {
+        throw new ApiError('İptal edilen etkinlikler düzenlenemez.', {
+          code: 'EVENT_CANCELLED',
+        })
+      }
       const payload = {
         ...values,
         startsAt: localDateTimeToZonedIso(values.startsAt, values.timezone),
@@ -174,22 +181,38 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
             ORGANİZATÖR STÜDYOSU
           </Typography>
           <Typography component="h1" variant="h2" sx={{ mt: 0.75 }}>
-            {isEditing ? 'Etkinliği düzenle' : 'Yeni bir deneyim oluştur'}
+            {isCancelled
+              ? 'İptal edilen etkinlik'
+              : isEditing
+                ? 'Etkinliği düzenle'
+                : 'Yeni bir deneyim oluştur'}
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1, maxWidth: 680 }}>
-            Katılımcıların karar vermesi için ihtiyaç duyduğu tüm bilgileri tek
-            bir yerde, anlaşılır biçimde paylaşın.
+            {isCancelled
+              ? 'Bu etkinliğin son yayınlanan bilgilerini inceleyebilirsiniz.'
+              : 'Katılımcıların karar vermesi için ihtiyaç duyduğu tüm bilgileri tek bir yerde, anlaşılır biçimde paylaşın.'}
           </Typography>
         </Box>
         {isEditing && eventQuery.data ? (
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', fontWeight: 700 }}
-          >
-            Sürüm {eventQuery.data.version}
-          </Typography>
+          <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5 }}>
+            {isCancelled ? (
+              <Chip label="İptal edildi" color="default" size="small" />
+            ) : null}
+            <Typography
+              variant="body2"
+              sx={{ color: 'text.secondary', fontWeight: 700 }}
+            >
+              Sürüm {eventQuery.data.version}
+            </Typography>
+          </Stack>
         ) : null}
       </Stack>
+      {isCancelled ? (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          Bu etkinlik organizatör tarafından iptal edildi. Yeni rezervasyon
+          kabul etmez ve bilgileri artık değiştirilemez.
+        </Alert>
+      ) : null}
       <Paper
         component="form"
         onSubmit={(event) => void submit(event)}
@@ -207,11 +230,6 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
           {mutation.isError && !hasVersionConflict ? (
             <Alert severity="error" sx={{ mt: 3 }}>
               {mutationError?.message ?? 'Etkinlik kaydedilemedi.'}
-              {mutationError?.requestId ? (
-                <Typography variant="caption" component="p" sx={{ mt: 1 }}>
-                  İstek kimliği: <code>{mutationError.requestId}</code>
-                </Typography>
-              ) : null}
             </Alert>
           ) : null}
           <Box
@@ -228,6 +246,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
               render={({ field }) => (
                 <TextField
                   select
+                  disabled={isCancelled}
                   fullWidth
                   label="Kategori"
                   error={Boolean(form.formState.errors.categoryId)}
@@ -248,6 +267,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
             />
             <TextField
               fullWidth
+              disabled={isCancelled}
               label="Başlık"
               placeholder="Örn. İstanbul Ürün Tasarımı Buluşması"
               error={Boolean(form.formState.errors.title)}
@@ -260,6 +280,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
             />
             <TextField
               fullWidth
+              disabled={isCancelled}
               label="Açıklama"
               placeholder="Katılımcıları nelerin beklediğini, programı ve önemli detayları anlatın."
               multiline
@@ -292,6 +313,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
               name="location"
               render={({ field }) => (
                 <Autocomplete
+                  disabled={isCancelled}
                   freeSolo
                   autoHighlight
                   options={[...LOCATION_OPTIONS]}
@@ -318,6 +340,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
               name="timezone"
               render={({ field }) => (
                 <Autocomplete
+                  disabled={isCancelled}
                   autoHighlight
                   options={[...TIMEZONE_OPTIONS]}
                   value={timezoneOption(field.value)}
@@ -353,6 +376,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
                   }
                 >
                   <DateTimePicker
+                    disabled={isCancelled}
                     label="Başlangıç tarihi ve saati"
                     ampm={false}
                     format="DD.MM.YYYY HH:mm"
@@ -381,6 +405,7 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
             />
             <TextField
               fullWidth
+              disabled={isCancelled}
               label="Kontenjan"
               type="number"
               slotProps={{ htmlInput: { min: 1 } }}
@@ -410,22 +435,28 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
             variant="body2"
             sx={{ fontWeight: 700 }}
           >
-            {form.formState.isDirty
-              ? 'Kaydedilmemiş değişiklikleriniz var.'
-              : isEditing
-                ? 'Tüm değişiklikler kaydedildi.'
-                : 'Formu doldurarak etkinliğinizi yayınlayın.'}
+            {isCancelled
+              ? 'İptal edilen etkinlik bilgileri salt okunurdur.'
+              : form.formState.isDirty
+                ? 'Kaydedilmemiş değişiklikleriniz var.'
+                : isEditing
+                  ? 'Tüm değişiklikler kaydedildi.'
+                  : 'Formu doldurarak etkinliğinizi yayınlayın.'}
           </Typography>
           <Stack direction="row" sx={{ gap: 1.5, justifyContent: 'flex-end' }}>
             <Button onClick={() => void navigate({ to: '/organizer/events' })}>
-              Vazgeç
+              {isCancelled ? 'Etkinliklerime dön' : 'Vazgeç'}
             </Button>
             <Button
               type="submit"
               variant="contained"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || isCancelled}
             >
-              {mutation.isPending ? 'Kaydediliyor…' : 'Kaydet'}
+              {isCancelled
+                ? 'İptal edildi'
+                : mutation.isPending
+                  ? 'Kaydediliyor…'
+                  : 'Kaydet'}
             </Button>
           </Stack>
         </Stack>
@@ -437,11 +468,6 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
             Kaydınız uygulanmadı. Güncel veriyi yükleyerek değişiklikleri
             yeniden değerlendirin.
           </Typography>
-          {mutationError?.requestId ? (
-            <Typography variant="caption" component="p" sx={{ mt: 2 }}>
-              İstek kimliği: <code>{mutationError.requestId}</code>
-            </Typography>
-          ) : null}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => mutation.reset()}>Düzenlemeye dön</Button>

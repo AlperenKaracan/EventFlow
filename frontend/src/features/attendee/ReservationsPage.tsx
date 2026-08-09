@@ -129,68 +129,87 @@ export function ReservationsPage() {
             gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
           }}
         >
-          {reservationsQuery.data.items.map((reservation) => (
-            <Card
-              key={reservation.id}
-              variant="outlined"
-              sx={{ display: 'flex', flexDirection: 'column', minHeight: 220 }}
-            >
-              <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                <Chip
-                  label={statusLabels[reservation.status]}
-                  color={
-                    reservation.status === 'ACTIVE' ? 'success' : 'default'
-                  }
-                  size="small"
-                />
-                <Typography
-                  component="h2"
-                  variant="h6"
-                  sx={{ fontWeight: 800, mt: 2 }}
-                >
-                  {reservation.event.title}
-                </Typography>
-                <Typography color="text.secondary">
-                  {dateFormatter.format(new Date(reservation.event.startsAt))}
-                </Typography>
-                <Typography color="text.secondary">
-                  {reservation.event.location}
-                </Typography>
-              </CardContent>
-              <CardActions
+          {reservationsQuery.data.items.map((reservation) => {
+            const isCancelledByEvent =
+              reservation.status === 'CANCELLED_BY_EVENT'
+
+            return (
+              <Card
+                key={reservation.id}
+                variant="outlined"
                 sx={{
-                  borderColor: 'divider',
-                  borderTop: '1px solid',
-                  px: 2.25,
-                  py: 1.5,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: 220,
                 }}
               >
-                <Link
-                  to="/events/$eventId"
-                  params={{ eventId: reservation.event.id }}
+                <CardContent sx={{ flexGrow: 1, p: 3 }}>
+                  <Chip
+                    label={statusLabels[reservation.status]}
+                    color={
+                      reservation.status === 'ACTIVE' ? 'success' : 'default'
+                    }
+                    size="small"
+                  />
+                  <Typography
+                    component="h2"
+                    variant="h6"
+                    sx={{ fontWeight: 800, mt: 2 }}
+                  >
+                    {reservation.event.title}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    {dateFormatter.format(new Date(reservation.event.startsAt))}
+                  </Typography>
+                  <Typography color="text.secondary">
+                    {reservation.event.location}
+                  </Typography>
+                  {isCancelledByEvent ? (
+                    <Alert severity="warning" sx={{ mt: 2.5 }}>
+                      Organizatör bu etkinliği iptal etti. Etkinlik detayları
+                      artık yayınlanmıyor.
+                    </Alert>
+                  ) : null}
+                </CardContent>
+                <CardActions
+                  sx={{
+                    borderColor: 'divider',
+                    borderTop: '1px solid',
+                    px: 2.25,
+                    py: 1.5,
+                  }}
                 >
-                  <Button component="span">Etkinlik</Button>
-                </Link>
-                {reservation.status === 'ACTIVE' ? (
-                  <Button
-                    color="error"
-                    disabled={cancelMutation.isPending}
-                    onClick={() => cancelMutation.mutate(reservation.id)}
-                  >
-                    Rezervasyonu iptal et
-                  </Button>
-                ) : reservation.status === 'CANCELLED_BY_ATTENDEE' &&
-                  reservation.event.status === 'ACTIVE' ? (
-                  <Button
-                    disabled={rebookMutation.isPending}
-                    onClick={() => rebook(reservation)}
-                  >
-                    Yeniden yer ayır
-                  </Button>
-                ) : null}
-              </CardActions>
-            </Card>
-          ))}
+                  {isCancelledByEvent ? (
+                    <Button disabled>Etkinlik iptal edildi</Button>
+                  ) : (
+                    <Link
+                      to="/events/$eventId"
+                      params={{ eventId: reservation.event.id }}
+                    >
+                      <Button component="span">Etkinlik</Button>
+                    </Link>
+                  )}
+                  {reservation.status === 'ACTIVE' ? (
+                    <Button
+                      color="error"
+                      disabled={cancelMutation.isPending}
+                      onClick={() => cancelMutation.mutate(reservation.id)}
+                    >
+                      Rezervasyonu iptal et
+                    </Button>
+                  ) : reservation.status === 'CANCELLED_BY_ATTENDEE' &&
+                    reservation.event.status === 'ACTIVE' ? (
+                    <Button
+                      disabled={rebookMutation.isPending}
+                      onClick={() => rebook(reservation)}
+                    >
+                      Yeniden yer ayır
+                    </Button>
+                  ) : null}
+                </CardActions>
+              </Card>
+            )
+          })}
         </Box>
       ) : null}
 
