@@ -23,6 +23,7 @@ from app.events.repository import (
     get_public_event,
     list_owned_events,
     list_public_events,
+    lock_active_event_reservations,
 )
 from app.events.schemas import (
     EventCreateRequest,
@@ -274,6 +275,7 @@ async def cancel_event(
     database_now = await get_database_now(session)
     if event.starts_at <= database_now:
         raise event_started_error()
+    await lock_active_event_reservations(session=session, event_id=event.id)
 
     before = _event_snapshot(event)
     event.status = EventStatus.CANCELLED

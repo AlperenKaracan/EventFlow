@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.categories.models import Category
 from app.events.cursor import EventCursor
 from app.events.models import Event, EventStatus
+from app.reservations.models import Reservation, ReservationStatus
 
 
 @dataclass(frozen=True, slots=True)
@@ -100,6 +101,22 @@ async def get_owned_event_for_update(
             )
             .with_for_update()
         ),
+    )
+
+
+async def lock_active_event_reservations(*, session: AsyncSession, event_id: UUID) -> list[UUID]:
+    return list(
+        (
+            await session.scalars(
+                select(Reservation.id)
+                .where(
+                    Reservation.event_id == event_id,
+                    Reservation.status == ReservationStatus.ACTIVE,
+                )
+                .order_by(Reservation.id.asc())
+                .with_for_update()
+            )
+        ).all()
     )
 
 
