@@ -1,0 +1,22 @@
+{
+  "name": "eventflow",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "pnpm@11.16.0",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "0.23.2",
+    "prettier": "3.9.6"
+  },
+  "scripts": {
+    "build": "pnpm --filter @eventflow/frontend build",
+    "format": "prettier --write package.json .markdownlint-cli2.jsonc .github/workflows/*.yml && pnpm --recursive format",
+    "format:check": "prettier --check package.json .markdownlint-cli2.jsonc .github/workflows/*.yml && pnpm --recursive format:check",
+    "lint": "pnpm lint:markdown && pnpm --recursive lint",
+    "lint:markdown": "markdownlint-cli2 \"**/*.md\"",
+    "test": "pnpm --filter @eventflow/frontend test",
+    "typecheck": "pnpm --recursive typecheck"
+  }
+}

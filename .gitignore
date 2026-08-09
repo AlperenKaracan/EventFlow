@@ -28,6 +28,7 @@ frontend/dist/
 coverage/
 playwright-report/
 test-results/
+*.tsbuildinfo
 
 # IDE and OS
 .idea/
@@ -38,4 +39,3 @@ Thumbs.db
 # Local temporary and generated artifacts
 tmp/
 *.log
-
