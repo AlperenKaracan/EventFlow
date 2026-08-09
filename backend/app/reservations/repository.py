@@ -6,6 +6,7 @@ from typing import cast
 from uuid import UUID
 
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.events.models import Event, EventStatus
@@ -73,6 +74,38 @@ async def get_event_for_update(*, session: AsyncSession, event_id: UUID) -> Even
         Event | None,
         await session.scalar(select(Event).where(Event.id == event_id).with_for_update()),
     )
+
+
+async def get_attendee_event_reservation_for_update(
+    *, session: AsyncSession, event_id: UUID, attendee_id: UUID
+) -> Reservation | None:
+    return cast(
+        Reservation | None,
+        await session.scalar(
+            select(Reservation)
+            .where(
+                Reservation.event_id == event_id,
+                Reservation.attendee_id == attendee_id,
+            )
+            .with_for_update()
+        ),
+    )
+
+
+async def add_reservation_in_savepoint(
+    *, session: AsyncSession, reservation: Reservation
+) -> bool:
+    try:
+        async with session.begin_nested():
+            session.add(reservation)
+            await session.flush()
+    except IntegrityError as exc:
+        driver_error = getattr(exc.orig, "__cause__", None)
+        constraint_name = getattr(driver_error, "constraint_name", None)
+        if constraint_name != "uq_reservations_event_attendee":
+            raise
+        return False
+    return True
 
 
 async def get_owned_reservation_for_update(

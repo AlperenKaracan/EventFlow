@@ -6,7 +6,7 @@ from uuid import UUID
 from pydantic import BaseModel, Field
 
 from app.events.models import EventStatus
-from app.reservations.models import ReservationStatus
+from app.reservations.models import Reservation, ReservationStatus
 from app.reservations.repository import EventAttendeeRecord, ReservationHistoryRecord
 
 
@@ -74,3 +74,25 @@ class EventAttendeePage(BaseModel):
     items: list[EventAttendeeResponse]
     next_cursor: str | None = Field(serialization_alias="nextCursor")
     has_more: bool = Field(serialization_alias="hasMore")
+
+
+class ReservationMutationResponse(BaseModel):
+    id: UUID
+    event_id: UUID = Field(serialization_alias="eventId")
+    attendee_id: UUID = Field(serialization_alias="attendeeId")
+    status: ReservationStatus
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_at: datetime = Field(serialization_alias="updatedAt")
+    cancelled_at: datetime | None = Field(serialization_alias="cancelledAt")
+
+    @classmethod
+    def from_reservation(cls, reservation: Reservation) -> ReservationMutationResponse:
+        return cls(
+            id=reservation.id,
+            event_id=reservation.event_id,
+            attendee_id=reservation.attendee_id,
+            status=reservation.status,
+            created_at=reservation.created_at,
+            updated_at=reservation.updated_at,
+            cancelled_at=reservation.cancelled_at,
+        )

@@ -1,25 +1,83 @@
 from __future__ import annotations
 
+from logging import Logger
 from typing import Annotated, cast
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Query, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
+from fastapi.responses import JSONResponse
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, RequireRole
-from app.reservations.schemas import EventAttendeePage, ReservationHistoryPage
+from app.idempotency.keys import reservation_create_request_hash, validate_idempotency_key
+from app.reservations.rate_limit import enforce_reservation_rate_limit
+from app.reservations.schemas import (
+    EventAttendeePage,
+    ReservationHistoryPage,
+    ReservationMutationResponse,
+)
 from app.reservations.service import (
     cancel_reservation,
+    create_reservation,
     get_event_attendee_page,
     get_reservation_history_page,
 )
 from app.shared.config import Settings
 from app.shared.database import get_session
 from app.shared.errors import ErrorEnvelope
+from app.shared.request_context import get_request_id
 from app.users.models import User, UserRole
 
 router = APIRouter(tags=["reservations"])
 AttendeeCapability = Annotated[User, Depends(RequireRole(UserRole.ATTENDEE))]
+
+
+@router.post(
+    "/api/v1/events/{event_id}/reservations",
+    response_model=ReservationMutationResponse,
+    response_model_by_alias=True,
+    status_code=status.HTTP_201_CREATED,
+    operation_id="createReservation",
+    responses={
+        401: {"model": ErrorEnvelope, "description": "Bearer token is invalid"},
+        403: {"model": ErrorEnvelope, "description": "Attendee capability is required"},
+        404: {"model": ErrorEnvelope, "description": "Event is missing"},
+        409: {"model": ErrorEnvelope, "description": "Reservation or idempotency conflict"},
+        422: {"model": ErrorEnvelope, "description": "Idempotency key is invalid"},
+        429: {"model": ErrorEnvelope, "description": "Reservation rate limit exceeded"},
+        503: {"model": ErrorEnvelope, "description": "Rate limit dependency unavailable"},
+    },
+)
+async def create_attendee_reservation(
+    request: Request,
+    event_id: UUID,
+    attendee: AttendeeCapability,
+    session: Annotated[AsyncSession, Depends(get_session)],
+    idempotency_key_header: Annotated[str, Header(alias="Idempotency-Key")],
+) -> JSONResponse:
+    settings = cast(Settings, request.app.state.settings)
+    await enforce_reservation_rate_limit(
+        redis=cast(Redis, request.app.state.redis),
+        user_id=attendee.id,
+        settings=settings,
+    )
+    idempotency_key = validate_idempotency_key(idempotency_key_header)
+    semantic_response = await create_reservation(
+        session=session,
+        event_id=event_id,
+        attendee_id=attendee.id,
+        idempotency_key=idempotency_key,
+        request_hash=reservation_create_request_hash(event_id=event_id, body={}),
+        logger=cast(Logger, request.app.state.logger),
+    )
+    return JSONResponse(
+        status_code=semantic_response.status_code,
+        content=semantic_response.materialize_body(
+            current_request_id=UUID(get_request_id())
+        ),
+        headers=semantic_response.replay_headers(),
+    )
 
 
 @router.get(
