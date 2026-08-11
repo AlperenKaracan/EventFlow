@@ -2,7 +2,7 @@
 
 EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Proje, ürün gereksinimleri ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmektedir.
 
-Bu branch **PR 5 — Frontend ve P0 kapanışı** kapsamındadır. Responsive ürün arayüzü, generated OpenAPI client, memory-only auth oturumu, organizer/attendee çalışma alanları, cursor navigation ve gerçek Compose üzerinde P0 Playwright yolculuğu hazırdır.
+Bu branch **PR 6 - Operasyon ve teslim** kapsamındadır. P0 ürün akışları ile P1 arama, filtre, governance ve graceful shutdown kabul kapıları tamamlanmıştır. P2 kapsamında Prometheus metrikleri, Loki/Alloy log hattı ve repository dosyalarından otomatik kurulan Grafana operasyon ekranları eklenmiştir.
 
 ## Roller ve hedef akışlar
 
@@ -18,6 +18,7 @@ PR 1 seed'i bu iki rolü, altı etkinliği ve aktif/iptal edilmiş reservation �
 - Veri: PostgreSQL 17.6; Redis 8.2 yalnız geçici rate-limit state'i için
 - Frontend: React 19, TypeScript, Vite, MUI, TanStack Query/Router, React Hook Form, Zod; production'da unprivileged Nginx
 - Test: pytest, Testcontainers, Vitest, Playwright, Ruff, mypy, ESLint, Prettier
+- Gözlemlenebilirlik: Prometheus 3, Loki 3, Grafana Alloy ve provision edilmiş Grafana 13
 - Teslim: pnpm workspace, multi-stage/non-root Docker image'ları, Docker Compose, GitHub Actions
 
 ## Ön koşullar
@@ -44,6 +45,8 @@ Servis sırası healthcheck ve completion koşullarıyla zorlanır:
 ```text
 PostgreSQL -> migrate -> seed -> backend -> frontend
 Redis -----------------------> backend
+backend -> Prometheus -> Grafana
+Docker logs -> Alloy -> Loki -> Grafana
 ```
 
 Lokal URL'ler:
@@ -51,8 +54,10 @@ Lokal URL'ler:
 - Frontend: <http://localhost:8080>
 - Backend health: <http://localhost:8000/health>
 - Backend readiness: <http://localhost:8000/ready>
+- Prometheus metrikleri: <http://localhost:8000/metrics>
 - OpenAPI JSON: <http://localhost:8000/api/v1/openapi.json>
 - Swagger UI: <http://localhost:8000/docs> (`production` dışında)
+- Grafana: <http://localhost:3000>
 
 `/health` yalnız process'in cevap verdiğini belirtir. `/ready`, PostgreSQL için `SELECT 1` ve Redis için `PING` çalıştırır; bağımlılık hazır değilse ortak hata envelope'u ile `503` döner.
 
@@ -137,9 +142,12 @@ docker compose build backend frontend
 docker compose up -d --wait --wait-timeout 120
 docker compose exec -T backend id -u
 docker compose exec -T frontend id -u
+docker compose exec -T alloy id -u
+docker compose exec -T prometheus id -u
+docker compose exec -T grafana id -u
 ```
 
-Beklenen runtime UID'leri backend için `10001`, frontend için `101`'dir.
+Beklenen runtime UID'leri backend için `10001`, frontend için `101`, Alloy için `473`, Prometheus için `65534` ve Grafana için `472`'dir. Loki image kullanıcı tanımı `10001`'dir.
 
 ## Monorepo yapısı
 
@@ -151,19 +159,19 @@ backend/                 FastAPI modüler monolit, Alembic ve pytest
     categories/          Seed edilmiş kategori kataloğu
     events/              Public/owner event lifecycle, cursor ve timezone kuralları
     idempotency/         Request sahipliği/replay persistence modeli
-    observability/       Request ID, JSON log, health/readiness
+    observability/       Request ID, JSON log, health/readiness ve Prometheus metrikleri
     reservations/        Reservation modeli
     shared/              Config, database ve ortak error envelope
     users/               User modeli ve rol/statü enum'ları
   migrations/            Tek şema kaynağı olan Alembic revision'ları
 frontend/                React/Vite uygulaması ve unprivileged Nginx image'ı
 e2e/                     Playwright test paketi
-observability/           PR 6 provisioning alanı; kuralları şimdiden tanımlı
-docs/                    P0 kabul matrisi
+observability/           Prometheus, Loki, Alloy ve Grafana provisioning dosyaları
+docs/                    P0/P1/P2 kabul kanıtları ve PR ekran görüntüleri
 .github/workflows/       CI kalite kapıları
 ```
 
-Mimari ve veri modeli için `ARCHITECTURE.md`, kabul edilen trade-off'lar için `DECISIONS.md`, HTTP sözleşmesi için `API.md`, tehdit/kontrol özeti için `SECURITY.md` ve P0 izlenebilirliği için `docs/P0_ACCEPTANCE_MATRIX.md` okunmalıdır.
+Mimari ve veri modeli için `ARCHITECTURE.md`, kabul edilen trade-off'lar için `DECISIONS.md`, HTTP sözleşmesi için `API.md`, test yaklaşımı için `TESTING.md`, günlük işletim için `OPERATIONS.md`, tehdit/kontrol özeti için `SECURITY.md` ve katkı kuralları için `CONTRIBUTING.md` okunmalıdır. Kabul kanıtları `docs/P0_ACCEPTANCE_MATRIX.md`, `docs/P1_ACCEPTANCE_MATRIX.md` ve `docs/P2_ACCEPTANCE_MATRIX.md` içindedir.
 
 ## Konfigürasyon ve secret güvenliği
 
@@ -190,7 +198,7 @@ uv run python -m app.idempotency.cleanup
 Pop-Location
 ```
 
-## P0 ürün ve API özeti
+## Ürün ve API özeti
 
 - `GET /api/v1/categories`
 - `GET /api/v1/events` ve `GET /api/v1/events/{eventId}`
@@ -205,14 +213,37 @@ Liste API'leri yalnız opaque `nextCursor` döndürür. Organizer mutasyonları 
 
 Reservation create için `Idempotency-Key` zorunludur. Kapasite event satırı kilidi altında kontrol edilir; counter, reservation, audit ve semantic replay snapshot tek PostgreSQL transaction'ında commit edilir. Aynı key replay edilir, farklı payload/key reuse `409` olur ve Redis limit aşımı `429 + Retry-After` döndürür.
 
-## Bilinçli olarak P0 kapsamında yapılmayanlar
+## Gözlemlenebilirlik
+
+Backend `/metrics` endpoint'i HTTP, rezervasyon, idempotency, kilit bekleme, rate-limit ve readiness metriklerini Prometheus formatında sunar. Route etiketi her zaman path template veya sabit `unmatched` değeridir; request ID, kullanıcı, etkinlik UUID'si ve ham URL metrik etiketi yapılmaz.
+
+Grafana ilk açılışta şu repository-managed ekranları otomatik yükler:
+
+- `EventFlow - Genel Bakış`: metrik ve log çalışma alanlarına giriş.
+- `EventFlow - Metrikler`: trafik, gecikme, hata, rezervasyon ve bağımlılık panelleri.
+- `EventFlow - Loglar`: hata, route ve request ID odaklı Loki sorguları.
+
+Request ID ile terminal ve Loki araması:
+
+```powershell
+docker compose logs backend --no-color | Select-String 'REQUEST_ID'
+```
+
+```logql
+{service_name="backend"} | json | requestId="REQUEST_ID"
+```
+
+Grafana yerel giriş bilgileri `.env` içindeki `GRAFANA_ADMIN_USER` ve `GRAFANA_ADMIN_PASSWORD` değerleridir. Ayrıntılı doğrulama ve sorun giderme akışları `OPERATIONS.md` içindedir.
+
+## Bilinçli olarak kapsam dışında bırakılanlar
 
 - Account deletion endpoint'i: anonymization politikası `DECISIONS.md` D-014'te belgeli, uygulama P0 dışında.
 - P1 arama/filtre, governance ve graceful shutdown PR 6'da tamamlandı; kanıtlar `docs/P1_ACCEPTANCE_MATRIX.md` içinde izlenir.
-- Prometheus, Loki, Alloy ve Grafana P2 gözlemlenebilirlik teslimi P1 remote CI kapısından sonra başlayacaktır.
+- P2 Prometheus, Loki, Alloy ve Grafana teslimi tamamlandı; kanıtlar `docs/P2_ACCEPTANCE_MATRIX.md` içinde izlenir.
 - Cursor geçmişi route belleğindedir; hard refresh bilinçli olarak ilk sayfaya döner.
+- Distributed tracing, alert notification, merkezi SaaS log servisi ve Kubernetes kapsam dışıdır.
 
-Şemada sonraki PR'ların bütünlük kuralları şimdiden vardır; bunun anlamı iş davranışlarının hazır olduğu değildir. Her davranış kendi PR'ında gerçek PostgreSQL/Redis ve saldırgan negatif testleriyle kanıtlanacaktır.
+Kapsam içindeki davranışlar gerçek PostgreSQL/Redis, tarayıcı ve Compose testleriyle kanıtlanır. Gözlemlenebilirlik sistemi domain transaction'larının bir bağımlılığı değildir; Prometheus, Loki, Alloy veya Grafana arızası ürün API'sini durdurmaz.
 
 ## Kaynak ve teslim disiplini
 

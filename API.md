@@ -182,3 +182,41 @@ Attendee'nin aktif ve iptal edilmiş geçmişini `(createdAt DESC, id DESC)` sı
 Yalnız event sahibi organizer aktif attendee listesini görebilir. Başka owner, başka rol ve eksik
 UUID aynı `404 RESOURCE_NOT_FOUND` envelope'unu döndürür. Sayfalama `(reservedAt ASC,
 reservationId ASC)` imzalı cursor'ıyla yapılır.
+
+## Sistem endpointleri
+
+### `GET /health`
+
+Process liveness endpoint'idir. PostgreSQL, Redis veya gözlemlenebilirlik servislerini kontrol etmez. Başarılı yanıt:
+
+```json
+{"status":"ok"}
+```
+
+### `GET /ready`
+
+PostgreSQL `SELECT 1` ve Redis `PING` kontrolü yapar. İkisi de hazırsa `200`, aksi halde `503 DEPENDENCIES_NOT_READY` döndürür. Dependency adları güvenli `details` alanında bulunur. Prometheus readiness gauge değerleri aynı sonucu yansıtır.
+
+### `GET /metrics`
+
+Prometheus text exposition formatı döndürür. Authentication gerektirmeyen lokal operasyon endpoint'idir ve production ağında yalnız izleme altyapısından erişilebilir olmalıdır. Başlıca seriler:
+
+- `eventflow_http_requests_total`
+- `eventflow_http_request_duration_seconds`
+- `eventflow_http_requests_in_progress`
+- `eventflow_http_errors_total`
+- `eventflow_reservation_attempts_total`
+- `eventflow_reservation_lock_wait_seconds`
+- `eventflow_idempotency_requests_total`
+- `eventflow_event_cancellations_total`
+- `eventflow_rate_limit_rejections_total`
+- `eventflow_readiness_status`
+- `eventflow_process_start_time_seconds`
+
+Route etiketi FastAPI path template veya sabit `unmatched` değeridir. Request ID, kullanıcı/etkinlik UUID'si, e-posta ve ham URL metric label olarak kullanılmaz. `/metrics` scrape isteği kendi HTTP trafik serilerine dahil edilmez.
+
+## Request ID operasyon sözleşmesi
+
+Geçerli `X-Request-ID` korunur; eksik veya geçersiz değer yerine UUIDv7 üretilir. Response header ve hata body'sindeki `requestId` aynı güncel değerdir. Kritik audit satırı bu request ID'yi taşır.
+
+Idempotency snapshot request ID içermez. Replay denemesi kendi güncel `X-Request-ID` değerini alır; ilk domain owner request değeri yalnız `Idempotency-Original-Request-ID` header'ında korunur. Request ID Prometheus etiketi veya Loki index etiketi değildir.

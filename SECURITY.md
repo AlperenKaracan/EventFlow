@@ -43,6 +43,10 @@ Cleanup yalnız aktif, revoke edilmemiş ve süresi dolmamış hiçbir üyesi bu
 
 Idempotency semantic snapshot'ları request ID içermez; replay güncel request ID'yi enjekte eder ve original owner ID'yi yalnız ayrı header'da taşır. Kayıtlar 24 saat tutulur. Süresi dolan kayıtlar `uv run python -m app.idempotency.cleanup` ile tekrar çalıştırılabilir biçimde temizlenir.
 
+## Secret ve Git geçmişi taraması
+
+CI full history checkout üzerinde Gitleaks çalıştırır. `.gitleaksignore` yalnız doğrulanmış test-only değerlerin tam commit, dosya, kural ve satır fingerprint'lerini içerir; wildcard path, genel kural veya gerçek secret allowlist edilmez. Yeni bulgu önce redacted raporla incelenir. Gerçek secret bulunursa yalnız dosyadan silmek yeterli değildir; credential revoke/rotation ve Git history temizliği ayrı güvenlik işlemi olarak ele alınır.
+
 ## Zafiyet bildirimi
 
 Credential, kişisel veri, erişim tokenı, çalışan exploit veya henüz giderilmemiş zafiyet ayrıntısı issue, pull request, discussion ya da herkese açık başka bir kanalda paylaşılmamalıdır.
