@@ -208,7 +208,8 @@ Reservation create için `Idempotency-Key` zorunludur. Kapasite event satırı k
 ## Bilinçli olarak P0 kapsamında yapılmayanlar
 
 - Account deletion endpoint'i: anonymization politikası `DECISIONS.md` D-014'te belgeli, uygulama P0 dışında.
-- Search/filtre, governance, graceful shutdown ve provisioning tabanlı observability stack: PR 6.
+- P1 arama/filtre, governance ve graceful shutdown PR 6'da tamamlandı; kanıtlar `docs/P1_ACCEPTANCE_MATRIX.md` içinde izlenir.
+- Prometheus, Loki, Alloy ve Grafana P2 gözlemlenebilirlik teslimi P1 remote CI kapısından sonra başlayacaktır.
 - Cursor geçmişi route belleğindedir; hard refresh bilinçli olarak ilk sayfaya döner.
 
 Şemada sonraki PR'ların bütünlük kuralları şimdiden vardır; bunun anlamı iş davranışlarının hazır olduğu değildir. Her davranış kendi PR'ında gerçek PostgreSQL/Redis ve saldırgan negatif testleriyle kanıtlanacaktır.
