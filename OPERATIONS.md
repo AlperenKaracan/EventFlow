@@ -81,7 +81,7 @@ docker compose logs backend --no-color | Select-String 'REQUEST_ID'
 Grafana araması:
 
 1. <http://localhost:3000> adresinde `.env` içindeki admin bilgileriyle giriş yapın.
-2. `Log dashboardunu aç` bağlantısını seçin.
+2. `Log analizi` bağlantısını seçin.
 3. `Ortam`, `Servis`, `Seviye`, `Rota` ve `HTTP durumu` filtreleriyle inceleme kapsamını daraltın.
 4. Performans sorunu için `Yavaş istek eşiği` değerini seçip `Yavaş istekler` ve `Rota bazında p95 istek süresi` panellerini karşılaştırın.
 5. Uygulama davranışı için `İşlem sonuçları`, `Uygulama hata kodları` ve `İş alanı olay ayrıntıları` panellerini kullanın.
@@ -89,6 +89,8 @@ Grafana araması:
 7. `Request ID uçtan uca zaman çizelgesi` panelinde başlangıç, iş alanı sonucu, rejection ve completion kayıtlarını kronolojik inceleyin.
 
 Dashboard dört bölüme ve 17 analiz paneline ayrılır. Serbest arama için `Metin / regex` alanı kullanılabilir. Request ID, actor, event ve reservation kimlikleri JSON alanı olarak sorgulanır; Loki index label değildir.
+
+Rota filtresindeki `unmatched`, kayıtlı bir rota şablonuyla eşleşmeyen istekleri belirtir. Bunlar çoğunlukla yanlış veya artık kullanılmayan adreslere gelen 404 istekleridir. Ham URL ve UUID değerlerinin yüksek cardinality oluşturmasını önlemek için teknik etiket tek grupta tutulur; rota grafiklerinde `Eşleşmeyen rota (404)` adıyla gösterilir.
 
 Provision edilen dashboardun bütün LogQL sorgularını çalışan Grafana ve Loki üzerinde doğrulamak için:
 

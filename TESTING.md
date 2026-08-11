@@ -66,7 +66,7 @@ CI ayrıca şunları doğrular:
 - Bilinen bir `X-Request-ID` backend logundan Loki'ye ulaşır ve LogQL ile bulunur.
 - Loki index label kümesi yalnız `service_name`, `environment`, `level` ve `route` alanlarından oluşur.
 - Grafana datasource health sonuçları `OK`, dashboard UID'leri sabit ve ana ekran `eventflow-overview` olur.
-- Log dashboardundaki 17 LogQL target çalışan Grafana datasource API'si üzerinden Loki'ye karşı hatasız yürütülür; yapılandırılmış `RESOURCE_NOT_FOUND` rejection kaydı uçtan uca bulunur.
+- Log dashboardundaki 19 LogQL target çalışan Grafana datasource API'si üzerinden Loki'ye karşı hatasız yürütülür; yapılandırılmış `RESOURCE_NOT_FOUND` rejection kaydı uçtan uca bulunur.
 - Gözlemlenebilirlik containerları root olmayan kullanıcıyla çalışır.
 
 Örnek PromQL:

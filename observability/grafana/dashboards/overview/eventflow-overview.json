@@ -12,7 +12,7 @@
       "keepTime": true,
       "tags": [],
       "targetBlank": false,
-      "title": "Metrik dashboardunu aç",
+      "title": "Metrikler",
       "type": "link",
       "url": "/d/eventflow-metrics/eventflow-metrikleri"
     },
@@ -22,7 +22,7 @@
       "keepTime": true,
       "tags": [],
       "targetBlank": false,
-      "title": "Log dashboardunu aç",
+      "title": "Log analizi",
       "type": "link",
       "url": "/d/eventflow-logs/eventflow-loglari"
     }
