@@ -82,8 +82,19 @@ Grafana araması:
 
 1. <http://localhost:3000> adresinde `.env` içindeki admin bilgileriyle giriş yapın.
 2. `Log dashboardunu aç` bağlantısını seçin.
-3. `Request ID` alanına hata body veya `X-Request-ID` header değerini yapıştırın.
-4. `Request ID uçtan uca logları` panelinde ilgili kayıtları inceleyin.
+3. `Ortam`, `Servis`, `Seviye`, `Rota` ve `HTTP durumu` filtreleriyle inceleme kapsamını daraltın.
+4. Performans sorunu için `Yavaş istek eşiği` değerini seçip `Yavaş istekler` ve `Rota bazında p95 istek süresi` panellerini karşılaştırın.
+5. Uygulama davranışı için `İşlem sonuçları`, `Uygulama hata kodları` ve `İş alanı olay ayrıntıları` panellerini kullanın.
+6. Hata body veya `X-Request-ID` header değerini `Request ID` alanına yapıştırın.
+7. `Request ID uçtan uca zaman çizelgesi` panelinde başlangıç, iş alanı sonucu, rejection ve completion kayıtlarını kronolojik inceleyin.
+
+Dashboard dört bölüme ve 17 analiz paneline ayrılır. Serbest arama için `Metin / regex` alanı kullanılabilir. Request ID, actor, event ve reservation kimlikleri JSON alanı olarak sorgulanır; Loki index label değildir.
+
+Provision edilen dashboardun bütün LogQL sorgularını çalışan Grafana ve Loki üzerinde doğrulamak için:
+
+```powershell
+python observability/verify_log_dashboard.py
+```
 
 Eşdeğer LogQL:
 
@@ -91,7 +102,7 @@ Eşdeğer LogQL:
 {service_name="backend"} | json | requestId="REQUEST_ID"
 ```
 
-Request ID JSON alanıdır, Loki index label değildir. Index label kümesi düşük cardinality `service_name`, `environment`, `level` ve route template alanlarıyla sınırlıdır.
+Request ID JSON alanıdır, Loki index label değildir. Index label kümesi düşük cardinality `service_name`, `environment`, `level` ve route template alanlarıyla sınırlıdır. Beklenen HTTP reddetmeleri güvenli `errorCode`, status, method ve route template alanlarıyla `http.request.rejected` olayı olarak loglanır; response ayrıntıları veya kaynak kimlikleri toplu hata analizine taşınmaz.
 
 ## Audit log
 

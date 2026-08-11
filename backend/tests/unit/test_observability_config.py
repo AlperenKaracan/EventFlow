@@ -89,8 +89,9 @@ def test_grafana_provisions_fixed_datasources_folders_and_home_dashboard() -> No
     assert 'matcherRegex: \'"requestId":"([0-9a-fA-F-]{36})"\'' in datasource_config
     assert "$${__value.raw}" in datasource_config
     assert "folder: EventFlow - Metrikler" in dashboard_config
-    assert "folder: EventFlow - Loglar" in dashboard_config
+    assert "folder: EventFlow - Log Analizi" in dashboard_config
     assert "grafana/grafana:13.1.3" in compose
+    assert "GF_USERS_DEFAULT_LANGUAGE: tr-TR" in compose
     assert "GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH" in compose
     assert "grafana-lokiexplore-app@2.5.0" in compose
     assert "grafana-metricsdrilldown-app@2.4.0" in compose
@@ -105,7 +106,8 @@ def test_grafana_dashboards_cover_every_required_operations_view() -> None:
     assert metrics["uid"] == "eventflow-metrics"
     assert logs["uid"] == "eventflow-logs"
     assert len(metrics["panels"]) == 12
-    assert len(logs["panels"]) == 3
+    log_analysis_panels = [panel for panel in logs["panels"] if panel["type"] != "row"]
+    assert len(log_analysis_panels) == 17
 
     required_titles = {
         "İstek trafiği",
@@ -120,11 +122,24 @@ def test_grafana_dashboards_cover_every_required_operations_view() -> None:
         "Bağımlılık sağlığı",
         "HTTP 5xx eğilimi",
         "Backend çalışma süresi",
-        "Son hata logları",
-        "Seçili rota için canlı loglar",
-        "Request ID uçtan uca logları",
+        "Toplam log",
+        "Hata logları",
+        "Başarısız HTTP",
+        "En yüksek istek süresi p95",
+        "Yapılandırılmamış loglar",
+        "Log hızı ve seviye eğilimi",
+        "En yoğun rotalar",
+        "Rota bazında p95 istek süresi",
+        "Yavaş istekler",
+        "İş alanı olay eğilimi",
+        "İşlem sonuçları",
+        "Uygulama hata kodları",
+        "İş alanı olay ayrıntıları",
+        "Request ID uçtan uca zaman çizelgesi",
+        "Filtrelenmiş canlı log akışı",
+        "Ayrıştırılamayan loglar",
     }
-    operation_panels = metrics["panels"] + logs["panels"]
+    operation_panels = metrics["panels"] + log_analysis_panels
     assert {panel["title"] for panel in operation_panels} == required_titles
     assert all(panel.get("description") for panel in operation_panels)
 

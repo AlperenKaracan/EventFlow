@@ -221,7 +221,7 @@ Grafana ilk açılışta şu repository-managed ekranları otomatik yükler:
 
 - `EventFlow - Genel Bakış`: metrik ve log çalışma alanlarına giriş.
 - `EventFlow - Metrikler`: trafik, gecikme, hata, rezervasyon ve bağımlılık panelleri.
-- `EventFlow - Loglar`: hata, route ve request ID odaklı Loki sorguları.
+- `EventFlow - Log Analizi`: operasyon özeti, log seviyesi eğilimi, HTTP durum ve rota yoğunluğu, p95 süreler, yavaş istekler, iş alanı sonuçları, uygulama hata kodları, request ID zaman çizelgesi ve ayrıştırma sorunları.
 
 Request ID ile terminal ve Loki araması:
 
@@ -233,7 +233,7 @@ docker compose logs backend --no-color | Select-String 'REQUEST_ID'
 {service_name="backend"} | json | requestId="REQUEST_ID"
 ```
 
-Grafana yerel giriş bilgileri `.env` içindeki `GRAFANA_ADMIN_USER` ve `GRAFANA_ADMIN_PASSWORD` değerleridir. Ayrıntılı doğrulama ve sorun giderme akışları `OPERATIONS.md` içindedir.
+Grafana koyu tema ve Türkçe varsayılan dil ile açılır. Yerel giriş bilgileri `.env` içindeki `GRAFANA_ADMIN_USER` ve `GRAFANA_ADMIN_PASSWORD` değerleridir. Ayrıntılı doğrulama ve sorun giderme akışları `OPERATIONS.md` içindedir.
 
 ## Bilinçli olarak kapsam dışında bırakılanlar
 
