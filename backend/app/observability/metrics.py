@@ -4,7 +4,7 @@ from collections.abc import Callable
 from contextlib import suppress
 from contextvars import ContextVar, Token
 from logging import Logger
-from time import perf_counter
+from time import perf_counter, time
 
 from prometheus_client import CollectorRegistry, Counter, Gauge, Histogram
 
@@ -76,6 +76,12 @@ class EventFlowMetrics:
             ("dependency",),
             registry=self.registry,
         )
+        self.process_start_time = Gauge(
+            "eventflow_process_start_time_seconds",
+            "Unix timestamp for the EventFlow process metrics registry creation.",
+            registry=self.registry,
+        )
+        self.process_start_time.set(time())
         for dependency in ("postgresql", "redis"):
             self.readiness_status.labels(dependency=dependency).set(0)
 

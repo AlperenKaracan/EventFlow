@@ -64,6 +64,7 @@ async def test_metrics_use_route_templates_and_bounded_labels(client: AsyncClien
     assert 'eventflow_readiness_status{dependency="postgresql"} 0.0' in body
     assert 'eventflow_readiness_status{dependency="redis"} 0.0' in body
     assert "eventflow_http_requests_in_progress 0.0" in body
+    assert "eventflow_process_start_time_seconds" in body
 
     allowed_label_names = {
         "dependency",
