@@ -125,12 +125,16 @@ export function RootLayout() {
                 </Button>
               </Stack>
             ) : (
-              <Stack direction="row" sx={{ gap: { xs: 0.25, sm: 1 } }}>
+              <Stack
+                direction="row"
+                sx={{ flexShrink: 0, gap: { xs: 0.25, sm: 1 } }}
+              >
                 <Button
                   component={Link}
                   to="/login"
                   variant="text"
                   size="small"
+                  sx={{ px: { xs: 0.75, sm: 1.25 }, whiteSpace: 'nowrap' }}
                 >
                   Giriş yap
                 </Button>
@@ -139,6 +143,7 @@ export function RootLayout() {
                   to="/register"
                   variant="contained"
                   size="small"
+                  sx={{ px: { xs: 1.25, sm: 2 }, whiteSpace: 'nowrap' }}
                 >
                   Kayıt ol
                 </Button>
