@@ -38,6 +38,13 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         track_request = request.url.path != "/metrics"
         if track_request:
             self.metrics.request_started()
+            self.logger.info(
+                "Request started",
+                extra={
+                    "event": "http.request.started",
+                    "method": request.method,
+                },
+            )
         try:
             response = await call_next(request)
             response.headers[REQUEST_ID_HEADER] = request_id

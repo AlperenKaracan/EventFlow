@@ -171,6 +171,15 @@ async def create_reservation(
         )
         if replay is not None:
             record_reservation_attempt(outcome="replayed")
+            logger.info(
+                "Reservation request replayed",
+                extra={
+                    "event": "reservation.request.replayed",
+                    "actorId": attendee_id,
+                    "eventId": event_id,
+                    "outcome": "replayed",
+                },
+            )
             return replay
         if owner_record is None:
             raise RuntimeError("idempotency claim returned neither owner nor replay")
@@ -309,6 +318,16 @@ async def create_reservation(
         await session.commit()
         record_reservation_attempt(
             outcome="created" if action == "reservation.created" else "reactivated"
+        )
+        logger.info(
+            "Reservation mutation completed",
+            extra={
+                "event": action,
+                "actorId": attendee_id,
+                "eventId": event_id,
+                "reservationId": reservation.id,
+                "outcome": "created" if action == "reservation.created" else "reactivated",
+            },
         )
         return SemanticResponse(
             status_code=201,

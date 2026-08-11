@@ -262,6 +262,17 @@ jobs:
           else:
               raise SystemExit("request ID log did not reach Loki")
 
+          request_events = {
+              json.loads(entry[1])["event"]
+              for stream in result
+              for entry in stream["values"]
+          }
+          required_request_events = {"http.request.started", "http.request.completed"}
+          if not required_request_events <= request_events:
+              raise SystemExit(
+                  f"incomplete request log lifecycle: {sorted(request_events)}"
+              )
+
           with urllib.request.urlopen("http://loki:3100/loki/api/v1/labels", timeout=5) as response:
               labels = set(json.load(response)["data"])
           expected = {"environment", "level", "route", "service_name"}
