@@ -11,6 +11,7 @@ import {
   type PublicEventFilters,
 } from '../../api/publicEvents'
 import { PublicEventsPage } from './PublicEventsPage'
+import { validatePublicEventFilters } from './publicEventFilters'
 
 vi.mock('../../api/publicEvents', () => ({
   fetchPublicCategories: vi.fn(),
@@ -140,6 +141,27 @@ describe('PublicEventsPage', () => {
     expect(await screen.findByText('Henüz etkinlik yok')).toBeInTheDocument()
   })
 
+  it('keeps search available when categories cannot be loaded', async () => {
+    vi.mocked(fetchPublicCategories).mockRejectedValue(
+      new ApiError('Kategoriler alınamadı.'),
+    )
+    vi.mocked(fetchPublicEvents).mockResolvedValue({
+      items: [],
+      nextCursor: null,
+      hasMore: false,
+    })
+
+    renderWithQueryClient(<PublicEventsPage />)
+
+    expect(
+      await screen.findByText(
+        'Kategoriler alınamadı. Arama ve tarih filtrelerini kullanmaya devam edebilirsiniz.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('textbox', { name: 'Etkinlik ara' })).toBeEnabled()
+    expect(screen.getByRole('button', { name: 'Tekrar dene' })).toBeEnabled()
+  })
+
   it('shows a safe error with request ID and retries on demand', async () => {
     vi.mocked(fetchPublicEvents)
       .mockRejectedValueOnce(
@@ -163,5 +185,24 @@ describe('PublicEventsPage', () => {
       expect(screen.getByText(event.title)).toBeInTheDocument(),
     )
     expect(fetchPublicEvents).toHaveBeenCalledTimes(2)
+  })
+})
+
+describe('validatePublicEventFilters', () => {
+  it('rejects a date range whose start is after its end', () => {
+    expect(
+      validatePublicEventFilters({
+        ...emptyFilters,
+        dateFrom: '2035-08-02',
+        dateTo: '2035-05-12',
+      }),
+    ).toBe('Başlangıç tarihi bitiş tarihinden sonra olamaz.')
+    expect(
+      validatePublicEventFilters({
+        ...emptyFilters,
+        dateFrom: '2035-05-12',
+        dateTo: '2035-08-02',
+      }),
+    ).toBeNull()
   })
 })

@@ -26,6 +26,7 @@ import {
 import { EmptyState, ErrorState, LoadingState } from '../../shared/AsyncState'
 import { EventCard } from './EventCard'
 import { useCursorPager } from './cursorPager'
+import { validatePublicEventFilters } from './publicEventFilters'
 
 export function PublicEventsPage() {
   const pager = useCursorPager()
@@ -50,12 +51,9 @@ export function PublicEventsPage() {
 
   const applyFilters = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (
-      draftFilters.dateFrom &&
-      draftFilters.dateTo &&
-      draftFilters.dateFrom > draftFilters.dateTo
-    ) {
-      setFilterError('Başlangıç tarihi bitiş tarihinden sonra olamaz.')
+    const validationError = validatePublicEventFilters(draftFilters)
+    if (validationError) {
+      setFilterError(validationError)
       return
     }
     setFilterError(null)
