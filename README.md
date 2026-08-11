@@ -56,6 +56,14 @@ Lokal URL'ler:
 
 `/health` yalnız process'in cevap verdiğini belirtir. `/ready`, PostgreSQL için `SELECT 1` ve Redis için `PING` çalıştırır; bağımlılık hazır değilse ortak hata envelope'u ile `503` döner.
 
+Backend `SIGTERM` aldığında yeni bağlantı kabulünü durdurur ve `GRACEFUL_SHUTDOWN_TIMEOUT_SECONDS` süresince akan istekleri tamamlar. Ardından Redis ve PostgreSQL pool'ları lifespan kapanışında kapatılır. Compose backend'e `SIGTERM` gönderir ve uygulamanın izin verdiği en yüksek 120 saniyelik drain süresinden daha uzun, 130 saniyelik zorla sonlandırma penceresi tanır:
+
+```powershell
+docker compose stop backend
+```
+
+Normal kapatma sırasında rezervasyon transaction'ı yarım commit edilmez; akan işlem timeout içinde commit olur, hata veya iptal durumunda session rollback ile kapanır.
+
 Stack'i veri volume'unu koruyarak durdurmak için:
 
 ```powershell
