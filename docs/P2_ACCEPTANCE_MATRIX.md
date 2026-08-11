@@ -1,6 +1,6 @@
 # P2 Gözlemlenebilirlik Kabul Matrisi
 
-Tarih: 2026-08-11
+Tarih: 2026-08-12
 
 Kapsam: PR 6 içindeki tek P2 teslimi olan Prometheus metrics endpoint'i ve onu tamamlayan Loki, Alloy ve provision edilmiş Grafana operasyon arayüzü.
 
@@ -10,9 +10,9 @@ Kapsam: PR 6 içindeki tek P2 teslimi olan Prometheus metrics endpoint'i ve onu 
 
 | Alan | Sonuç | Kanıt |
 |---|---|---|
-| Backend kalite ve test | Yeşil | 148 geçti, Windows POSIX SIGTERM için 1 açık skip, Linux karşılığı geçti, coverage yüzde 92 |
-| Frontend kalite ve test | Yeşil | 35 component testi, lint, typecheck ve production build |
-| Playwright | Yeşil | Desktop/mobile toplam 6 kullanıcı yolculuğu |
+| Backend kalite ve test | Yeşil | Güncel Linux CI'da 149 geçti, strict mypy temiz, coverage yüzde 92 |
+| Frontend kalite ve test | Yeşil | 16 dosyada 44 component testi, lint, typecheck ve production build |
+| Playwright | Yeşil | Desktop/mobile 8 geçen kullanıcı yolculuğu ve 2 bilinçli çapraz-proje skip |
 | Fresh Compose | Yeşil | Ayrı `eventflow-acceptance` projesi ve sıfır named volume ile bütün servisler healthy |
 | Prometheus | Yeşil | Config geçerli, `eventflow-backend` target `UP=1`, dashboard PromQL sorguları geçerli |
 | Loki ve Alloy | Yeşil | Request ID LogQL sonucu, tam lifecycle, exact düşük cardinality label kümesi |
@@ -20,7 +20,7 @@ Kapsam: PR 6 içindeki tek P2 teslimi olan Prometheus metrics endpoint'i ve onu 
 | Dayanıklılık | Yeşil | Loki dururken backend `/health` 200 ve Docker JSON logu korunuyor |
 | Dependency audit | Yeşil | `pip-audit` ve production `pnpm audit` bulgu üretmedi |
 | Secret/history scan | Yeşil | Gitleaks 8.30.1 full-history taraması geçti, gerçek leak yok |
-| Son remote CI | Yeşil | [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) içindeki dört job ve kayıtlı bütün adımlar geçti |
+| Son uygulama CI | Yeşil | [GitHub Actions run #77](https://github.com/AlperenKaracan/EventFlow/actions/runs/31537371791) içindeki dört job ve kayıtlı bütün adımlar geçti |
 
 ## Metrik sözleşmesi
 

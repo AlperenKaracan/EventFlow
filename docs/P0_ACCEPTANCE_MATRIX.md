@@ -161,6 +161,21 @@ PR 5 kanıtları tarihsel kapanış sonucunu korur. PR 6 son uygulama head'inde 
 | Integrity | IDOR, timezone, idempotency, 200 istek kapasite, lock sırası, audit atomikliği ve seed korunumu regresyonsuz |
 | Remote CI | [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) içindeki dört job ve kayıtlı bütün adımlar geçti |
 
+## PR 7 UI/UX takip regresyonu
+
+PR 6 satırları ana planın tarihsel kapanış kanıtını korur. PR 7 uygulama head'inde P0 davranışları yeniden tasarlanan arayüz ve değişmeyen backend üzerinde tekrar doğrulandı:
+
+| Kapı | Sonuç |
+|---|---|
+| Backend | Linux CI'da 149/149 pytest geçti; strict mypy 102 source dosyasında temiz; branch coverage yüzde 92 |
+| Frontend | 16 dosyada 44/44 component testi, lint, typecheck ve production build geçti |
+| Browser | Production Compose üzerinde 8 Playwright yolculuğu geçti; 2 bilinçli çapraz-proje skip kaydedildi |
+| P0 UX | Doğrudan rezervasyon, tam yenilemede aktif rezervasyon, iptal edilen etkinliklerin açıklayıcı görünümü, 64 saat dilimi ve gruplu konum seçimi doğrulandı |
+| Integrity | IDOR, timezone kalıcılığı, manuel timezone override, idempotency, kapasite, rebooking ve event version conflict regresyonsuz |
+| Operasyon | Generated OpenAPI client, non-root runtime, JSON log, Loki/Alloy hattı ve provision edilmiş analiz sorguları geçti |
+| Security | 217 commitlik Gitleaks taraması, `pip-audit` ve production `pnpm audit` bulgusuz tamamlandı |
+| Remote CI | [GitHub Actions run #77](https://github.com/AlperenKaracan/EventFlow/actions/runs/31537371791) içindeki dört job ve kayıtlı bütün adımlar geçti |
+
 ## PR kapıları
 
 |  PR | Kapanış koşulu                                                                                      | Durum                   |

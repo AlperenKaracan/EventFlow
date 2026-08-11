@@ -1,6 +1,6 @@
 # EventFlow Teslim Denetimi
 
-Tarih: 2026-08-11
+Tarih: 2026-08-12
 
 Bu belge yerel ürün gereksinim PDF'i, `EVENTFLOW_MASTER_PLAN.md`, çalışan uygulama, otomatik testler ve GitHub teslim durumu birlikte incelenerek hazırlanmıştır. Kaynak PDF lisans durumu belirsiz olduğu için repository'ye eklenmez. Sunum videosu kullanıcı tarafından ayrıca hazırlanacağı için bu denetimde uygulama eksiği sayılmaz.
 
@@ -11,10 +11,10 @@ Bu belge yerel ürün gereksinim PDF'i, `EVENTFLOW_MASTER_PLAN.md`, çalışan u
 | P0 | 52/52 kanıtlandı | [`P0_ACCEPTANCE_MATRIX.md`](P0_ACCEPTANCE_MATRIX.md) |
 | P1 | 19/19 kanıtlandı | [`P1_ACCEPTANCE_MATRIX.md`](P1_ACCEPTANCE_MATRIX.md) |
 | Seçilen P2 | Prometheus teslimi ve tamamlayıcı Loki/Alloy/Grafana hattı kanıtlandı | [`P2_ACCEPTANCE_MATRIX.md`](P2_ACCEPTANCE_MATRIX.md) |
-| PR sırası | PR 1-5 merge edildi, PR 6 draft ve açıktır | [PR 6](https://github.com/AlperenKaracan/EventFlow/pull/6) |
-| Son uzak doğrulama | Dört CI job'ı ve kayıtlı bütün adımlar geçti | [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) |
+| PR sırası | Ana plandaki PR 1-6 ve kullanıcı onaylı UI/UX takip teslimi PR 7 merge edildi | [PR 7](https://github.com/AlperenKaracan/EventFlow/pull/7) |
+| Son uygulama doğrulaması | Dört CI job'ı ve kayıtlı bütün adımlar geçti | [GitHub Actions run #77](https://github.com/AlperenKaracan/EventFlow/actions/runs/31537371791) |
 
-PDF içinde video dışında uygulanması gereken ve kodda karşılığı bulunmayan bir P0, P1 veya seçilmiş P2 maddesi tespit edilmedi. Kalan işler ürün geliştirmesi değil; PR 6 merge'i, repository görünürlüğü ve GitHub koruma ayarlarının etkinleştirilmesi gibi kullanıcı onayı gerektiren teslim adımlarıdır.
+PDF içinde video dışında uygulanması gereken ve kodda karşılığı bulunmayan bir P0, P1 veya seçilmiş P2 maddesi tespit edilmedi. PR 7, ana teslimin backend ve API sözleşmesini değiştirmeden arayüz kalitesini yükselten takip çalışmasıdır. Kalan işler ürün geliştirmesi değil; repository görünürlüğü, teslim paylaşımı ve GitHub koruma ayarlarının etkinleştirilmesi gibi ayrıca kullanıcı veya platform işlemi gerektiren adımlardır.
 
 ## PDF gereksinim eşlemesi
 
@@ -28,7 +28,7 @@ PDF içinde video dışında uygulanması gereken ve kodda karşılığı bulunm
 | Kapasite ve concurrency | Tamamlandı | Event-first `FOR UPDATE` sırası, unique constraint ve `reserved_count == ACTIVE reservations` invariantı gerçek PostgreSQL yarış testleriyle kanıtlanmıştır. |
 | Idempotency ve ağ kopması | Tamamlandı | Owner/replay/conflict/takeover akışları, commit sonrası yanıt kaybında aynı anahtarın yeniden kullanımı ve request ID snapshot ayrımı testlidir. |
 | Audit log | Tamamlandı | Kritik event/reservation kayıtları domain değişikliğiyle aynı transaction'da INSERT edilir; PostgreSQL trigger UPDATE/DELETE'i reddeder. İnceleme komutu `OPERATIONS.md` içindedir. |
-| UI ve Türkçe UX | Tamamlandı | Dark-only responsive arayüz, client validation, loading/empty/error/success durumları ve UUID/request ID gizleyen açıklayıcı Türkçe hata yüzeyleri vardır. |
+| UI ve Türkçe UX | Tamamlandı | Dark-only responsive arayüz, kategori renkleri, doğrudan rezervasyon, aktif rezervasyon farkındalığı, 64 seçenekli gruplu saat dilimi araması, gruplu konum seçimi, client validation ve UUID/request ID gizleyen açıklayıcı Türkçe durumlar vardır. |
 | Arama ve filtre | Tamamlandı | Türkçe full-text arama, GIN indeks, kategori, etkinliğin yerel gününe göre dahil tarih aralığı ve filtreye bağlı cursor uygulanmıştır. |
 | API sözleşmesi | Tamamlandı | `/api/v1`, ortak error envelope, doğru status kodları, self-hosted Swagger UI, OpenAPI 3.1 ve CI'da güncelliği denetlenen generated TypeScript client vardır. |
 | Request korelasyonu ve log | Tamamlandı | Her HTTP yanıtında güncel `X-Request-ID`, yapılandırılmış JSON log, güvenli rejection alanları ve PII/secret dışlama vardır. |
@@ -43,17 +43,17 @@ PDF içinde video dışında uygulanması gereken ve kodda karşılığı bulunm
 
 ## Son doğrulama kanıtı
 
-PR 6'nın son uygulama doğrulamasında aşağıdaki sonuçlar gerçekten çalıştırıldı ve [run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) ile uzak Linux ortamında da doğrulandı:
+PR 7 uygulama head'inde aşağıdaki sonuçlar gerçekten çalıştırıldı ve [run #77](https://github.com/AlperenKaracan/EventFlow/actions/runs/31537371791) ile uzak Linux ortamında doğrulandı. PR 6 kapanış kanıtı tarihsel kabul matrislerinde ayrıca korunur:
 
 - Ruff format: 105 dosya geçti; Ruff lint temiz.
 - Strict mypy: 102 source dosyası geçti.
-- Pytest: 148 geçti; Windows'ta POSIX SIGTERM için 1 açık skip vardır, Linux CI testi geçmiştir.
+- Pytest: Linux CI'da 149 geçti; toplam branch coverage yüzde 92.
 - Backend aggregate branch coverage: yüzde 92.
-- Vitest: 13 dosyada 35/35 component testi geçti.
-- Production Compose Playwright: desktop ve mobile toplam 6/6 yolculuk geçti.
+- Vitest: 16 dosyada 44/44 component testi geçti.
+- Production Compose Playwright: desktop ve mobile toplam 8 yolculuk geçti; iki senaryo yalnız diğer tarayıcı projesinde çalıştığı için bilinçli olarak skip edildi.
 - PostgreSQL, Redis, backend, frontend, Prometheus, Loki, Alloy ve Grafana health kontrolleri geçti.
 - 19/19 LogQL targetı gerçek Loki, 15/15 PromQL targetı gerçek Prometheus üzerinde geçti.
-- `pip-audit`, production `pnpm audit` ve full-history Gitleaks taraması bulgu üretmedi.
+- `pip-audit`, production `pnpm audit` ve 217 commitlik full-history Gitleaks taraması bulgu üretmedi.
 - Yerel normal stack'teki sekiz uzun ömürlü servis bu denetim sırasında `healthy` durumdaydı.
 - Yerel `/health`, `/ready`, OpenAPI JSON ve self-hosted Swagger UI `200` döndü; Swagger initializer doğru `/api/v1/openapi.json` adresini kullandı.
 - Audit tablosu PostgreSQL üzerinden okunabildi ve bütün etkinliklerde `reserved_count` ile aktif reservation sayısı arasındaki uyuşmazlık `0` çıktı.
@@ -73,8 +73,9 @@ Tarihsel PR kanıtları kendi kabul matrislerinde korunur. Sayıları daha düş
 | Public API değişim zinciri | Tamamlandı | OpenAPI, generated client, test ve belgeler birlikte güncellenir; CI temiz diff ister. |
 | Temiz Compose ve non-root çalışma | Tamamlandı | Fresh-volume CI, UID ve health kontrolleri geçmiştir. |
 | Dependency cache geçersizleştirme | Tamamlandı | Backend `working-directory` altında doğru `uv.lock` yolu izlenir. |
-| Son dokümantasyon | Tamamlandı | Bu denetimle eski gelecek-zaman ve PR durum ifadeleri güncellenmiştir. |
-| PR 6 merge'i | Kullanıcı onayı bekliyor | PR draft tutulur; açık onay olmadan merge edilmez. |
+| Son dokümantasyon | Tamamlandı | PR 6 merge durumu, PR 7 UI/UX kapsamı, güncel test sayıları ve uzak CI kanıtı işlendi. |
+| PR 6 merge'i | Tamamlandı | PR 6 kullanıcı onayıyla `main` dalına merge edildi. |
+| PR 7 UI/UX takip teslimi | Tamamlandı | Uygulama head'i CI'da yeşil, kullanıcı onayı alındı ve PR merge edildi. |
 | Repository public görünürlüğü | Kullanıcı onayı bekliyor | Repository halen private; açık onay olmadan görünürlük değiştirilmez. |
 | `main` korumasının gerçekten uygulanması | Harici ayar gerekiyor | Kural var, ancak GitHub private kişisel repository planında `Not enforced` gösteriyor. |
 
@@ -90,11 +91,10 @@ Tarihsel PR kanıtları kendi kabul matrislerinde korunur. Sayıları daha düş
 
 Bu ayarlar kullanıcı onayı olmadan değiştirilmemiştir. Kural uygulanabilir hale geldiğinde önerilen sıra:
 
-1. PR 6'nın son CI sonucunu ve manuel kullanıcı testini onaylayın.
-2. Zorunlu Compose check adını güncel workflow job adıyla eşleştirin.
-3. Repository görünürlüğü veya GitHub planı üzerinden branch protection enforcement durumunu doğrulayın.
-4. Public yayın yapılacaksa private vulnerability reporting kanalını etkinleştirip `SECURITY.md` akışını doğrulayın.
-5. Açık kullanıcı onayından sonra PR 6'yı merge edin ve teslim bağlantısını paylaşın.
+1. Zorunlu Compose check adını güncel workflow job adıyla eşleştirin.
+2. Repository görünürlüğü veya GitHub planı üzerinden branch protection enforcement durumunu doğrulayın.
+3. Public yayın yapılacaksa private vulnerability reporting kanalını etkinleştirip `SECURITY.md` akışını doğrulayın.
+4. Public görünürlük veya teslim bağlantısı paylaşımı istenirse ayrıca açık kullanıcı onayı alın.
 
 ## Bilinçli olarak yapılmayanlar
 

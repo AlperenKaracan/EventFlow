@@ -2,7 +2,7 @@
 
 EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Ürün, kaynak gereksinim PDF'i ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmiştir.
 
-P0 ürün akışlarının 52/52'si, P1 kriterlerinin 19/19'u ve seçilen P2 Prometheus teslimi kanıtlanmıştır. Loki/Alloy log hattı ile repository dosyalarından otomatik kurulan Grafana operasyon ekranları da aynı operasyon teslimini tamamlar. PR 1-5 merge edilmiştir; PR 6 inceleme için draft durumundadır. Ayrıntılı son denetim ve kalan harici teslim adımları için [`docs/DELIVERY_AUDIT.md`](docs/DELIVERY_AUDIT.md) belgesine bakın.
+P0 ürün akışlarının 52/52'si, P1 kriterlerinin 19/19'u ve seçilen P2 Prometheus teslimi kanıtlanmıştır. Loki/Alloy log hattı ile repository dosyalarından otomatik kurulan Grafana operasyon ekranları da aynı operasyon teslimini tamamlar. Altı PR'lık ana plan merge edilerek tamamlanmıştır. Ana teslimi izleyen [PR 7 UI/UX yeniden tasarımı](https://github.com/AlperenKaracan/EventFlow/pull/7) da kullanıcı onayı ve dört yeşil CI işiyle merge edilmiştir. Ayrıntılı son denetim ve kalan harici teslim adımları için [`docs/DELIVERY_AUDIT.md`](docs/DELIVERY_AUDIT.md) belgesine bakın.
 
 ## Roller ve hedef akışlar
 
@@ -242,10 +242,9 @@ Grafana koyu tema ve Türkçe varsayılan dil ile açılır. Yerel giriş bilgil
 ## Teslim durumu ve kalan adımlar
 
 - Repository: <https://github.com/AlperenKaracan/EventFlow>
-- PR 1-5: merge edildi ve P0 kapanış kapıları yeşil.
-- PR 6: P1 ve P2 uygulaması tamamlandı; kullanıcı incelemesi ve açık merge onayı bekleyen draft PR.
-- Son doğrulanan uzak koşu: [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302); dört job ve kayıtlı bütün adımlar geçti.
-- Repository halen private. Public görünürlük, PR 6 merge'i ve teslim paylaşımı kullanıcı onayı olmadan değiştirilmez.
+- PR 1-7: merge edildi; ana plandaki P0, P1, seçilen P2 ve takip eden UI/UX yeniden tasarımı tamamlandı.
+- Son doğrulanan uzak koşu: [GitHub Actions run #77](https://github.com/AlperenKaracan/EventFlow/actions/runs/31537371791); dört job ve kayıtlı bütün adımlar geçti.
+- Repository halen private. Public görünürlük ve teslim paylaşımı ayrıca açık kullanıcı onayı olmadan değiştirilmez.
 - `main` için branch protection kuralı yapılandırılmıştır; GitHub mevcut private kişisel repository planında kuralın uygulanmadığını bildirir. Ayrıca zorunlu Compose check adı güncel workflow job adıyla eşleştirilmelidir. Bunlar kod eksiği değil, yayın öncesi GitHub yönetim adımlarıdır.
 - Sunum videosu kullanıcı tarafından repository dışında hazırlanacaktır; uygulama veya dokümantasyon eksiği olarak değerlendirilmez.
 

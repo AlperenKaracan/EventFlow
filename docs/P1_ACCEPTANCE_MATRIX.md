@@ -43,3 +43,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 ## P2 geçiş kararı
 
 Yerel P1 matrisi tamamen yeşildir. P1 head'i GitHub Actions Linux koşusunda backend, frontend ve Compose job'larıyla doğrulandıktan sonra P2 geliştirmesine geçildi. Son PR 6 regresyonunda 148 backend testi, 35 frontend component testi ve 6 production Compose Playwright yolculuğu geçti. [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) içindeki dört job ve kayıtlı bütün adımlar başarıyla tamamlandı.
+
+## PR 7 arayüz takip regresyonu
+
+Tarihsel P1 geçiş kararı değişmedi. PR 7 uygulama head'inde Türkçe arama, kategori, etkinliğin IANA yerel gününe bağlı tarih filtresi, birleşik filtreler ve cursor sıfırlama davranışları yeniden tasarlanan desktop/mobile yüzeylerde tekrar geçti. Güncel regresyon 16 dosyada 44/44 frontend testi ile production Compose üzerinde 8 geçen Playwright yolculuğunu içerir. Dört CI işinin tamamı [GitHub Actions run #77](https://github.com/AlperenKaracan/EventFlow/actions/runs/31537371791) koşusunda başarıyla tamamlandı.
