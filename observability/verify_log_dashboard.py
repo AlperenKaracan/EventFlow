@@ -74,7 +74,9 @@ def _wait_for_dashboard(*, grafana_url: str, authorization: str) -> dict[str, An
             dashboard = provisioned["dashboard"]
             if dashboard.get("title") == "EventFlow - Log Analizi":
                 return dashboard  # type: ignore[no-any-return]
-        except OSError, RuntimeError:
+        except OSError:
+            pass
+        except RuntimeError:
             pass
         time.sleep(1)
     raise RuntimeError("provisioned EventFlow log dashboard was not ready")
