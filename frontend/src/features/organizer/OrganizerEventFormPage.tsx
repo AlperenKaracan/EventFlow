@@ -8,6 +8,7 @@ import {
   Button,
   Chip,
   Container,
+  createFilterOptions,
   Dialog,
   DialogActions,
   DialogContent,
@@ -51,8 +52,25 @@ import {
 import {
   LOCATION_OPTIONS,
   TIMEZONE_OPTIONS,
+  type LocationOption,
+  type TimezoneOption,
+  timezoneLocalTimeLabel,
+  timezoneOffsetLabel,
   timezoneOption,
+  timezoneOptionLabel,
+  timezoneSearchText,
 } from './eventFormOptions'
+
+const filterTimezoneOptions = createFilterOptions<TimezoneOption>({
+  stringify: timezoneSearchText,
+  trim: true,
+})
+
+const filterLocationOptions = createFilterOptions<LocationOption>({
+  stringify: (option) =>
+    `${option.value} ${option.detail} ${option.group} ${option.kind}`,
+  trim: true,
+})
 
 export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
   const isEditing = Boolean(eventId)
@@ -327,23 +345,95 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
                 control={form.control}
                 name="location"
                 render={({ field }) => (
-                  <Autocomplete
+                  <Autocomplete<LocationOption, false, false, true>
                     disabled={isCancelled}
                     freeSolo
                     autoHighlight
+                    openOnFocus
+                    selectOnFocus
                     options={[...LOCATION_OPTIONS]}
                     value={field.value || null}
-                    onChange={(_, value) => field.onChange(value ?? '')}
-                    onInputChange={(_, value) => field.onChange(value)}
+                    onChange={(_, value) => {
+                      field.onChange(
+                        typeof value === 'string'
+                          ? value
+                          : (value?.value ?? ''),
+                      )
+                      if (typeof value !== 'string' && value?.timezone) {
+                        form.setValue('timezone', value.timezone, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
+                    }}
+                    onInputChange={(_, value, reason) => {
+                      if (reason === 'input') field.onChange(value)
+                    }}
+                    getOptionLabel={(option) =>
+                      typeof option === 'string' ? option : option.value
+                    }
+                    groupBy={(option) => option.group}
+                    filterOptions={filterLocationOptions}
+                    noOptionsText="Öneri bulunamadı; mekân adını yazmaya devam edebilirsiniz."
+                    renderOption={(props, option) => {
+                      const { key, ...optionProps } = props
+                      return (
+                        <Box
+                          component="li"
+                          key={key}
+                          {...optionProps}
+                          sx={{
+                            alignItems: 'center',
+                            display: 'flex',
+                            minHeight: 58,
+                            py: 1.1,
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontWeight: 760 }}>
+                              {option.value}
+                            </Typography>
+                            <Typography
+                              color="text.secondary"
+                              variant="caption"
+                              sx={{ display: 'block' }}
+                            >
+                              {option.detail}
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )
+                    }}
+                    slotProps={{
+                      paper: {
+                        elevation: 12,
+                        sx: {
+                          mt: 1,
+                          '& .MuiAutocomplete-groupLabel': {
+                            bgcolor: 'background.paper',
+                            color: 'primary.light',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            letterSpacing: '0.08em',
+                            lineHeight: '36px',
+                            textTransform: 'uppercase',
+                          },
+                          '& .MuiAutocomplete-listbox': {
+                            maxHeight: 380,
+                            p: 1,
+                          },
+                        },
+                      },
+                    }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         label="Konum veya platform"
-                        placeholder="Şehir, mekân veya çevrim içi"
+                        placeholder="Şehir, mekân veya platform ara"
                         error={Boolean(form.formState.errors.location)}
                         helperText={
                           form.formState.errors.location?.message ??
-                          'Listeden seçebilir veya özel bir mekân yazabilirsiniz.'
+                          'Şehir seçilince saat dilimi önerilir; özel bir mekân da yazabilirsiniz.'
                         }
                       />
                     )}
@@ -357,21 +447,93 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
                   <Autocomplete
                     disabled={isCancelled}
                     autoHighlight
+                    openOnFocus
+                    selectOnFocus
                     options={[...TIMEZONE_OPTIONS]}
                     value={timezoneOption(field.value)}
                     onChange={(_, value) => field.onChange(value?.value ?? '')}
                     isOptionEqualToValue={(option, value) =>
                       option.value === value.value
                     }
-                    getOptionLabel={(option) => option.label}
+                    getOptionLabel={timezoneOptionLabel}
+                    groupBy={(option) => option.group}
+                    filterOptions={filterTimezoneOptions}
+                    noOptionsText="Aramanızla eşleşen saat dilimi bulunamadı."
+                    renderOption={(props, option) => {
+                      const { key, ...optionProps } = props
+                      return (
+                        <Box
+                          component="li"
+                          key={key}
+                          {...optionProps}
+                          sx={{
+                            alignItems: 'center',
+                            display: 'grid',
+                            gap: 1.5,
+                            gridTemplateColumns: 'minmax(0, 1fr) auto',
+                            minHeight: 64,
+                            py: 1.25,
+                          }}
+                        >
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography sx={{ fontWeight: 760 }}>
+                              {option.city}
+                            </Typography>
+                            <Typography
+                              color="text.secondary"
+                              variant="caption"
+                              sx={{ display: 'block' }}
+                            >
+                              {option.country} · {option.value}
+                            </Typography>
+                          </Box>
+                          <Stack sx={{ alignItems: 'flex-end', gap: 0.5 }}>
+                            <Chip
+                              label={timezoneOffsetLabel(option.value)}
+                              color="primary"
+                              size="small"
+                              variant="outlined"
+                            />
+                            <Typography
+                              color="text.secondary"
+                              variant="caption"
+                            >
+                              Yerel saat {timezoneLocalTimeLabel(option.value)}
+                            </Typography>
+                          </Stack>
+                        </Box>
+                      )
+                    }}
+                    slotProps={{
+                      paper: {
+                        elevation: 12,
+                        sx: {
+                          mt: 1,
+                          '& .MuiAutocomplete-groupLabel': {
+                            bgcolor: 'background.paper',
+                            color: 'primary.light',
+                            fontSize: 12,
+                            fontWeight: 800,
+                            letterSpacing: '0.08em',
+                            lineHeight: '36px',
+                            textTransform: 'uppercase',
+                          },
+                          '& .MuiAutocomplete-listbox': {
+                            maxHeight: 420,
+                            p: 1,
+                          },
+                        },
+                      },
+                    }}
                     renderInput={(params) => (
                       <TextField
                         {...params}
                         label="Saat dilimi"
+                        placeholder="Şehir, ülke veya UTC farkı ara"
                         error={Boolean(form.formState.errors.timezone)}
                         helperText={
                           form.formState.errors.timezone?.message ??
-                          'Etkinliğin gerçekleşeceği bölgeyi seçin.'
+                          'Şehir, ülke, bölge adı veya UTC farkıyla arayabilirsiniz.'
                         }
                       />
                     )}
@@ -532,7 +694,9 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
             />
             <SummaryRow
               label="Saat dilimi"
-              value={timezoneOption(watchedValues.timezone ?? '').label}
+              value={timezoneOptionLabel(
+                timezoneOption(watchedValues.timezone ?? ''),
+              )}
             />
             <SummaryRow
               label="Kontenjan"
