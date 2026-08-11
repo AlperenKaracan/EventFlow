@@ -1,11 +1,5 @@
-import {
-  Alert,
-  Box,
-  Button,
-  CircularProgress,
-  Stack,
-  Typography,
-} from '@mui/material'
+import { Alert, Box, Button, Skeleton, Stack, Typography } from '@mui/material'
+import type { ReactNode } from 'react'
 
 import { ApiError } from '../api/errors'
 
@@ -13,18 +7,28 @@ export function LoadingState({ label = 'Yükleniyor' }: { label?: string }) {
   return (
     <Stack
       role="status"
+      aria-label={label}
       sx={{
-        alignItems: 'center',
-        border: '1px solid',
-        borderColor: 'divider',
-        borderRadius: 3,
-        gap: 2,
+        gap: 1.5,
         mt: 4,
-        py: 8,
+        py: 2,
       }}
     >
-      <CircularProgress aria-hidden="true" />
-      <Typography>{label}</Typography>
+      <Typography color="text.secondary" variant="body2">
+        {label}
+      </Typography>
+      <Skeleton height={26} width="42%" />
+      <Skeleton height={18} width="72%" />
+      <Stack direction={{ xs: 'column', sm: 'row' }} sx={{ gap: 2, pt: 1 }}>
+        {[0, 1, 2].map((item) => (
+          <Skeleton
+            key={item}
+            height={190}
+            sx={{ flex: 1, transform: 'none' }}
+            variant="rounded"
+          />
+        ))}
+      </Stack>
     </Stack>
   )
 }
@@ -32,16 +36,18 @@ export function LoadingState({ label = 'Yükleniyor' }: { label?: string }) {
 export function EmptyState({
   title,
   description,
+  action,
 }: {
   title: string
   description: string
+  action?: ReactNode
 }) {
   return (
     <Box
       sx={{
         border: '1px dashed',
         borderColor: 'divider',
-        borderRadius: 3,
+        borderRadius: 4,
         mt: 4,
         px: 3,
         py: 8,
@@ -54,6 +60,7 @@ export function EmptyState({
       <Typography color="text.secondary" sx={{ mt: 1 }}>
         {description}
       </Typography>
+      {action ? <Box sx={{ mt: 3 }}>{action}</Box> : null}
     </Box>
   )
 }
