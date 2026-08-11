@@ -1,0 +1,109 @@
+# EventFlow Teslim Denetimi
+
+Tarih: 2026-08-11
+
+Bu belge yerel ürün gereksinim PDF'i, `EVENTFLOW_MASTER_PLAN.md`, çalışan uygulama, otomatik testler ve GitHub teslim durumu birlikte incelenerek hazırlanmıştır. Kaynak PDF lisans durumu belirsiz olduğu için repository'ye eklenmez. Sunum videosu kullanıcı tarafından ayrıca hazırlanacağı için bu denetimde uygulama eksiği sayılmaz.
+
+## Yönetici özeti
+
+| Kapsam | Sonuç | Ana kanıt |
+|---|---|---|
+| P0 | 52/52 kanıtlandı | [`P0_ACCEPTANCE_MATRIX.md`](P0_ACCEPTANCE_MATRIX.md) |
+| P1 | 19/19 kanıtlandı | [`P1_ACCEPTANCE_MATRIX.md`](P1_ACCEPTANCE_MATRIX.md) |
+| Seçilen P2 | Prometheus teslimi ve tamamlayıcı Loki/Alloy/Grafana hattı kanıtlandı | [`P2_ACCEPTANCE_MATRIX.md`](P2_ACCEPTANCE_MATRIX.md) |
+| PR sırası | PR 1-5 merge edildi, PR 6 draft ve açıktır | [PR 6](https://github.com/AlperenKaracan/EventFlow/pull/6) |
+| Son uzak doğrulama | Dört CI job'ı ve kayıtlı bütün adımlar geçti | [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) |
+
+PDF içinde video dışında uygulanması gereken ve kodda karşılığı bulunmayan bir P0, P1 veya seçilmiş P2 maddesi tespit edilmedi. Kalan işler ürün geliştirmesi değil; PR 6 merge'i, repository görünürlüğü ve GitHub koruma ayarlarının etkinleştirilmesi gibi kullanıcı onayı gerektiren teslim adımlarıdır.
+
+## PDF gereksinim eşlemesi
+
+| Gereksinim grubu | Durum | Uygulama ve kanıt özeti |
+|---|---|---|
+| Kimlik ve roller | Tamamlandı | Kayıt, giriş, organizer/attendee rolleri, kısa ömürlü JWT, rotating refresh ve replay revoke testlidir. |
+| Authorization ve IDOR | Tamamlandı | Capability kontrolü server-side'dır. Owner-scoped UUID kaynakları eksik kaynakla aynı `404 RESOURCE_NOT_FOUND` sonucunu verir. |
+| Etkinlik yönetimi | Tamamlandı | Owner create/update/soft-cancel, public ve owner liste/detail, attendee listesi, kapasite tabanı ve optimistic version conflict uygulanmıştır. |
+| Etkinlik alanları ve zaman | Tamamlandı | Başlık, açıklama, kategori, konum, kapasite, açık offset'li başlangıç ve IANA timezone client/server tarafında doğrulanır; UTC instant saklanır. |
+| Rezervasyon yaşam döngüsü | Tamamlandı | Create, cancel, reactivate, history, duplicate engeli, geçmiş etkinlik reddi ve event iptalinde bulk transition uygulanmıştır. |
+| Kapasite ve concurrency | Tamamlandı | Event-first `FOR UPDATE` sırası, unique constraint ve `reserved_count == ACTIVE reservations` invariantı gerçek PostgreSQL yarış testleriyle kanıtlanmıştır. |
+| Idempotency ve ağ kopması | Tamamlandı | Owner/replay/conflict/takeover akışları, commit sonrası yanıt kaybında aynı anahtarın yeniden kullanımı ve request ID snapshot ayrımı testlidir. |
+| Audit log | Tamamlandı | Kritik event/reservation kayıtları domain değişikliğiyle aynı transaction'da INSERT edilir; PostgreSQL trigger UPDATE/DELETE'i reddeder. İnceleme komutu `OPERATIONS.md` içindedir. |
+| UI ve Türkçe UX | Tamamlandı | Dark-only responsive arayüz, client validation, loading/empty/error/success durumları ve UUID/request ID gizleyen açıklayıcı Türkçe hata yüzeyleri vardır. |
+| Arama ve filtre | Tamamlandı | Türkçe full-text arama, GIN indeks, kategori, etkinliğin yerel gününe göre dahil tarih aralığı ve filtreye bağlı cursor uygulanmıştır. |
+| API sözleşmesi | Tamamlandı | `/api/v1`, ortak error envelope, doğru status kodları, self-hosted Swagger UI, OpenAPI 3.1 ve CI'da güncelliği denetlenen generated TypeScript client vardır. |
+| Request korelasyonu ve log | Tamamlandı | Her HTTP yanıtında güncel `X-Request-ID`, yapılandırılmış JSON log, güvenli rejection alanları ve PII/secret dışlama vardır. |
+| Health ve readiness | Tamamlandı | `/health` process liveness, `/ready` PostgreSQL ve Redis kontrolü yapar; dependency failure güvenli `503` üretir. |
+| Güvenlik kontrolleri | Tamamlandı | Exact CORS, security headers, production HSTS/Swagger politikası, Redis tabanlı login/reservation rate limit ve dependency audit vardır. |
+| Veri ve migration | Tamamlandı | Şema yalnız versiyonlanmış Alembic migration'larla değişir. Seed ayrı, insert-missing, idempotent ve domain durumunu koruyacak biçimdedir. |
+| Container ve 12-factor | Tamamlandı | Dependency-aware Compose, multi-stage image'lar, non-root runtime'lar, fail-fast environment ve açıklamalı `.env.example` vardır. |
+| Test ve CI | Tamamlandı | Unit, integration, concurrency, component, desktop/mobile Playwright, Compose, dependency, secret/history ve generated-client kapıları vardır. |
+| Graceful shutdown | Tamamlandı | SIGTERM sonrası yeni bağlantı reddi, akan istek drain'i, pool kapanışı ve Compose timeout sınırı Linux testinde doğrulanmıştır. |
+| Seçilen P2 gözlemlenebilirlik | Tamamlandı | `/metrics`, düşük cardinality metrikler, Prometheus, Loki, Alloy, üç provision edilmiş Grafana dashboardu ve 36 sorguluk panel sözleşmesi vardır. |
+| Dokümantasyon | Tamamlandı | README, architecture, decisions, API, testing, operations, security, contributing ve kabul matrisleri repository'dedir. |
+
+## Son doğrulama kanıtı
+
+PR 6'nın son uygulama doğrulamasında aşağıdaki sonuçlar gerçekten çalıştırıldı ve [run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) ile uzak Linux ortamında da doğrulandı:
+
+- Ruff format: 105 dosya geçti; Ruff lint temiz.
+- Strict mypy: 102 source dosyası geçti.
+- Pytest: 148 geçti; Windows'ta POSIX SIGTERM için 1 açık skip vardır, Linux CI testi geçmiştir.
+- Backend aggregate branch coverage: yüzde 92.
+- Vitest: 13 dosyada 35/35 component testi geçti.
+- Production Compose Playwright: desktop ve mobile toplam 6/6 yolculuk geçti.
+- PostgreSQL, Redis, backend, frontend, Prometheus, Loki, Alloy ve Grafana health kontrolleri geçti.
+- 19/19 LogQL targetı gerçek Loki, 15/15 PromQL targetı gerçek Prometheus üzerinde geçti.
+- `pip-audit`, production `pnpm audit` ve full-history Gitleaks taraması bulgu üretmedi.
+- Yerel normal stack'teki sekiz uzun ömürlü servis bu denetim sırasında `healthy` durumdaydı.
+- Yerel `/health`, `/ready`, OpenAPI JSON ve self-hosted Swagger UI `200` döndü; Swagger initializer doğru `/api/v1/openapi.json` adresini kullandı.
+- Audit tablosu PostgreSQL üzerinden okunabildi ve bütün etkinliklerde `reserved_count` ile aktif reservation sayısı arasındaki uyuşmazlık `0` çıktı.
+
+Tarihsel PR kanıtları kendi kabul matrislerinde korunur. Sayıları daha düşük olan eski satırlar, ilgili PR kapanışındaki gerçek sonucu gösterir; güncel regresyon sonucu yukarıdaki son doğrulama satırıdır.
+
+## Master plan kapanış kontrolü
+
+| Kapanış kapısı | Durum | Not |
+|---|---|---|
+| Altı PR sırası korundu | Tamamlandı | P0 PR 1-5'te, P1 ve ardından P2 PR 6'da geliştirildi. |
+| P1 tamamlanmadan P2 başlanmadı | Tamamlandı | P1 matrisi ve uzak CI yeşil olduktan sonra P2 uygulandı. |
+| Modüler monolit korundu | Tamamlandı | Ayrı deploy edilen domain mikroservisi yoktur. |
+| Migration ve seed disiplini | Tamamlandı | Runtime schema generation yoktur; seed migration değildir. |
+| Kritik integrity kuralları | Tamamlandı | Authorization, IDOR, lock sırası, counter invariantı, audit ve idempotency testlidir. |
+| Public API değişim zinciri | Tamamlandı | OpenAPI, generated client, test ve belgeler birlikte güncellenir; CI temiz diff ister. |
+| Temiz Compose ve non-root çalışma | Tamamlandı | Fresh-volume CI, UID ve health kontrolleri geçmiştir. |
+| Son dokümantasyon | Tamamlandı | Bu denetimle eski gelecek-zaman ve PR durum ifadeleri güncellenmiştir. |
+| PR 6 merge'i | Kullanıcı onayı bekliyor | PR draft tutulur; açık onay olmadan merge edilmez. |
+| Repository public görünürlüğü | Kullanıcı onayı bekliyor | Repository halen private; açık onay olmadan görünürlük değiştirilmez. |
+| `main` korumasının gerçekten uygulanması | Harici ayar gerekiyor | Kural var, ancak GitHub private kişisel repository planında `Not enforced` gösteriyor. |
+
+## GitHub yönetim bulguları
+
+2026-08-11 tarihinde GitHub repository ayarları salt okunur incelendi:
+
+- `main` için classic branch protection kuralı tanımlı.
+- Pull Request zorunluluğu, status check zorunluluğu, branch'in güncel olması, conversation resolution, bypass engeli, force-push ve deletion engeli yapılandırılmış.
+- GitHub bu kuralı mevcut private kişisel repository planında `Not enforced` olarak gösteriyor.
+- Zorunlu Compose check adı ayarda `Compose migration, seed, and non-root smoke`; güncel workflow job adı `Compose, browser, and non-root smoke`. Koruma etkinleştirilmeden önce ad eşleştirilmelidir.
+- Repository private olduğu için Advanced Security sayfasında dependency graph ve Dependabot seçenekleri kapalı görünür; private vulnerability reporting seçeneği bu görünümde sunulmaz. Public yayın öncesi private bildirim kanalı doğrulanmalıdır.
+
+Bu ayarlar kullanıcı onayı olmadan değiştirilmemiştir. Kural uygulanabilir hale geldiğinde önerilen sıra:
+
+1. PR 6'nın son CI sonucunu ve manuel kullanıcı testini onaylayın.
+2. Zorunlu Compose check adını güncel workflow job adıyla eşleştirin.
+3. Repository görünürlüğü veya GitHub planı üzerinden branch protection enforcement durumunu doğrulayın.
+4. Public yayın yapılacaksa private vulnerability reporting kanalını etkinleştirip `SECURITY.md` akışını doğrulayın.
+5. Açık kullanıcı onayından sonra PR 6'yı merge edin ve teslim bağlantısını paylaşın.
+
+## Bilinçli olarak yapılmayanlar
+
+Aşağıdakiler kaynak PDF'nin zorunlu P0/P1 kapsamı veya seçilen tek P2 maddesi değildir:
+
+- Account deletion endpoint'i. KVKK anonimleştirme politikası `DECISIONS.md` D-014'te belgelenmiştir.
+- Distributed tracing ve OpenTelemetry.
+- Alarm bildirimi ve harici notification routing.
+- Kubernetes, Terraform, mikroservis ayrıştırması ve production deployment.
+- Yüksek erişilebilirlik veya object storage tabanlı Loki.
+- Ücretli harici gözlemlenebilirlik servisi.
+- Cursor geçmişinin hard refresh sonrasında korunması; refresh ilk sayfaya döner.
+
+Sunum videosu kullanıcı tarafından ayrıca hazırlanacaktır ve bu listenin bir ürün eksiği değildir.

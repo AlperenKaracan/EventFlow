@@ -1,10 +1,10 @@
 # EventFlow Decisions
 
-Bu belge değişen mimari ve iş kurallarının aktif karar kaydıdır. “Kabul edildi” kararı, ilgili davranışın mevcut PR'da tamamlandığı anlamına gelmez; uygulama PR'ı ayrıca belirtilir. Bir karar değişirse alternatifleri ve bedeliyle birlikte bu belge ve ilgili testler aynı PR'da güncellenir.
+Bu belge değişen mimari ve iş kurallarının aktif karar kaydıdır. Durum satırları kararın uygulandığı teslim aşamasını ve güncel kanıtını gösterir. Bir karar değişirse alternatifleri ve bedeliyle birlikte bu belge ve ilgili testler aynı PR'da güncellenir.
 
-## D-001 — FastAPI modüler monolit
+## D-001 - FastAPI modüler monolit
 
-Durum: Kabul edildi; foundation PR 1'de uygulanıyor, domain use-case'leri PR 2-4'te tamamlanacak.
+Durum: Kabul edildi; foundation PR 1'de, domain use-case'leri PR 2-4'te uygulandı ve PR 6 regresyonunda doğrulandı.
 
 Karar: Backend tek deploy edilebilir FastAPI uygulaması olacak; `auth`, `users`, `events`, `reservations`, `idempotency`, `audit` ve ortak altyapı ayrı modül sınırlarında tutulacak.
 
@@ -14,7 +14,7 @@ Neden bunu seçtim: Domain transaction'ları aynı PostgreSQL sınırında atomi
 
 Neyi feda ettim: Modüller bağımsız deploy ve ölçeklenemez; sınırlar kod review ve import disipliniyle korunur.
 
-## D-002 — PostgreSQL ve async SQLAlchemy
+## D-002 - PostgreSQL ve async SQLAlchemy
 
 Durum: Kabul edildi ve PR 1'de uygulandı.
 
@@ -26,9 +26,9 @@ Neden bunu seçtim: Row lock, unique-conflict, partial index, JSONB, trigger ve 
 
 Neyi feda ettim: Lokal geliştirme için gerçek PostgreSQL gerekir; async transaction testleri ve migration disiplini daha fazla kurulum maliyeti taşır.
 
-## D-003 — Event row lock ve `reserved_count`
+## D-003 - Event row lock ve `reserved_count`
 
-Durum: Şema PR 1'de; event-first create/reactivate/cancel writer'ları PR 4'te uygulandı, 200 istek kapasite kanıtı PR 4 kapanış kapısında çalıştırılacak.
+Durum: Şema PR 1'de; event-first create/reactivate/cancel writer'ları PR 4'te uygulandı. Kapasitesi 1 olan etkinliğe 200 paralel istek testi ve son invariant kontrolü geçti.
 
 Karar: Rezervasyon writer'ları event satırını `FOR UPDATE` ile serialization point yapacak; kapasite `events.reserved_count` üzerinden aynı transaction'da güncellenecek.
 
@@ -38,7 +38,7 @@ Neden bunu seçtim: Tek authoritative transaction içinde kapasite kontrolü ve 
 
 Neyi feda ettim: Popüler tek event satırında write contention oluşur; çok büyük ölçekte queue/waiting-room gerekebilir.
 
-## D-004 — Idempotency tablosu ve doğal unique anahtar
+## D-004 - Idempotency tablosu ve doğal unique anahtar
 
 Durum: Şema PR 1'de; atomik owner/conflict/replay algoritması ve rollback takeover testi PR 4'te uygulandı.
 
@@ -50,7 +50,7 @@ Neden bunu seçtim: Concurrent insert unique-conflict'i bütün backend replica'
 
 Neyi feda ettim: Her idempotent işlem ek satır/index write'ı ve retention cleanup gerektirir; loser istek unique-conflict sonrası transaction sınırını doğru yönetmelidir.
 
-## D-005 — UTC instant ve IANA timezone
+## D-005 - UTC instant ve IANA timezone
 
 Durum: Server validation PR 3'te uygulandı ve DST/offset testleriyle kanıtlandı; UI doğrulaması PR 5'te.
 
@@ -62,7 +62,7 @@ Neden bunu seçtim: UTC sıralama/karşılaştırmayı kararlı yapar; IANA zone
 
 Neyi feda ettim: API create/PATCH daha katı offset-zone doğrulaması ve timezone veri tabanı bağımlılığı taşır.
 
-## D-006 — Version ile optimistic concurrency
+## D-006 - Version ile optimistic concurrency
 
 Durum: API conflict akışı PR 3'te gerçek eşzamanlı PostgreSQL testiyle uygulandı; UI conflict akışı PR 5'te.
 
@@ -74,7 +74,7 @@ Neden bunu seçtim: Uzun kullanıcı edit süresince DB lock tutulmadan kayıp u
 
 Neyi feda ettim: Client conflict'i kullanıcıya göstermeli ve güncel veriyi yeniden yükleme/uzlaştırma akışı sunmalıdır.
 
-## D-007 — Soft event cancellation
+## D-007 - Soft event cancellation
 
 Durum: Event soft-cancel ve kilit sırası PR 3'te; aktif reservation bulk transition'ı PR 4'te.
 
@@ -86,7 +86,7 @@ Neden bunu seçtim: Reservation geçmişi, audit izi ve referential integrity ko
 
 Neyi feda ettim: Bütün public/owner sorguları status politikasını bilinçli uygulamalı; storage zamanla büyür.
 
-## D-008 — Immutable PostgreSQL audit
+## D-008 - Immutable PostgreSQL audit
 
 Durum: Tablo ve UPDATE/DELETE trigger'ı PR 1'de; kritik writer'lar PR 3-4'te.
 
@@ -98,7 +98,7 @@ Neden bunu seçtim: Başarılı domain commit'i auditsiz kalamaz ve uygulama hat
 
 Neyi feda ettim: Audit düzeltmesi yerinde update ile yapılamaz; düzeltici yeni kayıt/operasyon gerekir ve tablo retention planı ister.
 
-## D-009 — Kısa ömürlü access JWT ve opaque rotating refresh token
+## D-009 - Kısa ömürlü access JWT ve opaque rotating refresh token
 
 Durum: PR 2'de uygulandı; access/refresh ve saldırgan integration testleriyle kanıtlandı.
 
@@ -110,7 +110,7 @@ Neden bunu seçtim: Access doğrulaması stateless kalırken refresh revoke/repl
 
 Neyi feda ettim: Rotation transaction ve frontend single-flight bootstrap karmaşıklığı oluşur; access token süresi dolana kadar anlık revoke garanti edilmez.
 
-## D-010 — Redis yalnız rate limiting state'i için
+## D-010 - Redis yalnız rate limiting state'i için
 
 Durum: Compose PR 1'de; login limiti PR 2'de uygulandı, reservation limiti PR 4'te.
 
@@ -122,7 +122,7 @@ Neden bunu seçtim: Replica'lar arasında ortak, kısa ömürlü ve atomik saya�
 
 Neyi feda ettim: Ek runtime dependency ve readiness kontrolü gerekir; limit politikasının fail-open/fail-closed davranışı test edilmelidir.
 
-## D-011 — Yalnız `nextCursor` döndüren cursor pagination
+## D-011 - Yalnız `nextCursor` döndüren cursor pagination
 
 Durum: API PR 3, route-level client history PR 5'te.
 
@@ -134,7 +134,7 @@ Neden bunu seçtim: Concurrent insertlerde offset kayması azalır ve server cur
 
 Neyi feda ettim: Rastgele sayfaya atlama yoktur; hard refresh ilk sayfaya döner ve client cursor stack yönetir.
 
-## D-012 — Seed edilmiş kategori kataloğu
+## D-012 - Seed edilmiş kategori kataloğu
 
 Durum: PR 1'de uygulandı.
 
@@ -146,7 +146,7 @@ Neden bunu seçtim: Katalog ilişkisel/filtrelenebilir kalır, seed tekrar çal�
 
 Neyi feda ettim: Deployment migration sonrasında ayrı seed başarı koşuluna ihtiyaç duyar; katalog yönetim UI'sı bu kapsamda yoktur.
 
-## D-013 — Prometheus, Loki, Alloy ve Grafana pipeline'ı
+## D-013 - Prometheus, Loki, Alloy ve Grafana pipeline'ı
 
 Durum: PR 6 P2'de uygulandı; provisioning, sorgu ve dayanıklılık smoke testleri CI kapsamına alındı.
 
@@ -160,7 +160,7 @@ Neden bunu seçtim: Lokal/ücretsiz, tekrar üretilebilir ve metrik-log korelasy
 
 Neyi feda ettim: Compose kaynak tüketimi ve provisioning bakımı artar; full tracing bu kapsamda yoktur.
 
-## D-014 — KVKK için anonimleştirme politikası
+## D-014 - KVKK için anonimleştirme politikası
 
 Durum: Politika PR 1'de; account deletion endpoint'i P0 kapsamında değildir.
 
@@ -172,7 +172,7 @@ Neden bunu seçtim: Ürün geçmişi ve kritik audit bütünlüğü korunurken d
 
 Neyi feda ettim: Bu teknik politika tek başına hukuki retention kararı değildir; süreler ve dolaylı tanımlayıcılar hukuk/operasyon ekipleriyle belirlenmelidir.
 
-## D-015 — Loki düşük-cardinality label ve 7 günlük lokal retention
+## D-015 - Loki düşük-cardinality label ve 7 günlük lokal retention
 
 Durum: PR 6 P2'de Loki 3.7, Alloy Docker discovery, 7 günlük retention ve düşük kardinalite testleriyle uygulandı.
 
@@ -184,7 +184,7 @@ Neden bunu seçtim: Index cardinality ve disk büyümesi kontrol altında kalır
 
 Neyi feda ettim: Request ID araması label lookup kadar ucuz değildir; production retention ayrı kapasite ve mevzuat değerlendirmesi ister.
 
-## D-016 — Refresh token family, kilit ve replay revoke
+## D-016 - Refresh token family, kilit ve replay revoke
 
 Durum: PR 2'de satır kilitli transaction, concurrent replay testi ve aktif-family güvenli cleanup ile uygulandı.
 
@@ -196,7 +196,7 @@ Neden bunu seçtim: Token çalınması/reuse görünür olur, eşzamanlı rotati
 
 Neyi feda ettim: Normal concurrent refresh'lerden biri replay alarmına dönüşebilir; frontend single-flight ve dikkatli row-lock transaction gerekir. Cleanup aktif family zincirini bozamaz.
 
-## D-017 — Idempotency snapshot ve request ID ayrımı
+## D-017 - Idempotency snapshot ve request ID ayrımı
 
 Durum: Şema PR 1'de; request-ID-free snapshot, güncel replay ID enjeksiyonu ve original ID header'ı PR 4'te uygulandı.
 
@@ -208,7 +208,7 @@ Neden bunu seçtim: Her HTTP denemesi kendi log zinciriyle korele olurken semant
 
 Neyi feda ettim: Replay serializer stored snapshot'ı bilinçli yeniden kurmalıdır; ham response cache daha basit olurdu.
 
-## D-018 — ISO offset, IANA timezone ve DST kabul politikası
+## D-018 - ISO offset, IANA timezone ve DST kabul politikası
 
 Durum: Server validation PR 3'te uygulandı; client validation PR 5'te.
 
@@ -220,7 +220,7 @@ Neden bunu seçtim: Kullanıcının niyeti sessizce başka instante kaymaz ve fr
 
 Neyi feda ettim: Request sözleşmesi daha katıdır; timezone kütüphanesi ve gap/fold test matrisi gerekir.
 
-## D-019 — Organizer için owner-scoped detail endpoint'i
+## D-019 - Organizer için owner-scoped detail endpoint'i
 
 Durum: Owner-scoped API PR 3'te uygulandı; organizer ekranları PR 5'te.
 
@@ -232,7 +232,7 @@ Neden bunu seçtim: Yönetim verisi ve authorization sınırı açık olur; publ
 
 Neyi feda ettim: Benzer event projection'ları ve ek endpoint/test bakımı oluşur; frontend iki farklı query key kullanır.
 
-## D-020 — Browser access tokenı yalnız process belleğinde
+## D-020 - Browser access tokenı yalnız process belleğinde
 
 Durum: PR 5'te memory-only token store, refresh-cookie bootstrap ve single-flight retry ile uygulandı.
 
@@ -244,7 +244,7 @@ Neden bunu seçtim: XSS durumunda kalıcı access credential okuma yüzeyi azal�
 
 Neyi feda ettim: Her tam sayfa yüklemesi bir refresh çağrısı gerektirir; ayrı browser tabları process belleğini paylaşmaz ve kendi bootstrap'ını yapar. Refresh servisi geçici olarak erişilemezse mevcut access token kalıcı depodan kurtarılamaz.
 
-## D-021 — Seed yalnız eksik demo kayıtlarını ekler
+## D-021 - Seed yalnız eksik demo kayıtlarını ekler
 
 Durum: PR 5 P0 yeniden denetiminde uygulandı ve domain durumu korunumu integration testiyle doğrulandı.
 
@@ -256,7 +256,7 @@ Neden bunu seçtim: Tekrar çalıştırılan deployment seed'i organizatör değ
 
 Neyi feda ettim: Demo içerik metinlerindeki sonraki seed değişiklikleri mevcut ortama otomatik uygulanmaz; böyle bir yenileme için açık ve ayrı bir bakım komutu gerekir.
 
-## D-022 — Swagger UI varlıkları backend tarafından sunulur
+## D-022 - Swagger UI varlıkları backend tarafından sunulur
 
 Durum: PR 5 P0 dokümantasyon doğrulamasında uygulandı ve HTML/statik varlık integration testiyle güvenceye alındı.
 

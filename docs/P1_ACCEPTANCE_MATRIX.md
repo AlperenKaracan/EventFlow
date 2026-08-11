@@ -42,4 +42,4 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 
 ## P2 geçiş kararı
 
-Yerel P1 matrisi tamamen yeşildir. P2 başlangıcı için bu commit'in GitHub Actions Linux koşusunda backend, frontend ve Compose job'larının da yeşil olması zorunludur. Remote CI sonucu doğrulanana kadar P2 kodu yazılmaz.
+Yerel P1 matrisi tamamen yeşildir. P1 head'i GitHub Actions Linux koşusunda backend, frontend ve Compose job'larıyla doğrulandıktan sonra P2 geliştirmesine geçildi. Son PR 6 regresyonunda 148 backend testi, 35 frontend component testi ve 6 production Compose Playwright yolculuğu geçti. [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) içindeki dört job ve kayıtlı bütün adımlar başarıyla tamamlandı.

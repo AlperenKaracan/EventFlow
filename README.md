@@ -1,16 +1,16 @@
 # EventFlow
 
-EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Proje, ürün gereksinimleri ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmektedir.
+EventFlow, organizatörlerin etkinlik yayımladığı ve katılımcıların kapasite güvenli rezervasyon yaptığı bir full-stack etkinlik yönetimi uygulamasıdır. Ürün, kaynak gereksinim PDF'i ile `EVENTFLOW_MASTER_PLAN.md` doğrultusunda altı küçük Pull Request halinde geliştirilmiştir.
 
-Bu branch **PR 6 - Operasyon ve teslim** kapsamındadır. P0 ürün akışları ile P1 arama, filtre, governance ve graceful shutdown kabul kapıları tamamlanmıştır. P2 kapsamında Prometheus metrikleri, Loki/Alloy log hattı ve repository dosyalarından otomatik kurulan Grafana operasyon ekranları eklenmiştir.
+P0 ürün akışlarının 52/52'si, P1 kriterlerinin 19/19'u ve seçilen P2 Prometheus teslimi kanıtlanmıştır. Loki/Alloy log hattı ile repository dosyalarından otomatik kurulan Grafana operasyon ekranları da aynı operasyon teslimini tamamlar. PR 1-5 merge edilmiştir; PR 6 inceleme için draft durumundadır. Ayrıntılı son denetim ve kalan harici teslim adımları için [`docs/DELIVERY_AUDIT.md`](docs/DELIVERY_AUDIT.md) belgesine bakın.
 
 ## Roller ve hedef akışlar
 
 - `ORGANIZER`: kendi etkinliklerini oluşturur, düzenler, iptal eder ve katılımcılarını görür.
 - `ATTENDEE`: public etkinlikleri inceler, rezervasyon oluşturur/iptal eder ve geçmişini görür.
-- Yetkilendirme her zaman server-side uygulanacaktır; UI'da bir kontrolü gizlemek güvenlik sınırı değildir.
+- Yetkilendirme her zaman server-side uygulanır; UI'da bir kontrolü gizlemek güvenlik sınırı değildir.
 
-PR 1 seed'i bu iki rolü, altı etkinliği ve aktif/iptal edilmiş reservation örneklerini üretir. Public, organizer ve reservation API'leri ile PR 5 ürün ekranları bu verilerle çalışır.
+Seed bu iki rolü, altı etkinliği ve aktif/iptal edilmiş reservation örneklerini üretir. Public, organizer ve reservation API'leri ile ürün ekranları bu verilerle çalışır.
 
 ## Teknoloji yığını
 
@@ -171,7 +171,7 @@ docs/                    P0/P1/P2 kabul kanıtları ve PR ekran görüntüleri
 .github/workflows/       CI kalite kapıları
 ```
 
-Mimari ve veri modeli için `ARCHITECTURE.md`, kabul edilen trade-off'lar için `DECISIONS.md`, HTTP sözleşmesi için `API.md`, test yaklaşımı için `TESTING.md`, günlük işletim için `OPERATIONS.md`, tehdit/kontrol özeti için `SECURITY.md` ve katkı kuralları için `CONTRIBUTING.md` okunmalıdır. Kabul kanıtları `docs/P0_ACCEPTANCE_MATRIX.md`, `docs/P1_ACCEPTANCE_MATRIX.md` ve `docs/P2_ACCEPTANCE_MATRIX.md` içindedir.
+Mimari ve veri modeli için `ARCHITECTURE.md`, kabul edilen trade-off'lar için `DECISIONS.md`, HTTP sözleşmesi için `API.md`, test yaklaşımı için `TESTING.md`, günlük işletim için `OPERATIONS.md`, tehdit/kontrol özeti için `SECURITY.md` ve katkı kuralları için `CONTRIBUTING.md` okunmalıdır. Kabul kanıtları `docs/P0_ACCEPTANCE_MATRIX.md`, `docs/P1_ACCEPTANCE_MATRIX.md` ve `docs/P2_ACCEPTANCE_MATRIX.md` içindedir. Kaynak PDF ile master planın son durum karşılaştırması `docs/DELIVERY_AUDIT.md` içinde tutulur.
 
 ## Konfigürasyon ve secret güvenliği
 
@@ -235,16 +235,25 @@ docker compose logs backend --no-color | Select-String 'REQUEST_ID'
 
 Grafana koyu tema ve Türkçe varsayılan dil ile açılır. Yerel giriş bilgileri `.env` içindeki `GRAFANA_ADMIN_USER` ve `GRAFANA_ADMIN_PASSWORD` değerleridir. Ayrıntılı doğrulama ve sorun giderme akışları `OPERATIONS.md` içindedir.
 
+## Teslim durumu ve kalan adımlar
+
+- Repository: <https://github.com/AlperenKaracan/EventFlow>
+- PR 1-5: merge edildi ve P0 kapanış kapıları yeşil.
+- PR 6: P1 ve P2 uygulaması tamamlandı; kullanıcı incelemesi ve açık merge onayı bekleyen draft PR.
+- Son doğrulanan uzak koşu: [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302); dört job ve kayıtlı bütün adımlar geçti.
+- Repository halen private. Public görünürlük, PR 6 merge'i ve teslim paylaşımı kullanıcı onayı olmadan değiştirilmez.
+- `main` için branch protection kuralı yapılandırılmıştır; GitHub mevcut private kişisel repository planında kuralın uygulanmadığını bildirir. Ayrıca zorunlu Compose check adı güncel workflow job adıyla eşleştirilmelidir. Bunlar kod eksiği değil, yayın öncesi GitHub yönetim adımlarıdır.
+- Sunum videosu kullanıcı tarafından repository dışında hazırlanacaktır; uygulama veya dokümantasyon eksiği olarak değerlendirilmez.
+
 ## Bilinçli olarak kapsam dışında bırakılanlar
 
 - Account deletion endpoint'i: anonymization politikası `DECISIONS.md` D-014'te belgeli, uygulama P0 dışında.
-- P1 arama/filtre, governance ve graceful shutdown PR 6'da tamamlandı; kanıtlar `docs/P1_ACCEPTANCE_MATRIX.md` içinde izlenir.
-- P2 Prometheus, Loki, Alloy ve Grafana teslimi tamamlandı; kanıtlar `docs/P2_ACCEPTANCE_MATRIX.md` içinde izlenir.
 - Cursor geçmişi route belleğindedir; hard refresh bilinçli olarak ilk sayfaya döner.
 - Distributed tracing, alert notification, merkezi SaaS log servisi ve Kubernetes kapsam dışıdır.
+- Üretim deploy'u, yüksek erişilebilirlik ve object storage tabanlı Loki topolojisi kapsam dışıdır.
 
 Kapsam içindeki davranışlar gerçek PostgreSQL/Redis, tarayıcı ve Compose testleriyle kanıtlanır. Gözlemlenebilirlik sistemi domain transaction'larının bir bağımlılığı değildir; Prometheus, Loki, Alloy veya Grafana arızası ürün API'sini durdurmaz.
 
 ## Kaynak ve teslim disiplini
 
-Ürün gereksinimi lokal PDF'tir ve yeniden dağıtım izni belirsiz olduğu için repository'ye commit edilmez. `EVENTFLOW_MASTER_PLAN.md` teknik uygulama sırasını belirler. Her PR feature branch'te, anlamlı Conventional Commit'lerle ve önce draft olarak açılır; kullanıcı onayı olmadan merge edilmez.
+Ürün gereksinimi lokal PDF'tir ve yeniden dağıtım izni belirsiz olduğu için repository'ye commit edilmez. `EVENTFLOW_MASTER_PLAN.md` teknik uygulama sırasını belirler. Her PR feature branch'te, anlamlı Conventional Commit'lerle ve önce draft olarak açılır; kullanıcı onayı olmadan merge edilmez. Yapılamayan veya bilinçli bırakılan işler gizlenmez; son durum `docs/DELIVERY_AUDIT.md` ve kabul matrislerinde açıkça yazılır.

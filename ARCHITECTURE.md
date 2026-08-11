@@ -1,6 +1,6 @@
 # EventFlow Architecture
 
-Bu belge çalışan sistemin mimarisini açıklar. PR 4 itibarıyla foundation, auth/authorization, event ve reservation use-case'leri gerçek transaction ve HTTP akışlarıyla çalışmaktadır.
+Bu belge PR 6 teslimindeki çalışan sistemin mimarisini açıklar. Foundation, auth/authorization, event, reservation, arama, graceful shutdown ve gözlemlenebilirlik akışları gerçek transaction, HTTP ve container akışlarıyla çalışmaktadır.
 
 ## Mimari hedefler
 
@@ -35,17 +35,26 @@ flowchart TB
     seed["seed: python -m app.seed"]
     backend["backend: FastAPI / Uvicorn"]
     frontend["frontend: unprivileged Nginx + React assets"]
+    prometheus["prometheus: metrics scrape"]
+    alloy["alloy: Docker log collector"]
+    loki["loki: log storage"]
+    grafana["grafana: provisioned dashboards"]
 
     db -->|"healthy"| migrate
     migrate -->|"completed successfully"| seed
     seed -->|"completed successfully"| backend
     redis -->|"healthy"| backend
     backend -->|"ready"| frontend
+    prometheus -->|"scrape /metrics"| backend
+    backend -.->|"Docker stdout JSON"| alloy
+    alloy -->|"push"| loki
+    prometheus --> grafana
+    loki --> grafana
 ```
 
-`migrate` ve `seed` one-shot container'lardır. Backend ile aynı image'ı kullanırlar, böylece migration kodu ile runtime model sürümü ayrışmaz. PostgreSQL named volume kullanır; Redis PR 1'de persistence kapalıdır çünkü ileride yalnız geçici rate-limit state'i taşıyacaktır.
+`migrate` ve `seed` one-shot container'lardır. Backend ile aynı image'ı kullanırlar, böylece migration kodu ile runtime model sürümü ayrışmaz. PostgreSQL named volume kullanır; Redis persistence kapalıdır çünkü yalnız geçici rate-limit state'i taşır. Prometheus, Loki, Alloy ve Grafana ürün API'sinin çalışma bağımlılığı değildir.
 
-Backend runtime UID/GID `10001:10001`, frontend runtime UID/GID `101:101`'dir. Her iki Dockerfile multi-stage build kullanır ve compiler/package-manager araçlarını runtime image'a taşımaz.
+Backend runtime UID/GID `10001:10001`, frontend runtime UID/GID `101:101`'dir. Alloy `473`, Loki `10001`, Prometheus `65534` ve Grafana `472` UID ile root olmadan çalışır. Uygulama Dockerfile'ları multi-stage build kullanır ve compiler/package-manager araçlarını runtime image'a taşımaz.
 
 ## Backend bileşenleri
 
@@ -72,11 +81,11 @@ Modül sınırları:
 | `shared` | Fail-fast config, async DB base/session altyapısı, ortak hata modeli | Çalışıyor |
 | `observability` | Request ID, JSON logging, `/health`, `/ready`, graceful drain | Çalışıyor |
 | `users` | User persistence, rol/statü enum'ları | Auth ile çalışıyor |
-| `auth` | Register/login/me ve refresh rotation/replay | PR 2'de çalışıyor |
+| `auth` | Register/login/me ve refresh rotation/replay | Tamamlandı |
 | `categories` | Seed edilmiş kategori kataloğu | Public read API çalışıyor |
-| `events` | Owner/public lifecycle, cursor ve timezone politikası | PR 3'te çalışıyor |
-| `reservations` | Create/reactivate/cancel/history, attendee listesi ve kapasite transaction'ları | PR 4'te çalışıyor |
-| `idempotency` | Atomik request ownership, semantic replay ve retention cleanup | PR 4'te çalışıyor |
+| `events` | Owner/public lifecycle, arama/filtre, cursor ve timezone politikası | Tamamlandı |
+| `reservations` | Create/reactivate/cancel/history, attendee listesi ve kapasite transaction'ları | Tamamlandı |
+| `idempotency` | Atomik request ownership, semantic replay ve retention cleanup | Tamamlandı |
 | `audit` | Event ve reservation kritik değişikliklerinin immutable kaydı | Çalışıyor |
 
 `backend/app/models.py`, bütün modelleri Alembic metadata için import eder; domain davranışı içeren bir “god model” değildir.

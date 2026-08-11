@@ -51,14 +51,14 @@ CI full history checkout üzerinde Gitleaks çalıştırır. `.gitleaksignore` y
 
 Credential, kişisel veri, erişim tokenı, çalışan exploit veya henüz giderilmemiş zafiyet ayrıntısı issue, pull request, discussion ya da herkese açık başka bir kanalda paylaşılmamalıdır.
 
-Repository erişimi olan güvenlik araştırmacıları ve ekip üyeleri GitHub içindeki **Security > Advisories > New draft security advisory** akışını kullanmalıdır. Bildirim şu bilgileri içermelidir:
+Repository private durumdayken erişimi olan güvenlik araştırmacıları ve ekip üyeleri GitHub içindeki **Security > Advisories > New draft security advisory** akışını kullanmalıdır. Bildirim şu bilgileri içermelidir:
 
 - Etkilenen endpoint, bileşen veya commit.
 - Tekrar üretme adımları ve beklenen etki.
 - Varsa güvenli proof-of-concept; gerçek kullanıcı verisi içermemelidir.
 - Önerilen azaltım veya düzeltme fikri.
 
-İlk alındı yanıtı için hedef süre 3 iş günü, ilk risk değerlendirmesi için 7 iş günüdür. Düzeltme doğrulanmadan ve koordineli açıklama tarihi kararlaştırılmadan ayrıntılar yayımlanmamalıdır. Repository public yapılmadan önce GitHub private vulnerability reporting etkinleştirilecek; bu kanal etkin değilse public yayın yapılmayacaktır.
+İlk alındı yanıtı için hedef süre 3 iş günü, ilk risk değerlendirmesi için 7 iş günüdür. Düzeltme doğrulanmadan ve koordineli açıklama tarihi kararlaştırılmadan ayrıntılar yayımlanmamalıdır. Repository halen private olduğu için GitHub Advanced Security ayarlarında private vulnerability reporting kontrolü sunulmaz. Public görünürlük açıkça onaylanırsa görünürlük değişikliğinin hemen ardından ve teslim bağlantısı paylaşılmadan önce private vulnerability reporting etkinleştirilip doğrulanmalıdır.
 
 ## Güvenlik düzeltmesi süreci
 

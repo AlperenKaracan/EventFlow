@@ -84,3 +84,7 @@ sum(rate(eventflow_http_requests_total[5m]))
 ## Kabul kanıtı disiplini
 
 `docs/P0_ACCEPTANCE_MATRIX.md`, `docs/P1_ACCEPTANCE_MATRIX.md` ve `docs/P2_ACCEPTANCE_MATRIX.md` yalnız gerçekten çalıştırılmış komutları yeşil gösterir. Atlanan veya platform nedeniyle çalışmayan test açıkça belirtilir. Yaklaşık sonuç, beklenen sonuç veya önceki commit sonucu güncel HEAD için kanıt sayılmaz.
+
+## Son teslim kanıtı
+
+Son PR 6 uygulama doğrulamasında 148 backend testi, 35 frontend component testi, 6 production Compose Playwright yolculuğu, 19 gerçek Loki LogQL targetı ve 15 gerçek Prometheus PromQL targetı geçti. Windows'ta POSIX SIGTERM integration testi açıkça skip edildi; aynı davranış Linux CI'da geçti. Uzak kanıt [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302), PDF ve master plan karşılaştırması ise [`docs/DELIVERY_AUDIT.md`](docs/DELIVERY_AUDIT.md) içindedir.
