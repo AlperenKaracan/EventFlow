@@ -19,7 +19,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-RES-03 | Kapasite ve geçmiş zaman kuralları atomik uygulanır            |        4 | 200 paralel istek + DB clock testleri                                                  | ✅ Kanıtlandı |
 | P0-RES-04 | İptal kontenjanı geri açar                                     |        4 | Cancel transaction/invariant testi                                                     | ✅ Kanıtlandı |
 | P0-RES-05 | Attendee kendi rezervasyon geçmişini görür                     |      4,5 | Ownership integration + desktop/mobile E2E                                             | ✅ Kanıtlandı |
-| P0-UI-01  | Çalışan, gezilebilir ve responsive arayüz                      |        5 | 30 component testi + desktop/Pixel 7 Playwright ve MCP keşif QA                        | ✅ Kanıtlandı |
+| P0-UI-01  | Çalışan, gezilebilir ve responsive arayüz                      |        5 | 32 component testi + desktop/Pixel 7 Playwright ve MCP keşif QA                        | ✅ Kanıtlandı |
 | P0-UI-02  | Loading/empty/error/success durumları                          |        5 | Component ve E2E state matrisi                                                         | ✅ Kanıtlandı |
 | P0-UI-03  | Client ve server validation                                    |      2-5 | Zod/Pydantic/domain/DB testleri                                                        | ✅ Kanıtlandı |
 | P0-UI-04  | Tema tutarlı; pixel-perfect zorunlu değil                      |        5 | MUI theme + desktop/mobile görsel akış                                                 | ✅ Kanıtlandı |
@@ -40,7 +40,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-CFG-02 | `.env.example` bütün anahtarları açıklar; secret yok           |        1 | Config testi + tracked/high-confidence secret scan                                     | ✅ Kanıtlandı |
 | P0-DB-01  | Yalnız versiyonlanmış migration; runtime auto-schema yok       |        1 | Alembic twice/check + CI `create_all` source guard                                     | ✅ Kanıtlandı |
 | P0-DB-02  | Migration container başlangıcında çalışır                      |        1 | Compose migrate one-shot exit `0` ve start-order smoke                                 | ✅ Kanıtlandı |
-| P0-DB-03  | Ayrı, idempotent, tekrar çalıştırılabilir seed                 |        1 | Integration testi + ikinci Compose seed sayımı `2\|6\|6\|2`                            | ✅ Kanıtlandı |
+| P0-DB-03  | Ayrı, idempotent, tekrar çalıştırılabilir seed                 |      1,5 | Tekrar + mevcut domain durumunu koruma testi; dolu Compose DB üzerinde invariant `0`    | ✅ Kanıtlandı |
 | P0-DB-04  | İndeks kararları bilinçli ve sorgularla ilişkili               |    1,3,4 | Migration introspection + EXPLAIN                                                      | ✅ Kanıtlandı |
 | P0-API-01 | API `/api/v1` ile versiyonlanır                                |      1-4 | Route/OpenAPI testleri                                                                 | ✅ Kanıtlandı |
 | P0-API-02 | Bütün hatalar ortak envelope kullanır                          |      1-4 | Unit/integration error matrisi                                                         | ✅ Kanıtlandı |
@@ -50,7 +50,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-OBS-02 | Request/correlation ID header, body ve loglarda                |        1 | UUIDv7/preserve/error/log propagation testleri                                         | ✅ Kanıtlandı |
 | P0-OBS-03 | `/health` process, `/ready` dependency anlamını taşır          |        1 | Healthy ve dependency-unready integration testleri                                     | ✅ Kanıtlandı |
 | P0-OBS-04 | Loglarda secret/PII yok; print kullanılmaz                     |      1-5 | Redaction + 104 container logu + source scan                                           | ✅ Kanıtlandı |
-| P0-TST-01 | Kritik iş kuralları otomatik testlidir                         |      1-5 | 124 backend + 30 frontend + 4 production E2E                                           | ✅ Kanıtlandı |
+| P0-TST-01 | Kritik iş kuralları otomatik testlidir                         |      1-5 | 124 backend + 32 frontend + 4 production E2E                                           | ✅ Kanıtlandı |
 | P0-TST-02 | Kapasite ve zamanlılık concurrency testi zorunlu               |        4 | Gerçek PostgreSQL 200-request testi                                                    | ✅ Kanıtlandı |
 | P0-TST-03 | Testler izole; lokal geliştirici DB’sine bağlı değil           |      1-5 | Testcontainers + temiz Compose + benzersiz E2E verisi                                  | ✅ Kanıtlandı |
 | P0-CI-01  | Push CI: lint/format/type/test/build/audit                     |      1,5 | [PR 1 CI run #2](https://github.com/AlperenKaracan/EventFlow/actions/runs/31323243906) | ✅ Kanıtlandı |
@@ -136,13 +136,13 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Backend statik kalite     | Ruff format/lint ve strict mypy                                                                | 92 dosya formatlı; 53 source file typed; temiz                                                           |
 | Backend tam test          | `uv run pytest --cov=app --cov-report=term-missing`                                            | 124/124 geçti; toplam branch coverage `%92`                                                              |
 | Frontend kalite           | Peer, Prettier, Markdownlint, ESLint ve TypeScript                                             | Tüm workspace kapıları temiz                                                                             |
-| Frontend component test   | `pnpm test`                                                                                    | 12 dosyada 30/30 test geçti; cursor, state, auth-race, timezone, koyu tema ve açıklayıcı hata dahil      |
-| Frontend production build | `pnpm build` ve Docker multi-stage build                                                       | Geçti; ana giriş `315.33 kB` (`100.68 kB` gzip), form lazy chunk'ı `268.92 kB` (`83.07 kB` gzip)         |
+| Frontend component test   | `pnpm test`                                                                                    | 13 dosyada 32/32 test geçti; cursor, state, auth-race, timezone, koyu tema, semantik kart ve hata dahil  |
+| Frontend production build | `pnpm build` ve Docker multi-stage build                                                       | Geçti; ana giriş `316.77 kB` (`101.10 kB` gzip), form lazy chunk'ı `268.80 kB` (`83.04 kB` gzip)         |
 | Görsel/UX regresyonu      | Keşif, auth, organizer, iptal ve form için masaüstü + mobil ekran görüntüsü                    | Salt-okunur iptal formu, açıklayıcı rezervasyon kartı, koyu tema ve responsive yerleşim doğrulandı       |
 | Playwright MCP keşif QA   | `npx @playwright/mcp@latest --port 8931` ile production Compose                                | Owner/attendee iptal akışları, UUID/request ID gizleme, a11y ağacı ve yatay taşma doğrulandı             |
 | P0 browser journey        | Gerçek production Compose üzerinde desktop Chrome + Pixel 7                                    | 4/4 geçti; lifecycle, two-tab conflict, role/IDOR guard, timezone refresh ve response-loss replay dahil  |
 | Temiz Compose startup     | Volume sıfırlama + `up -d --build --wait`                                                      | Migrate/seed exit `0`; bütün servisler healthy; UID `10001/101`                                          |
-| Seed ve veri bütünlüğü    | İkinci seed + global reservation counter sorgusu                                               | Seed `2\|6\|6\|2`; active reservation/counter mismatch `0`                                               |
+| Seed ve veri bütünlüğü    | Dolu DB'de ikinci seed + domain-state preservation integration testi                           | Mevcut kayıtlar korunuyor; active reservation/counter mismatch `0`                                      |
 | Deployed security         | Backend/frontend header ve exact CORS smoke                                                    | CSP/nosniff/frame/referrer header'ları mevcut; hostile origin reddedildi                                 |
 | Log ve secret taraması    | Container JSON parse + credential/email + tracked secret + source scan                         | `298/298` JSON; credential/email, yüksek güvenli secret ve print/console izi yok                         |
 | Dependency audit          | `pip-audit` ve `pnpm audit --prod --audit-level high`                                          | Bilinen açık yok                                                                                         |
