@@ -108,7 +108,7 @@ Owner-scoped mutasyondur. Body `expectedVersion` ve en az bir değişiklik taş�
 
 ### `DELETE /api/v1/events/{eventId}?expectedVersion=1`
 
-Hard delete yapmaz; event'i `CANCELLED` durumuna geçirir, `cancelledAt` yazar ve sürümü artırır. Başarı `204`'tür. Aktif reservation'ların `CANCELLED_BY_EVENT` bulk transition'ı PR 4 transaction kapsamındadır.
+Hard delete yapmaz; event'i `CANCELLED` durumuna geçirir, `cancelledAt` yazar ve sürümü artırır. Başarı `204`'tür. Aktif reservation'lar aynı event-first transaction içinde deterministik sırayla kilitlenir, `CANCELLED_BY_EVENT` durumuna geçirilir, audit kayıtları eklenir ve `reservedCount` sıfırlanır.
 
 ### `GET /api/v1/me/events`
 

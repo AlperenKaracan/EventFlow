@@ -10,7 +10,7 @@ Kapsam: PR 6 içindeki tek P2 teslimi olan Prometheus metrics endpoint'i ve onu 
 
 | Alan | Sonuç | Kanıt |
 |---|---|---|
-| Backend kalite ve test | Yeşil | 141 geçti, Windows POSIX SIGTERM için 1 açık skip, coverage yüzde 92 |
+| Backend kalite ve test | Yeşil | 148 geçti, Windows POSIX SIGTERM için 1 açık skip, Linux karşılığı geçti, coverage yüzde 92 |
 | Frontend kalite ve test | Yeşil | 35 component testi, lint, typecheck ve production build |
 | Playwright | Yeşil | Desktop/mobile toplam 6 kullanıcı yolculuğu |
 | Fresh Compose | Yeşil | Ayrı `eventflow-acceptance` projesi ve sıfır named volume ile bütün servisler healthy |
@@ -19,7 +19,8 @@ Kapsam: PR 6 içindeki tek P2 teslimi olan Prometheus metrics endpoint'i ve onu 
 | Grafana | Yeşil | 2 datasource, 3 sabit dashboard UID, default home ve pinned eklentiler |
 | Dayanıklılık | Yeşil | Loki dururken backend `/health` 200 ve Docker JSON logu korunuyor |
 | Dependency audit | Yeşil | `pip-audit` ve production `pnpm audit` bulgu üretmedi |
-| Secret/history scan | Yeşil | Gitleaks 8.30.1 ile 172 commit, gerçek leak yok |
+| Secret/history scan | Yeşil | Gitleaks 8.30.1 full-history taraması geçti, gerçek leak yok |
+| Son remote CI | Yeşil | [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) içindeki dört job ve kayıtlı bütün adımlar geçti |
 
 ## Metrik sözleşmesi
 

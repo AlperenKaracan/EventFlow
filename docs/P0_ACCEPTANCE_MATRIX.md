@@ -149,6 +149,18 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Clean-worktree smoke      | Detached HEAD, frozen pnpm install, Compose config ve iki image build                          | Geçti; yalnız tracked dosyalarla build ve non-root image user doğrulandı                                 |
 | Remote CI                 | [GitHub Actions run #26](https://github.com/AlperenKaracan/EventFlow/actions/runs/31334804518) | Backend, frontend ve Compose + desktop/mobile P0 Playwright job'ları geçti                               |
 
+## PR 6 son P0 regresyonu
+
+PR 5 kanıtları tarihsel kapanış sonucunu korur. PR 6 son uygulama head'inde P0 davranışları daha geniş P1/P2 suite'i içinde yeniden doğrulandı:
+
+| Kapı | Sonuç |
+|---|---|
+| Backend | 148 pytest geçti; Windows POSIX SIGTERM için 1 açık skip, Linux CI karşılığı geçti; branch coverage yüzde 92 |
+| Frontend | 35/35 component testi, lint, typecheck ve production build geçti |
+| Browser | Production Compose desktop/mobile toplam 6/6 Playwright yolculuğu geçti |
+| Integrity | IDOR, timezone, idempotency, 200 istek kapasite, lock sırası, audit atomikliği ve seed korunumu regresyonsuz |
+| Remote CI | [GitHub Actions run #69](https://github.com/AlperenKaracan/EventFlow/actions/runs/31508859302) içindeki dört job ve kayıtlı bütün adımlar geçti |
+
 ## PR kapıları
 
 |  PR | Kapanış koşulu                                                                                      | Durum                   |
@@ -157,4 +169,4 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 |   2 | Auth, refresh rotation/replay, authorization/IDOR ve security negatifleri yeşil                     | ✅ Kanıtlandı           |
 |   3 | Event lifecycle, timezone/version/ownership ve public cursor API yeşil                              | ✅ Kanıtlandı           |
 |   4 | Reservation/idempotency/audit ve gerçek PostgreSQL concurrency invariantları yeşil                  | ✅ Kanıtlandı           |
-|   5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış               | 🟡 Merge onayı bekliyor |
+|   5 | Bütün P0 satırları `✅ Kanıtlandı`; clean-clone ve E2E yeşil, kullanıcı onayı alınmış               | ✅ Kanıtlandı           |

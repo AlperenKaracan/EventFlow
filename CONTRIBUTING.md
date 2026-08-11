@@ -2,8 +2,8 @@
 
 ## Branch ve PR düzeni
 
-- Feature branch adları İngilizce ve kısa olmalıdır; Codex branch'leri `codex/` öneki kullanır.
-- Ana planın altı PR sırası korunur. PR 6 içinde P1 kabul kapısı tamamlanmadan P2 kodu yazılmaz.
+- Feature branch adları İngilizce ve kısa olmalıdır. Ana plandaki altı onaylı branch kendi sabit adlarını korur; yeni bağımsız Codex branch'leri `codex/` öneki kullanır.
+- Ana planın altı PR sırası tamamlanmıştır. P1 kabul kapısının P2'den önce tamamlandığını gösteren tarihsel kanıt `docs/P1_ACCEPTANCE_MATRIX.md` içinde korunur.
 - PR önce draft açılır. Kullanıcı açıkça onaylamadan merge yapılmaz ve repository public yapılmaz.
 - PR açıklaması kapsam, davranış, mimari karar, test kanıtı, güvenlik notu, manuel test ve ekran görüntüsü bölümlerini içerir.
 
