@@ -9,7 +9,7 @@ discovery.docker "eventflow" {
 
   filter {
     name   = "label"
-    values = ["com.docker.compose.project=eventflow"]
+    values = [sys.env("ALLOY_COMPOSE_PROJECT_FILTER")]
   }
 }
 

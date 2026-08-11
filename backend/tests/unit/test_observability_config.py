@@ -21,7 +21,7 @@ def test_alloy_limits_discovery_and_index_labels() -> None:
         encoding="utf-8"
     )
 
-    assert 'values = ["com.docker.compose.project=eventflow"]' in config
+    assert 'values = [sys.env("ALLOY_COMPOSE_PROJECT_FILTER")]' in config
     assert 'values = ["service_name", "environment", "level", "route"]' in config
     assert "drop_malformed = false" in config
     assert 'source   = "parse_error"' in config
@@ -29,6 +29,11 @@ def test_alloy_limits_discovery_and_index_labels() -> None:
     assert "actorId" not in config
     assert "email" not in config
     assert config.count('sys.env("ALLOY_DOCKER_REFRESH_INTERVAL")') == 2
+    assert (
+        "ALLOY_COMPOSE_PROJECT_FILTER: com.docker.compose.project="
+        "${COMPOSE_PROJECT_NAME:-eventflow}"
+        in (REPOSITORY_ROOT / "compose.yaml").read_text(encoding="utf-8")
+    )
 
 
 def test_compose_mounts_docker_socket_read_only_and_uses_named_storage() -> None:
