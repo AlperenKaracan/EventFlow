@@ -25,7 +25,7 @@ providers:
 
   - name: eventflow-logs
     orgId: 1
-    folder: EventFlow - Loglar
+    folder: EventFlow - Log Analizi
     folderUid: eventflow-logs-folder
     type: file
     disableDeletion: false

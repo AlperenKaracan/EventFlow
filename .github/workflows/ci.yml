@@ -316,6 +316,9 @@ jobs:
               raise SystemExit("Prometheus backend target is not UP")
           PY
 
+      - name: Verify every provisioned log analysis query
+        run: python observability/verify_log_dashboard.py
+
       - name: Print diagnostics
         if: always()
         run: |

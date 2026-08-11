@@ -64,8 +64,8 @@ Kapsam: PR 6 içindeki tek P2 teslimi olan Prometheus metrics endpoint'i ve onu 
 | Loki datasource | UID `eventflow-loki`, health `OK`, request ID derived field | Yeşil |
 | Ana ekran | UID `eventflow-overview`, 3 panel | Yeşil |
 | Metrik dashboard | UID `eventflow-metrics`, 12 panel | Yeşil |
-| Log dashboard | UID `eventflow-logs`, 3 panel | Yeşil |
-| Dashboard sorguları | Genel bakış dahil 19 PromQL/LogQL target | Yeşil |
+| Log dashboard | UID `eventflow-logs`, 4 bölüm ve 17 analiz paneli | Yeşil |
+| Dashboard sorguları | Genel bakış, metrik ve log ekranlarında toplam 33 PromQL/LogQL target; 17 log targetı gerçek Loki üzerinde ayrıca yürütüldü | Yeşil |
 | Pinned eklentiler | Loki Explore `2.5.0`, Metrics Drilldown `2.4.0` | Yeşil |
 | Dil ve sunum | Türkçe başlık/açıklama, doğru units/legend/threshold, yanıltıcı sıfır yok | Yeşil |
 
@@ -74,6 +74,16 @@ Ekran kanıtları:
 - [Grafana genel bakış](screenshots/pr6-p2-grafana-overview.png)
 - [Grafana metrik dashboard](screenshots/pr6-p2-grafana-metrics.png)
 - [Request ID log korelasyonu](screenshots/pr6-p2-grafana-request-id-logs.png)
+- [Gelişmiş log analizi özeti](screenshots/pr6-p2-grafana-log-analysis.png)
+- [İş alanı ve hata analizi](screenshots/pr6-p2-grafana-log-analysis-details.png)
+- [Request ID zaman çizelgesi](screenshots/pr6-p2-grafana-request-id-timeline.png)
+
+Log analizi geliştirme doğrulaması:
+
+- operasyon özeti, HTTP, iş alanı ve request ID incelemesi için 4 bölüm ve 17 panel provision edildi
+- 17 LogQL targetın tamamı Grafana datasource API üzerinden gerçek Loki'ye karşı hatasız çalıştı
+- yeni `http.request.rejected` ve `RESOURCE_NOT_FOUND` kaydı backend, Alloy ve Loki zincirinde bulundu
+- query selectorları request ID, actor ID, event ID veya reservation ID içermiyor
 
 ## Çalıştırılan kabul komutları
 
@@ -93,6 +103,13 @@ pnpm typecheck
 pnpm test
 pnpm build
 pnpm audit --prod --audit-level high
+```
+
+Güncel normal stack üzerinde log analizi sorguları ayrıca çalıştırıldı:
+
+```powershell
+docker compose config --quiet
+python observability/verify_log_dashboard.py
 ```
 
 Fresh stack mevcut geliştirici volume'larını silmeden ayrı projede çalıştırıldı:
