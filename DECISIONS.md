@@ -241,3 +241,15 @@ Değerlendirdiğim alternatifler: Access tokenı localStorage/sessionStorage'da 
 Neden bunu seçtim: XSS durumunda kalıcı access credential okuma yüzeyi azalır; refresh credential JavaScript'e açılmaz; token rotation yarışı sınırlanır. Özgün `Request` replay'i reservation `Idempotency-Key` başlığını retry boyunca korur.
 
 Neyi feda ettim: Her tam sayfa yüklemesi bir refresh çağrısı gerektirir; ayrı browser tabları process belleğini paylaşmaz ve kendi bootstrap'ını yapar. Refresh servisi geçici olarak erişilemezse mevcut access token kalıcı depodan kurtarılamaz.
+
+## D-021 — Seed yalnız eksik demo kayıtlarını ekler
+
+Durum: PR 5 P0 yeniden denetiminde uygulandı ve domain durumu korunumu integration testiyle doğrulandı.
+
+Karar: Seed komutu kararlı kimlikli demo kullanıcı, etkinlik ve rezervasyon kayıtlarını yalnız mevcut değillerse ekleyecek; mevcut domain kayıtlarını güncellemeyecek. Kategori kataloğu adları ise seed tarafından yönetildiği için güncellenebilir.
+
+Değerlendirdiğim alternatifler: Her çalışmada bütün seed alanlarını ilk değerlere döndürmek; `reserved_count` değerini seed sonunda aktif rezervasyonlardan yeniden hesaplamak; seed öncesinde tabloları temizlemek.
+
+Neden bunu seçtim: Tekrar çalıştırılan deployment seed'i organizatör değişikliklerini, iptalleri, kullanıcı durumunu veya rezervasyon yaşam döngüsünü geri alamaz ve `reserved_count == ACTIVE reservations` invariantını bozamaz.
+
+Neyi feda ettim: Demo içerik metinlerindeki sonraki seed değişiklikleri mevcut ortama otomatik uygulanmaz; böyle bir yenileme için açık ve ayrı bir bakım komutu gerekir.
