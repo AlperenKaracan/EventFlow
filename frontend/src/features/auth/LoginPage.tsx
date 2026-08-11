@@ -32,7 +32,7 @@ export function LoginPage() {
   return (
     <AuthFormLayout
       title="Tekrar hoş geldiniz"
-      description="Rezervasyonlarınızı ve etkinliklerinizi yönetmek için giriş yapın."
+      description="Rezervasyonlarınıza ve etkinliklerinize kaldığınız yerden devam edin."
       footer="login"
     >
       <Stack
@@ -66,7 +66,7 @@ export function LoginPage() {
           size="large"
           disabled={form.formState.isSubmitting}
         >
-          {form.formState.isSubmitting ? 'Giriş yapılıyor…' : 'Giriş yap'}
+          {form.formState.isSubmitting ? 'Giriş yapılıyor...' : 'Giriş yap'}
         </Button>
       </Stack>
     </AuthFormLayout>

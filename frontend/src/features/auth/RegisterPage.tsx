@@ -1,6 +1,18 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigate } from '@tanstack/react-router'
-import { Alert, Button, MenuItem, Stack, TextField } from '@mui/material'
+import {
+  Alert,
+  Box,
+  Button,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { Controller, useForm } from 'react-hook-form'
 
 import { ApiError } from '../../api/errors'
@@ -31,8 +43,8 @@ export function RegisterPage() {
 
   return (
     <AuthFormLayout
-      title="EventFlow’a katılın"
-      description="Katılımcı olarak yer ayırın veya organizatör olarak etkinliklerinizi yayınlayın."
+      title="EventFlow'a katılın"
+      description="Etkinlikleri keşfetmek veya kendi topluluğunuzu büyütmek için hesabınızı oluşturun."
       footer="register"
     >
       <Stack
@@ -70,16 +82,74 @@ export function RegisterPage() {
           }
           {...form.register('password')}
         />
-        <Controller
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <TextField select label="Hesap türü" {...field}>
-              <MenuItem value="attendee">Katılımcı</MenuItem>
-              <MenuItem value="organizer">Organizatör</MenuItem>
-            </TextField>
-          )}
-        />
+        <FormControl>
+          <FormLabel id="account-role-label">Hesap türü</FormLabel>
+          <Controller
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <RadioGroup aria-labelledby="account-role-label" {...field}>
+                <Stack
+                  direction={{ xs: 'column', sm: 'row' }}
+                  sx={{ gap: 1.25, mt: 1 }}
+                >
+                  {[
+                    {
+                      value: 'attendee',
+                      label: 'Katılımcı',
+                      hint: 'Etkinlik keşfet ve yer ayır',
+                    },
+                    {
+                      value: 'organizer',
+                      label: 'Organizatör',
+                      hint: 'Etkinlik oluştur ve yönet',
+                    },
+                  ].map((option) => (
+                    <Box
+                      key={option.value}
+                      sx={{
+                        bgcolor:
+                          field.value === option.value
+                            ? 'action.selected'
+                            : 'background.default',
+                        border: '1px solid',
+                        borderColor:
+                          field.value === option.value
+                            ? 'primary.main'
+                            : 'divider',
+                        borderRadius: 3,
+                        flex: 1,
+                        p: 1,
+                      }}
+                    >
+                      <FormControlLabel
+                        value={option.value}
+                        control={<Radio />}
+                        label={
+                          <Box>
+                            <Typography
+                              variant="body2"
+                              sx={{ fontWeight: 760 }}
+                            >
+                              {option.label}
+                            </Typography>
+                            <Typography
+                              color="text.secondary"
+                              variant="caption"
+                            >
+                              {option.hint}
+                            </Typography>
+                          </Box>
+                        }
+                        sx={{ alignItems: 'center', m: 0, width: '100%' }}
+                      />
+                    </Box>
+                  ))}
+                </Stack>
+              </RadioGroup>
+            )}
+          />
+        </FormControl>
         <Button
           type="submit"
           variant="contained"
@@ -87,7 +157,7 @@ export function RegisterPage() {
           disabled={form.formState.isSubmitting}
         >
           {form.formState.isSubmitting
-            ? 'Hesap oluşturuluyor…'
+            ? 'Hesap oluşturuluyor...'
             : 'Hesap oluştur'}
         </Button>
       </Stack>
