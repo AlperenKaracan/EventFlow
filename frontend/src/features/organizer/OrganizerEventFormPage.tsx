@@ -35,8 +35,10 @@ import {
   updateOwnedEvent,
 } from '../../api/organizer'
 import { ApiError } from '../../api/errors'
+import { designTokens } from '../../app/theme'
 import { LoadingState } from '../../shared/AsyncState'
 import { useFeedback } from '../../shared/feedback'
+import { Surface } from '../../shared/ui/Surface'
 import {
   localDateTimeToZonedIso,
   zonedIsoToLocalDateTime,
@@ -79,7 +81,8 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
       capacity: 1,
     },
   })
-  const title = useWatch({ control: form.control, name: 'title' })
+  const watchedValues = useWatch({ control: form.control })
+  const title = watchedValues.title ?? ''
   const isCancelled = eventQuery.data?.status === 'CANCELLED'
 
   useEffect(() => {
@@ -161,7 +164,14 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
   }
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 3, md: 6 } }}>
+    <Container
+      component="main"
+      maxWidth={false}
+      sx={{
+        maxWidth: designTokens.layout.contentMaxWidth,
+        py: { xs: 3, md: 6 },
+      }}
+    >
       <Button
         onClick={() => void navigate({ to: '/organizer/events' })}
         sx={{ mb: 2, px: 0 }}
@@ -205,254 +215,343 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
           kabul etmez ve bilgileri artık değiştirilemez.
         </Alert>
       ) : null}
-      <Paper
-        component="form"
-        onSubmit={(event) => void submit(event)}
-        noValidate
-        variant="outlined"
-        sx={{ overflow: 'hidden' }}
+      <Box
+        sx={{
+          display: 'grid',
+          gap: 3,
+          gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) 310px' },
+        }}
       >
-        <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-          <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>
-            Temel bilgiler
-          </Typography>
-          <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
-            Net bir başlık ve kısa açıklama etkinliğinizi öne çıkarır.
-          </Typography>
-          {mutation.isError && !hasVersionConflict ? (
-            <Alert severity="error" sx={{ mt: 3 }}>
-              {mutationError?.message ?? 'Etkinlik kaydedilemedi.'}
-            </Alert>
-          ) : null}
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2.5,
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' },
-              mt: 3,
-            }}
-          >
-            <Controller
-              control={form.control}
-              name="categoryId"
-              render={({ field }) => (
-                <TextField
-                  select
-                  disabled={isCancelled}
-                  fullWidth
-                  label="Kategori"
-                  error={Boolean(form.formState.errors.categoryId)}
-                  helperText={
-                    form.formState.errors.categoryId?.message ??
-                    'Etkinliğin en uygun kategorisini seçin.'
-                  }
-                  sx={{ gridColumn: { md: 'span 5' } }}
-                  {...field}
-                >
-                  {categoriesQuery.data?.map((category) => (
-                    <MenuItem value={category.id} key={category.id}>
-                      {category.name}
-                    </MenuItem>
-                  ))}
-                </TextField>
-              )}
-            />
-            <TextField
-              fullWidth
-              disabled={isCancelled}
-              label="Başlık"
-              placeholder="Örn. İstanbul Ürün Tasarımı Buluşması"
-              error={Boolean(form.formState.errors.title)}
-              helperText={
-                form.formState.errors.title?.message ??
-                `${title.length}/160 karakter`
-              }
-              sx={{ gridColumn: { md: 'span 7' } }}
-              {...form.register('title')}
-            />
-            <TextField
-              fullWidth
-              disabled={isCancelled}
-              label="Açıklama"
-              placeholder="Katılımcıları nelerin beklediğini, programı ve önemli detayları anlatın."
-              multiline
-              minRows={5}
-              error={Boolean(form.formState.errors.description)}
-              helperText={form.formState.errors.description?.message}
-              sx={{ gridColumn: { md: 'span 12' } }}
-              {...form.register('description')}
-            />
-          </Box>
-        </Box>
-        <Divider />
-        <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
-          <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>
-            Zaman ve yer
-          </Typography>
-          <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
-            Tarih, saat ve saat dilimi birlikte değerlendirilir.
-          </Typography>
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 2.5,
-              gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
-              mt: 3,
-            }}
-          >
-            <Controller
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <Autocomplete
-                  disabled={isCancelled}
-                  freeSolo
-                  autoHighlight
-                  options={[...LOCATION_OPTIONS]}
-                  value={field.value || null}
-                  onChange={(_, value) => field.onChange(value ?? '')}
-                  onInputChange={(_, value) => field.onChange(value)}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Konum veya platform"
-                      placeholder="Şehir, mekân veya çevrim içi"
-                      error={Boolean(form.formState.errors.location)}
-                      helperText={
-                        form.formState.errors.location?.message ??
-                        'Listeden seçebilir veya özel bir mekân yazabilirsiniz.'
-                      }
-                    />
-                  )}
-                />
-              )}
-            />
-            <Controller
-              control={form.control}
-              name="timezone"
-              render={({ field }) => (
-                <Autocomplete
-                  disabled={isCancelled}
-                  autoHighlight
-                  options={[...TIMEZONE_OPTIONS]}
-                  value={timezoneOption(field.value)}
-                  onChange={(_, value) => field.onChange(value?.value ?? '')}
-                  isOptionEqualToValue={(option, value) =>
-                    option.value === value.value
-                  }
-                  getOptionLabel={(option) => option.label}
-                  renderInput={(params) => (
-                    <TextField
-                      {...params}
-                      label="Saat dilimi"
-                      error={Boolean(form.formState.errors.timezone)}
-                      helperText={
-                        form.formState.errors.timezone?.message ??
-                        'Etkinliğin gerçekleşeceği bölgeyi seçin.'
-                      }
-                    />
-                  )}
-                />
-              )}
-            />
-            <Controller
-              control={form.control}
-              name="startsAt"
-              render={({ field }) => (
-                <LocalizationProvider
-                  dateAdapter={AdapterDayjs}
-                  adapterLocale="tr"
-                  localeText={
-                    trTR.components.MuiLocalizationProvider.defaultProps
-                      .localeText
-                  }
-                >
-                  <DateTimePicker
-                    disabled={isCancelled}
-                    label="Başlangıç tarihi ve saati"
-                    ampm={false}
-                    format="DD.MM.YYYY HH:mm"
-                    minutesStep={5}
-                    disablePast={!isEditing}
-                    value={field.value ? dayjs(field.value) : null}
-                    onChange={(value) =>
-                      field.onChange(
-                        value?.isValid()
-                          ? value.format('YYYY-MM-DDTHH:mm')
-                          : '',
-                      )
-                    }
-                    slotProps={{
-                      textField: {
-                        fullWidth: true,
-                        error: Boolean(form.formState.errors.startsAt),
-                        helperText:
-                          form.formState.errors.startsAt?.message ??
-                          'Takvimden gün ve saati birlikte seçin.',
-                      },
-                    }}
-                  />
-                </LocalizationProvider>
-              )}
-            />
-            <TextField
-              fullWidth
-              disabled={isCancelled}
-              label="Kontenjan"
-              type="number"
-              slotProps={{ htmlInput: { min: 1 } }}
-              error={Boolean(form.formState.errors.capacity)}
-              helperText={
-                form.formState.errors.capacity?.message ??
-                'Katılabilecek toplam kişi sayısı.'
-              }
-              {...form.register('capacity')}
-            />
-          </Box>
-        </Box>
-        <Divider />
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          sx={{
-            alignItems: { sm: 'center' },
-            bgcolor: 'background.default',
-            gap: 2,
-            justifyContent: 'space-between',
-            p: { xs: 2.5, sm: 3 },
-          }}
+        <Paper
+          component="form"
+          onSubmit={(event) => void submit(event)}
+          noValidate
+          variant="outlined"
+          sx={{ overflow: 'hidden' }}
         >
-          <Typography
-            aria-live="polite"
-            color={form.formState.isDirty ? 'warning.main' : 'text.secondary'}
-            variant="body2"
-            sx={{ fontWeight: 700 }}
+          <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+            <Typography color="primary.light" variant="overline">
+              01 - İÇERİK
+            </Typography>
+            <Typography component="h2" variant="h5" sx={{ mt: 0.5 }}>
+              Temel bilgiler
+            </Typography>
+            <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
+              Net bir başlık ve kısa açıklama etkinliğinizi öne çıkarır.
+            </Typography>
+            {mutation.isError && !hasVersionConflict ? (
+              <Alert severity="error" sx={{ mt: 3 }}>
+                {mutationError?.message ?? 'Etkinlik kaydedilemedi.'}
+              </Alert>
+            ) : null}
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2.5,
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(12, 1fr)' },
+                mt: 3,
+              }}
+            >
+              <Controller
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <TextField
+                    select
+                    disabled={isCancelled}
+                    fullWidth
+                    label="Kategori"
+                    error={Boolean(form.formState.errors.categoryId)}
+                    helperText={
+                      form.formState.errors.categoryId?.message ??
+                      'Etkinliğin en uygun kategorisini seçin.'
+                    }
+                    sx={{ gridColumn: { md: 'span 5' } }}
+                    {...field}
+                  >
+                    {categoriesQuery.data?.map((category) => (
+                      <MenuItem value={category.id} key={category.id}>
+                        {category.name}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+              <TextField
+                fullWidth
+                disabled={isCancelled}
+                label="Başlık"
+                placeholder="Örn. İstanbul Ürün Tasarımı Buluşması"
+                error={Boolean(form.formState.errors.title)}
+                helperText={
+                  form.formState.errors.title?.message ??
+                  `${title.length}/160 karakter`
+                }
+                sx={{ gridColumn: { md: 'span 7' } }}
+                {...form.register('title')}
+              />
+              <TextField
+                fullWidth
+                disabled={isCancelled}
+                label="Açıklama"
+                placeholder="Katılımcıları nelerin beklediğini, programı ve önemli detayları anlatın."
+                multiline
+                minRows={5}
+                error={Boolean(form.formState.errors.description)}
+                helperText={form.formState.errors.description?.message}
+                sx={{ gridColumn: { md: 'span 12' } }}
+                {...form.register('description')}
+              />
+            </Box>
+          </Box>
+          <Divider />
+          <Box sx={{ p: { xs: 2.5, sm: 4 } }}>
+            <Typography color="primary.light" variant="overline">
+              02 - PLANLAMA
+            </Typography>
+            <Typography component="h2" variant="h5" sx={{ mt: 0.5 }}>
+              Zaman ve yer
+            </Typography>
+            <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
+              Tarih, saat ve saat dilimi birlikte değerlendirilir.
+            </Typography>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 2.5,
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+                mt: 3,
+              }}
+            >
+              <Controller
+                control={form.control}
+                name="location"
+                render={({ field }) => (
+                  <Autocomplete
+                    disabled={isCancelled}
+                    freeSolo
+                    autoHighlight
+                    options={[...LOCATION_OPTIONS]}
+                    value={field.value || null}
+                    onChange={(_, value) => field.onChange(value ?? '')}
+                    onInputChange={(_, value) => field.onChange(value)}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Konum veya platform"
+                        placeholder="Şehir, mekân veya çevrim içi"
+                        error={Boolean(form.formState.errors.location)}
+                        helperText={
+                          form.formState.errors.location?.message ??
+                          'Listeden seçebilir veya özel bir mekân yazabilirsiniz.'
+                        }
+                      />
+                    )}
+                  />
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="timezone"
+                render={({ field }) => (
+                  <Autocomplete
+                    disabled={isCancelled}
+                    autoHighlight
+                    options={[...TIMEZONE_OPTIONS]}
+                    value={timezoneOption(field.value)}
+                    onChange={(_, value) => field.onChange(value?.value ?? '')}
+                    isOptionEqualToValue={(option, value) =>
+                      option.value === value.value
+                    }
+                    getOptionLabel={(option) => option.label}
+                    renderInput={(params) => (
+                      <TextField
+                        {...params}
+                        label="Saat dilimi"
+                        error={Boolean(form.formState.errors.timezone)}
+                        helperText={
+                          form.formState.errors.timezone?.message ??
+                          'Etkinliğin gerçekleşeceği bölgeyi seçin.'
+                        }
+                      />
+                    )}
+                  />
+                )}
+              />
+              <Controller
+                control={form.control}
+                name="startsAt"
+                render={({ field }) => (
+                  <LocalizationProvider
+                    dateAdapter={AdapterDayjs}
+                    adapterLocale="tr"
+                    localeText={
+                      trTR.components.MuiLocalizationProvider.defaultProps
+                        .localeText
+                    }
+                  >
+                    <DateTimePicker
+                      disabled={isCancelled}
+                      label="Başlangıç tarihi ve saati"
+                      ampm={false}
+                      format="DD.MM.YYYY HH:mm"
+                      minutesStep={5}
+                      disablePast={!isEditing}
+                      value={field.value ? dayjs(field.value) : null}
+                      onChange={(value) =>
+                        field.onChange(
+                          value?.isValid()
+                            ? value.format('YYYY-MM-DDTHH:mm')
+                            : '',
+                        )
+                      }
+                      slotProps={{
+                        textField: {
+                          fullWidth: true,
+                          error: Boolean(form.formState.errors.startsAt),
+                          helperText:
+                            form.formState.errors.startsAt?.message ??
+                            'Takvimden gün ve saati birlikte seçin.',
+                        },
+                      }}
+                    />
+                  </LocalizationProvider>
+                )}
+              />
+              <TextField
+                fullWidth
+                disabled={isCancelled}
+                label="Kontenjan"
+                type="number"
+                slotProps={{ htmlInput: { min: 1 } }}
+                error={Boolean(form.formState.errors.capacity)}
+                helperText={
+                  form.formState.errors.capacity?.message ??
+                  'Katılabilecek toplam kişi sayısı.'
+                }
+                {...form.register('capacity')}
+              />
+            </Box>
+          </Box>
+          <Divider />
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            sx={{
+              alignItems: { sm: 'center' },
+              bgcolor: 'background.default',
+              gap: 2,
+              justifyContent: 'space-between',
+              p: { xs: 2.5, sm: 3 },
+            }}
           >
-            {isCancelled
-              ? 'İptal edilen etkinlik bilgileri salt okunurdur.'
-              : form.formState.isDirty
-                ? 'Kaydedilmemiş değişiklikleriniz var.'
-                : isEditing
-                  ? 'Tüm değişiklikler kaydedildi.'
-                  : 'Formu doldurarak etkinliğinizi yayınlayın.'}
-          </Typography>
-          <Stack direction="row" sx={{ gap: 1.5, justifyContent: 'flex-end' }}>
-            <Button onClick={() => void navigate({ to: '/organizer/events' })}>
-              {isCancelled ? 'Etkinliklerime dön' : 'Vazgeç'}
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              disabled={mutation.isPending || isCancelled}
+            <Typography
+              aria-live="polite"
+              color={form.formState.isDirty ? 'warning.main' : 'text.secondary'}
+              variant="body2"
+              sx={{ fontWeight: 700 }}
             >
               {isCancelled
-                ? 'İptal edildi'
-                : mutation.isPending
-                  ? 'Kaydediliyor…'
-                  : 'Kaydet'}
-            </Button>
+                ? 'İptal edilen etkinlik bilgileri salt okunurdur.'
+                : form.formState.isDirty
+                  ? 'Kaydedilmemiş değişiklikleriniz var.'
+                  : isEditing
+                    ? 'Tüm değişiklikler kaydedildi.'
+                    : 'Formu doldurarak etkinliğinizi yayınlayın.'}
+            </Typography>
+            <Stack
+              direction="row"
+              sx={{ gap: 1.5, justifyContent: 'flex-end' }}
+            >
+              <Button
+                onClick={() => void navigate({ to: '/organizer/events' })}
+              >
+                {isCancelled ? 'Etkinliklerime dön' : 'Vazgeç'}
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={mutation.isPending || isCancelled}
+              >
+                {isCancelled
+                  ? 'İptal edildi'
+                  : mutation.isPending
+                    ? 'Kaydediliyor...'
+                    : isEditing
+                      ? 'Değişiklikleri kaydet'
+                      : 'Kaydet ve yayınla'}
+              </Button>
+            </Stack>
           </Stack>
-        </Stack>
-      </Paper>
+        </Paper>
+
+        <Box>
+          <Surface
+            component="aside"
+            aria-label="Etkinlik özeti"
+            sx={{ p: 3, position: { lg: 'sticky' }, top: { lg: 96 } }}
+          >
+            <Typography color="primary.light" variant="overline">
+              CANLI ÖZET
+            </Typography>
+            <Typography component="h2" variant="h6" sx={{ mt: 0.75 }}>
+              {title || 'Etkinlik başlığı'}
+            </Typography>
+            <Typography
+              color="text.secondary"
+              variant="body2"
+              sx={{
+                display: '-webkit-box',
+                mt: 1,
+                overflow: 'hidden',
+                WebkitBoxOrient: 'vertical',
+                WebkitLineClamp: 3,
+              }}
+            >
+              {watchedValues.description || 'Açıklamanız burada özetlenecek.'}
+            </Typography>
+            <Divider sx={{ my: 2.5 }} />
+            <SummaryRow
+              label="Kategori"
+              value={
+                categoriesQuery.data?.find(
+                  (category) => category.id === watchedValues.categoryId,
+                )?.name ?? 'Henüz seçilmedi'
+              }
+            />
+            <SummaryRow
+              label="Konum"
+              value={watchedValues.location || 'Henüz belirlenmedi'}
+            />
+            <SummaryRow
+              label="Tarih ve saat"
+              value={
+                watchedValues.startsAt
+                  ? dayjs(watchedValues.startsAt).format('DD.MM.YYYY HH:mm')
+                  : 'Henüz belirlenmedi'
+              }
+            />
+            <SummaryRow
+              label="Saat dilimi"
+              value={timezoneOption(watchedValues.timezone ?? '').label}
+            />
+            <SummaryRow
+              label="Kontenjan"
+              value={
+                typeof watchedValues.capacity === 'number' ||
+                typeof watchedValues.capacity === 'string'
+                  ? `${watchedValues.capacity} kişi`
+                  : '1 kişi'
+              }
+            />
+            <Divider sx={{ my: 2.5 }} />
+            <Alert severity={isCancelled ? 'warning' : 'info'}>
+              {isCancelled
+                ? 'Bu özet, iptal öncesi son yayınlanan bilgileri gösterir.'
+                : 'Kaydettiğinizde bu bilgiler katılımcıların göreceği etkinlik kaydına aktarılır.'}
+            </Alert>
+          </Surface>
+        </Box>
+      </Box>
       <Dialog open={hasVersionConflict} onClose={() => mutation.reset()}>
         <DialogTitle>Etkinlik başka bir yerde güncellendi</DialogTitle>
         <DialogContent>
@@ -469,5 +568,18 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
         </DialogActions>
       </Dialog>
     </Container>
+  )
+}
+
+function SummaryRow({ label, value }: { label: string; value: string }) {
+  return (
+    <Box sx={{ '& + &': { mt: 2 } }}>
+      <Typography color="text.secondary" variant="caption">
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 720, mt: 0.25 }}>
+        {value}
+      </Typography>
+    </Box>
   )
 }
