@@ -1,34 +1,53 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import {
-  Box,
   Alert,
+  Box,
   Button,
-  Card,
-  CardContent,
   Chip,
   Container,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   Divider,
   LinearProgress,
   Stack,
   Typography,
 } from '@mui/material'
+import { useState } from 'react'
 
-import { fetchPublicEvent } from '../../api/publicEvents'
 import { createReservationIntent, reserveEvent } from '../../api/attendee'
 import { ApiError } from '../../api/errors'
+import { fetchPublicEvent } from '../../api/publicEvents'
+import { designTokens } from '../../app/theme'
 import { useAuth } from '../../auth/authContext'
-import { ErrorState, LoadingState } from '../../shared/AsyncState'
+import { EmptyState, ErrorState, LoadingState } from '../../shared/AsyncState'
+import { EventDateTime } from '../../shared/ui/EventDateTime'
+import { Surface } from '../../shared/ui/Surface'
 import { getCategoryAccent } from './categoryAccent'
 
-const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
-  dateStyle: 'full',
-  timeStyle: 'short',
-})
+function DetailItem({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <Box>
+      <Typography color="text.secondary" variant="overline">
+        {label}
+      </Typography>
+      <Box sx={{ mt: 0.4 }}>{children}</Box>
+    </Box>
+  )
+}
 
 export function PublicEventDetailPage({ eventId }: { eventId: string }) {
   const auth = useAuth()
   const queryClient = useQueryClient()
+  const [confirmOpen, setConfirmOpen] = useState(false)
   const eventQuery = useQuery({
     queryKey: ['public-event', eventId],
     queryFn: () => fetchPublicEvent(eventId),
@@ -40,6 +59,7 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
     mutationFn: reserveEvent,
     retry: 1,
     onSuccess: async () => {
+      setConfirmOpen(false)
       await queryClient.invalidateQueries({
         queryKey: ['public-event', eventId],
       })
@@ -48,12 +68,17 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
     },
   })
 
-  if (eventQuery.isPending) return <LoadingState label="Etkinlik yükleniyor" />
+  if (eventQuery.isPending) {
+    return (
+      <Container maxWidth="lg">
+        <LoadingState label="Etkinlik yükleniyor" />
+      </Container>
+    )
+  }
   if (eventQuery.isError) {
     const isUnavailable =
       eventQuery.error instanceof ApiError &&
       eventQuery.error.code === 'RESOURCE_NOT_FOUND'
-
     return (
       <Container component="main" maxWidth="md" sx={{ py: 8 }}>
         <ErrorState
@@ -79,133 +104,265 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
     100,
     Math.round((event.reservedCount / event.capacity) * 100),
   )
+  const reserveDisabled =
+    event.availableCapacity === 0 ||
+    reserveMutation.isPending ||
+    reserveMutation.isSuccess
 
   return (
-    <Container component="main" maxWidth="md" sx={{ py: { xs: 4, md: 8 } }}>
-      <Button component={Link} to="/" sx={{ mb: 3 }}>
+    <Container
+      component="main"
+      maxWidth={false}
+      sx={{
+        maxWidth: designTokens.layout.contentMaxWidth,
+        py: { xs: 3, md: 6 },
+      }}
+    >
+      <Button
+        component={Link}
+        to="/"
+        color="inherit"
+        sx={{ color: 'text.secondary', mb: 3 }}
+      >
         ← Etkinliklere dön
       </Button>
-      <Card
-        variant="outlined"
+
+      <Box
         sx={{
-          overflow: 'hidden',
-          position: 'relative',
-          '&::before': {
-            backgroundColor: accent.foreground,
-            content: '""',
-            height: 4,
-            inset: '0 0 auto',
-            position: 'absolute',
+          display: 'grid',
+          gap: { xs: 3, lg: 4 },
+          gridTemplateColumns: {
+            xs: '1fr',
+            lg: 'minmax(0, 1.7fr) minmax(320px, 0.75fr)',
           },
         }}
       >
-        <CardContent sx={{ p: { xs: 3, md: 5 } }}>
-          <Stack
-            direction="row"
-            sx={{ flexWrap: 'wrap', gap: 2, justifyContent: 'space-between' }}
-          >
-            <Chip
-              label={event.category.name}
-              variant="outlined"
-              sx={{
-                backgroundColor: accent.background,
-                borderColor: accent.border,
-                color: accent.foreground,
-              }}
-            />
-            <Chip
-              label={
-                event.availableCapacity > 0
-                  ? `${event.availableCapacity} yer kaldı`
-                  : 'Kontenjan dolu'
-              }
-              color={event.availableCapacity > 0 ? 'success' : 'error'}
-            />
-          </Stack>
-          <Typography
-            component="p"
-            color="text.secondary"
+        <Stack sx={{ gap: 3 }}>
+          <Surface
+            component="section"
             sx={{
-              fontSize: '0.76rem',
-              fontWeight: 800,
-              letterSpacing: '0.12em',
-              mt: 4,
+              borderColor: accent.border,
+              overflow: 'hidden',
+              p: { xs: 3, md: 5 },
+              position: 'relative',
+              '&::before': {
+                backgroundColor: accent.foreground,
+                content: '""',
+                height: 3,
+                inset: '0 0 auto',
+                position: 'absolute',
+              },
             }}
           >
-            ETKİNLİK DETAYI
-          </Typography>
-          <Typography component="h1" variant="h2" sx={{ mt: 1 }}>
-            {event.title}
-          </Typography>
-          <Stack sx={{ gap: 1, mt: 3 }}>
-            <Typography sx={{ fontWeight: 700 }}>
-              {dateFormatter.format(new Date(event.startsAt))}
+            <Stack
+              direction="row"
+              sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1.25 }}
+            >
+              <Chip
+                label={event.category.name}
+                variant="outlined"
+                sx={{
+                  backgroundColor: accent.background,
+                  borderColor: accent.border,
+                  color: accent.foreground,
+                }}
+              />
+              <Typography color="text.secondary" variant="overline">
+                ETKİNLİK DETAYI
+              </Typography>
+            </Stack>
+            <Typography
+              component="h1"
+              variant="h2"
+              sx={{ maxWidth: 820, mt: 3 }}
+            >
+              {event.title}
             </Typography>
-            <Typography color="text.secondary">{event.location}</Typography>
-            <Typography color="text.secondary">
-              Saat dilimi: {event.timezone}
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 3,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'minmax(0, 1.5fr) minmax(180px, 1fr)',
+                },
+                mt: 4,
+              }}
+            >
+              <DetailItem label="Tarih ve saat">
+                <EventDateTime
+                  startsAt={event.startsAt}
+                  timeZone={event.timezone}
+                />
+              </DetailItem>
+              <DetailItem label="Konum">
+                <Typography sx={{ fontWeight: 760 }}>
+                  {event.location}
+                </Typography>
+              </DetailItem>
+            </Box>
+          </Surface>
+
+          <Surface
+            component="section"
+            aria-labelledby="about-event"
+            sx={{ p: { xs: 3, md: 5 } }}
+          >
+            <Typography id="about-event" component="h2" variant="h4">
+              Etkinlik hakkında
             </Typography>
-          </Stack>
-          <Divider sx={{ my: 4 }} />
-          <Typography component="h2" variant="h5" sx={{ fontWeight: 800 }}>
-            Etkinlik hakkında
-          </Typography>
-          <Typography sx={{ mt: 2, whiteSpace: 'pre-wrap' }}>
-            {event.description}
-          </Typography>
-          <Box sx={{ mt: 4 }}>
-            <Typography variant="body2" color="text.secondary">
+            <Typography
+              color="text.secondary"
+              sx={{ fontSize: { md: 17 }, mt: 2.5, whiteSpace: 'pre-wrap' }}
+            >
+              {event.description}
+            </Typography>
+          </Surface>
+        </Stack>
+
+        <Box>
+          <Surface
+            component="aside"
+            aria-label="Rezervasyon özeti"
+            sx={{ p: 3, position: { lg: 'sticky' }, top: { lg: 96 } }}
+          >
+            <Stack
+              direction="row"
+              sx={{ alignItems: 'center', justifyContent: 'space-between' }}
+            >
+              <Typography component="h2" variant="h6">
+                Kontenjan
+              </Typography>
+              <Chip
+                label={
+                  event.availableCapacity > 0
+                    ? `${event.availableCapacity} yer kaldı`
+                    : 'Kontenjan dolu'
+                }
+                color={event.availableCapacity > 0 ? 'success' : 'error'}
+                size="small"
+                variant="outlined"
+              />
+            </Stack>
+            <Typography color="text.secondary" variant="body2" sx={{ mt: 2 }}>
               {event.reservedCount} / {event.capacity} yer ayrıldı
             </Typography>
             <LinearProgress
-              aria-label="Doluluk oranı"
+              aria-label={`Doluluk oranı yüzde ${occupancy}`}
               value={occupancy}
               variant="determinate"
-              sx={{ borderRadius: 999, height: 6, mt: 1.25 }}
+              sx={{ height: 7, mt: 1 }}
             />
-          </Box>
-          <Box sx={{ mt: 4 }}>
+            <Divider sx={{ my: 3 }} />
+
             {reserveMutation.isSuccess ? (
               <Alert severity="success" sx={{ mb: 2 }}>
-                Yeriniz ayrıldı. Rezervasyonlarınızdan yönetebilirsiniz.
+                Yeriniz ayrıldı. Rezervasyonunuz hesabınıza eklendi.
               </Alert>
             ) : null}
             {reserveMutation.isError ? (
               <ErrorState
                 error={reserveMutation.error}
-                onRetry={() => {
-                  if (reserveMutation.variables)
-                    reserveMutation.mutate(reserveMutation.variables)
-                }}
+                onRetry={() =>
+                  reserveMutation.variables &&
+                  reserveMutation.mutate(reserveMutation.variables)
+                }
               />
             ) : null}
+
             {auth.session.status === 'anonymous' ? (
-              <Button component={Link} to="/login" variant="contained">
-                Yer ayırmak için giriş yap
-              </Button>
+              <>
+                <Typography
+                  color="text.secondary"
+                  variant="body2"
+                  sx={{ mb: 2 }}
+                >
+                  Yer ayırmak ve rezervasyonunu yönetmek için hesabına giriş
+                  yap.
+                </Typography>
+                <Button
+                  component={Link}
+                  to="/login"
+                  fullWidth
+                  variant="contained"
+                >
+                  Giriş yap ve yer ayır
+                </Button>
+              </>
             ) : auth.session.status === 'authenticated' &&
               auth.session.user.role === 'attendee' ? (
-              <Button
-                variant="contained"
-                disabled={
-                  event.availableCapacity === 0 ||
-                  reserveMutation.isPending ||
-                  reserveMutation.isSuccess
-                }
-                onClick={() =>
-                  reserveMutation.mutate(createReservationIntent(event.id))
-                }
-              >
-                {event.availableCapacity === 0
-                  ? 'Kontenjan dolu'
-                  : reserveMutation.isPending
-                    ? 'Yer ayrılıyor…'
-                    : 'Yer ayır'}
-              </Button>
-            ) : null}
-          </Box>
-        </CardContent>
-      </Card>
+              reserveMutation.isSuccess ? (
+                <Button
+                  component={Link}
+                  to="/attendee/reservations"
+                  fullWidth
+                  variant="outlined"
+                >
+                  Rezervasyonlarımı gör
+                </Button>
+              ) : (
+                <Button
+                  fullWidth
+                  variant="contained"
+                  disabled={reserveDisabled}
+                  onClick={() => setConfirmOpen(true)}
+                >
+                  {event.availableCapacity === 0
+                    ? 'Kontenjan dolu'
+                    : 'Yerimi ayır'}
+                </Button>
+              )
+            ) : (
+              <EmptyState
+                title="Katılımcı hesabı gerekli"
+                description="Organizatör hesabıyla rezervasyon oluşturulamaz."
+              />
+            )}
+            <Typography
+              color="text.secondary"
+              variant="caption"
+              sx={{ display: 'block', mt: 2, textAlign: 'center' }}
+            >
+              Rezervasyonunu daha sonra hesabından iptal edebilirsin.
+            </Typography>
+          </Surface>
+        </Box>
+      </Box>
+
+      <Dialog
+        open={confirmOpen}
+        onClose={() => !reserveMutation.isPending && setConfirmOpen(false)}
+        fullWidth
+        maxWidth="xs"
+      >
+        <DialogTitle>Yerinizi ayıralım mı?</DialogTitle>
+        <DialogContent>
+          <Typography color="text.secondary">
+            {event.title} etkinliği için bir rezervasyon oluşturulacak. İşlemi
+            rezervasyonlarınızdan yönetebilirsiniz.
+          </Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            color="inherit"
+            disabled={reserveMutation.isPending}
+            onClick={() => setConfirmOpen(false)}
+          >
+            Vazgeç
+          </Button>
+          <Button
+            variant="contained"
+            disabled={reserveMutation.isPending}
+            onClick={() =>
+              reserveMutation.mutate(createReservationIntent(event.id))
+            }
+          >
+            {reserveMutation.isPending
+              ? 'Yer ayrılıyor...'
+              : 'Rezervasyonu onayla'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   )
 }
