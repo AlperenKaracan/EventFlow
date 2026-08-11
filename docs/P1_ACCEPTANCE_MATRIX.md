@@ -18,7 +18,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P1-GOV-01 | PR açıklama şablonu kapsam, risk, test, görsel ve merge kapılarını içerir | `.github/PULL_REQUEST_TEMPLATE.md` ve CI governance kontrolü | ✅ Kanıtlandı |
 | P1-GOV-02 | CODEOWNERS varsayılan ve hassas alan sahipliğini tanımlar | `.github/CODEOWNERS` ve CI governance kontrolü | ✅ Kanıtlandı |
 | P1-GOV-03 | SECURITY private bildirim ve düzeltme sürecini açıklar | `SECURITY.md` ve CI governance kontrolü | ✅ Kanıtlandı |
-| P1-SIG-01 | SIGTERM yeni bağlantı kabulünü durdurur ve akan isteği drain eder | Gerçek Linux testleri: slow request `200`, lifespan stop marker; Uvicorn sürümüne göre normal çıkış veya yeniden yükseltilmiş `SIGTERM` | ✅ Kanıtlandı |
+| P1-SIG-01 | SIGTERM yeni bağlantı kabulünü durdurur ve akan isteği drain eder | Gerçek Linux testi: yeni bağlantı reddedildi, slow request `200`, lifespan stop marker; Uvicorn sürümüne göre normal çıkış veya yeniden yükseltilmiş `SIGTERM` | ✅ Kanıtlandı |
 | P1-SIG-02 | Uvicorn graceful timeout environment ayarından gelir | Server unit testi | ✅ Kanıtlandı |
 | P1-SIG-03 | Redis ve PostgreSQL pool'ları lifespan sonunda kapanır | `aclose` ve `dispose` unit testi | ✅ Kanıtlandı |
 | P1-SIG-04 | Compose zorla sonlandırma süresi uygulama üst sınırından uzundur | `SIGTERM`, `stop_grace_period=130s`, config ve CI kontrolü | ✅ Kanıtlandı |

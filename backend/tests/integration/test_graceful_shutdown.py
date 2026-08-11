@@ -37,6 +37,20 @@ async def _wait_for_marker(marker: Path) -> None:
     raise AssertionError(f"marker was not created: {marker}")
 
 
+async def _wait_for_connection_rejection(port: int) -> None:
+    for _ in range(100):
+        try:
+            async with httpx.AsyncClient(
+                base_url=f"http://127.0.0.1:{port}",
+                timeout=0.2,
+            ) as probe:
+                await probe.get("/health")
+        except httpx.TransportError:
+            return
+        await asyncio.sleep(0.02)
+    raise AssertionError("server continued accepting connections after SIGTERM")
+
+
 @pytest.mark.skipif(os.name == "nt", reason="Windows cannot deliver POSIX SIGTERM")
 async def test_sigterm_drains_inflight_request_before_lifespan_shutdown(
     tmp_path: Path,
@@ -85,6 +99,7 @@ async def test_sigterm_drains_inflight_request_before_lifespan_shutdown(
             await _wait_for_marker(started_marker)
             process.send_signal(signal.SIGTERM)
 
+            await _wait_for_connection_rejection(port)
             response = await request
             assert response.status_code == 200
             assert response.json() == {"status": "completed"}
