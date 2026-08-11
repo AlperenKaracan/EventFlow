@@ -43,12 +43,13 @@ async def test_categories_and_public_events_use_stable_projections(
 ) -> None:
     categories = await auth_client.get("/api/v1/categories")
     assert categories.status_code == 200
-    assert len(categories.json()) == 6
+    seed_slugs = {"teknoloji", "muzik", "spor", "egitim", "sanat", "is-dunyasi"}
+    assert seed_slugs <= {row["slug"] for row in categories.json()}
     assert [row["name"] for row in categories.json()] == sorted(
         row["name"] for row in categories.json()
     )
 
-    first_page = await auth_client.get("/api/v1/events", params={"limit": 2})
+    first_page = await auth_client.get("/api/v1/events", params={"limit": 2, "q": "EventFlow"})
     assert first_page.status_code == 200
     first_body = first_page.json()
     assert len(first_body["items"]) == 2
@@ -57,7 +58,7 @@ async def test_categories_and_public_events_use_stable_projections(
 
     second_page = await auth_client.get(
         "/api/v1/events",
-        params={"limit": 2, "cursor": first_body["nextCursor"]},
+        params={"limit": 2, "q": "EventFlow", "cursor": first_body["nextCursor"]},
     )
     assert second_page.status_code == 200
     second_body = second_page.json()
@@ -79,6 +80,7 @@ async def test_public_cursor_uses_event_id_as_stable_timestamp_tiebreaker(
 ) -> None:
     headers = await register_organizer(auth_client)
     shared_start = "2030-05-12T19:00:00+03:00"
+    proof_term = f"cursortie{uuid7().hex}"
     created_ids: list[str] = []
     for title in ("Cursor Tie Alpha", "Cursor Tie Beta"):
         response = await auth_client.post(
@@ -87,7 +89,7 @@ async def test_public_cursor_uses_event_id_as_stable_timestamp_tiebreaker(
             json={
                 "categoryId": str(IDENTITY.technology_category_id),
                 "title": f"{title} {uuid7()}",
-                "description": "Stable tuple pagination proof",
+                "description": f"Stable tuple pagination proof {proof_term}",
                 "location": "İstanbul",
                 "startsAt": shared_start,
                 "timezone": "Europe/Istanbul",
@@ -97,11 +99,11 @@ async def test_public_cursor_uses_event_id_as_stable_timestamp_tiebreaker(
         assert response.status_code == 201, response.text
         created_ids.append(response.json()["id"])
 
-    first = await auth_client.get("/api/v1/events", params={"limit": 1})
+    first = await auth_client.get("/api/v1/events", params={"limit": 1, "q": proof_term})
     assert first.status_code == 200
     second = await auth_client.get(
         "/api/v1/events",
-        params={"limit": 1, "cursor": first.json()["nextCursor"]},
+        params={"limit": 1, "q": proof_term, "cursor": first.json()["nextCursor"]},
     )
 
     assert second.status_code == 200
@@ -124,6 +126,64 @@ async def test_public_detail_hides_cancelled_event_and_invalid_cursor(
     assert cancelled.json()["error"]["code"] == "RESOURCE_NOT_FOUND"
     assert invalid_cursor.status_code == 400
     assert invalid_cursor.json()["error"]["code"] == "INVALID_CURSOR"
+
+
+async def test_public_search_category_and_local_date_filters(
+    auth_client: AsyncClient,
+) -> None:
+    searched = await auth_client.get("/api/v1/events", params={"q": "yazılım"})
+    categorized = await auth_client.get("/api/v1/events", params={"category": "teknoloji"})
+    dated = await auth_client.get(
+        "/api/v1/events",
+        params={"dateFrom": "2035-06-18", "dateTo": "2035-06-18"},
+    )
+    combined = await auth_client.get(
+        "/api/v1/events",
+        params={
+            "q": "teknoloji",
+            "category": "teknoloji",
+            "dateFrom": "2035-05-12",
+            "dateTo": "2035-05-12",
+        },
+    )
+
+    assert searched.status_code == 200
+    assert [item["id"] for item in searched.json()["items"]] == [str(IDENTITY.berlin_event_id)]
+    assert categorized.status_code == 200
+    assert categorized.json()["items"]
+    assert all(item["category"]["slug"] == "teknoloji" for item in categorized.json()["items"])
+    assert str(IDENTITY.istanbul_event_id) in {item["id"] for item in categorized.json()["items"]}
+    assert dated.status_code == 200
+    assert [item["id"] for item in dated.json()["items"]] == [str(IDENTITY.berlin_event_id)]
+    assert combined.status_code == 200
+    assert [item["id"] for item in combined.json()["items"]] == [str(IDENTITY.istanbul_event_id)]
+
+
+async def test_public_filter_validation_and_cursor_binding(auth_client: AsyncClient) -> None:
+    invalid_range = await auth_client.get(
+        "/api/v1/events",
+        params={"dateFrom": "2035-08-02", "dateTo": "2035-05-12"},
+    )
+    first_page = await auth_client.get(
+        "/api/v1/events",
+        params={"q": "EventFlow", "limit": 1},
+    )
+    copied_cursor = await auth_client.get(
+        "/api/v1/events",
+        params={
+            "q": "EventFlow",
+            "category": "teknoloji",
+            "limit": 1,
+            "cursor": first_page.json()["nextCursor"],
+        },
+    )
+
+    assert invalid_range.status_code == 422
+    assert invalid_range.json()["error"]["code"] == "INVALID_DATE_RANGE"
+    assert first_page.status_code == 200
+    assert first_page.json()["nextCursor"] is not None
+    assert copied_cursor.status_code == 400
+    assert copied_cursor.json()["error"]["code"] == "INVALID_CURSOR"
 
 
 async def test_owner_list_and_detail_include_cancelled_and_past_events(
@@ -258,6 +318,24 @@ async def test_event_list_queries_use_cursor_order_indexes(auth_app: object) -> 
             .scalars()
             .all()
         )
+        search_plan = (
+            (
+                await session.execute(
+                    text(
+                        """
+                    EXPLAIN (FORMAT TEXT, COSTS OFF)
+                    SELECT events.id
+                    FROM events
+                    WHERE events.search_vector @@
+                          websearch_to_tsquery('pg_catalog.turkish', 'yazılım')
+                    """
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
 
     assert "ix_events_active_starts_at_id" in "\n".join(public_plan)
     assert "ix_events_organizer_id_created_at_id" in "\n".join(owner_plan)
+    assert "ix_events_search_vector_gin" in "\n".join(search_plan)

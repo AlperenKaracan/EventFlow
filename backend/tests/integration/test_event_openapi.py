@@ -38,6 +38,20 @@ async def test_event_openapi_documents_operations_errors_and_cursor_contract(
     paths = document["paths"]
     assert paths["/api/v1/categories"]["get"]["operationId"] == "listCategories"
     assert paths["/api/v1/events"]["get"]["operationId"] == "listPublicEvents"
+    public_parameters = {
+        parameter["name"]: parameter for parameter in paths["/api/v1/events"]["get"]["parameters"]
+    }
+    assert set(public_parameters) == {
+        "limit",
+        "cursor",
+        "q",
+        "category",
+        "dateFrom",
+        "dateTo",
+    }
+    expected_date_schema = {"type": "string", "format": "date"}
+    assert expected_date_schema in public_parameters["dateFrom"]["schema"]["anyOf"]
+    assert expected_date_schema in public_parameters["dateTo"]["schema"]["anyOf"]
     assert paths["/api/v1/events"]["post"]["operationId"] == "createEvent"
     assert paths["/api/v1/events/{event_id}"]["get"]["operationId"] == "getPublicEvent"
     assert paths["/api/v1/events/{event_id}"]["patch"]["operationId"] == "updateEvent"

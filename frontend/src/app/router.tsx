@@ -4,9 +4,13 @@ import {
   createRouter,
 } from '@tanstack/react-router'
 
-import { PublicEventsPage } from '../features/events/PublicEventsPage'
 import { RouteNotFoundPage } from '../shared/RouteNotFoundPage'
-import { LoginPage, PublicEventDetailPage, RegisterPage } from './lazyPages'
+import {
+  LoginPage,
+  PublicEventDetailPage,
+  PublicEventsPage,
+  RegisterPage,
+} from './lazyPages'
 import {
   OrganizerAttendeesRoute,
   OrganizerEventCreateRoute,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Any
 from uuid import UUID
 
@@ -14,6 +15,7 @@ from app.events.cursor import (
 )
 from app.events.models import Event, EventStatus
 from app.events.repository import (
+    PublicEventFilters,
     add_event,
     event_to_record,
     get_active_category,
@@ -45,9 +47,31 @@ async def get_public_event_page(
     session: AsyncSession,
     limit: int,
     raw_cursor: str | None,
+    query: str | None,
+    category_slug: str | None,
+    date_from: date | None,
+    date_to: date | None,
     settings: Settings,
 ) -> PublicEventPage:
-    fingerprint = filter_fingerprint({})
+    normalized_query = " ".join(query.split()) if query is not None else None
+    if not normalized_query:
+        normalized_query = None
+    if date_from is not None and date_to is not None and date_from > date_to:
+        raise invalid_date_range_error()
+    filters = PublicEventFilters(
+        query=normalized_query,
+        category_slug=category_slug,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    fingerprint = filter_fingerprint(
+        {
+            "q": filters.query,
+            "category": filters.category_slug,
+            "dateFrom": filters.date_from.isoformat() if filters.date_from else None,
+            "dateTo": filters.date_to.isoformat() if filters.date_to else None,
+        }
+    )
     cursor = (
         decode_event_cursor(
             raw_cursor,
@@ -58,7 +82,12 @@ async def get_public_event_page(
         if raw_cursor is not None
         else None
     )
-    records = await list_public_events(session=session, limit=limit + 1, cursor=cursor)
+    records = await list_public_events(
+        session=session,
+        limit=limit + 1,
+        cursor=cursor,
+        filters=filters,
+    )
     has_more = len(records) > limit
     page_records = records[:limit]
     next_cursor = None
@@ -428,6 +457,14 @@ def invalid_category_error() -> AppError:
         status_code=422,
         code="INVALID_CATEGORY",
         message="Aktif bir kategori seçin.",
+    )
+
+
+def invalid_date_range_error() -> AppError:
+    return AppError(
+        status_code=422,
+        code="INVALID_DATE_RANGE",
+        message="Başlangıç tarihi bitiş tarihinden sonra olamaz.",
     )
 
 

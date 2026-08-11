@@ -241,6 +241,7 @@ Bu constraint'ler tek başına use-case algoritması değildir. Event lifecycle'
 | `(refresh_tokens.user_id, expires_at)` | Kullanıcı bazlı expired cleanup | Token write alanı |
 | `(refresh_tokens.family_id, revoked_at)` | Replay halinde family-wide revoke | Rotation/revoke write alanı |
 | Active event `(starts_at, id)` partial | Public cursor sıralaması | Aktif event update'lerinde bakım |
+| Event `search_vector` GIN | Türkçe başlık/açıklama full-text araması | Event title/description write'ında generated vector ve GIN bakımı |
 | Event `(organizer_id, created_at, id)` | Owner-scoped liste/detail akışı | Event write alanı |
 | Reservation `(event_id, attendee_id)` unique | Duplicate reservation engeli | Rezervasyon create/rebook kontrol maliyeti |
 | Reservation attendee history | Kullanıcının cursor geçmişi | Reservation statü update'inde bakım |
@@ -248,7 +249,7 @@ Bu constraint'ler tek başına use-case algoritması değildir. Event lifecycle'
 | Idempotency `(user_id, operation, key)` unique | Concurrent claim/replay | Her idempotent işlemde write contention |
 | Idempotency `expires_at` | Retention cleanup | Snapshot write alanı |
 
-Public/owner event ve attendee/history reservation cursor sorguları kontrollü PostgreSQL `EXPLAIN` testlerinde ilgili composite indeksleri seçmektedir. Erken genel amaçlı indeks eklenmedi; her indeks bir sorgu veya invariant ile ilişkilidir.
+Public/owner event ve attendee/history reservation cursor sorguları kontrollü PostgreSQL `EXPLAIN` testlerinde ilgili composite indeksleri seçmektedir. Public arama sorgusu da generated `tsvector` üzerindeki GIN indeksini seçer. Tarih filtresi etkinliğin kendi IANA saat dilimindeki takvim gününü hesapladığı için ayrı bir B-tree indeksine bağlanmamıştır; event kataloğu büyüdüğünde bu sorgunun maliyeti ölçülmeden ek yazma maliyeti alınmayacaktır. Erken genel amaçlı indeks eklenmedi; her indeks bir sorgu veya invariant ile ilişkilidir.
 
 ## Güvenlik sınırları
 

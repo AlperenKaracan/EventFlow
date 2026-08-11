@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import date, datetime
 from typing import cast
 from uuid import UUID
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import Date, and_, func, or_, select
+from sqlalchemy import cast as sa_cast
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.categories.models import Category
@@ -37,6 +38,14 @@ class EventRecord:
     created_at: datetime
     updated_at: datetime
     cancelled_at: datetime | None
+
+
+@dataclass(frozen=True, slots=True)
+class PublicEventFilters:
+    query: str | None = None
+    category_slug: str | None = None
+    date_from: date | None = None
+    date_to: date | None = None
 
 
 async def list_active_categories(session: AsyncSession) -> list[CategoryRecord]:
@@ -142,7 +151,11 @@ def event_to_record(*, event: Event, category: CategoryRecord) -> EventRecord:
 
 
 async def list_public_events(
-    *, session: AsyncSession, limit: int, cursor: EventCursor | None
+    *,
+    session: AsyncSession,
+    limit: int,
+    cursor: EventCursor | None,
+    filters: PublicEventFilters,
 ) -> list[EventRecord]:
     statement = (
         select(Event, Category)
@@ -154,6 +167,16 @@ async def list_public_events(
         .order_by(Event.starts_at.asc(), Event.id.asc())
         .limit(limit)
     )
+    if filters.query is not None:
+        search_query = func.websearch_to_tsquery("pg_catalog.turkish", filters.query)
+        statement = statement.where(Event.search_vector.bool_op("@@")(search_query))
+    if filters.category_slug is not None:
+        statement = statement.where(Category.slug == filters.category_slug)
+    local_event_date = sa_cast(func.timezone(Event.timezone, Event.starts_at), Date)
+    if filters.date_from is not None:
+        statement = statement.where(local_event_date >= filters.date_from)
+    if filters.date_to is not None:
+        statement = statement.where(local_event_date <= filters.date_to)
     if cursor is not None:
         statement = statement.where(
             or_(

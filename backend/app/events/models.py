@@ -6,6 +6,7 @@ from uuid import UUID
 
 from sqlalchemy import (
     CheckConstraint,
+    Computed,
     DateTime,
     Enum,
     ForeignKey,
@@ -46,6 +47,7 @@ class Event(Base):
             "id",
             postgresql_where=text("status = 'ACTIVE'"),
         ),
+        Index("ix_events_search_vector_gin", "search_vector", postgresql_using="gin"),
         Index("ix_events_organizer_id_created_at_id", "organizer_id", "created_at", "id"),
     )
 
@@ -84,3 +86,12 @@ class Event(Base):
         DateTime(timezone=True), nullable=False, server_default=func.now()
     )
     cancelled_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    search_vector: Mapped[str] = mapped_column(
+        postgresql.TSVECTOR,
+        Computed(
+            "setweight(to_tsvector('pg_catalog.turkish', coalesce(title, '')), 'A') || "
+            "setweight(to_tsvector('pg_catalog.turkish', coalesce(description, '')), 'B')",
+            persisted=True,
+        ),
+        nullable=False,
+    )

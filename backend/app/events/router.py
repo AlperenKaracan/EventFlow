@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated, cast
 from uuid import UUID
 
@@ -60,11 +61,22 @@ async def public_events(
     session: Annotated[AsyncSession, Depends(get_session)],
     limit: Annotated[int, Query(ge=1, le=100)] = 20,
     cursor: str | None = None,
+    q: Annotated[str | None, Query(min_length=1, max_length=120)] = None,
+    category: Annotated[
+        str | None,
+        Query(min_length=1, max_length=80, pattern=r"^[a-z0-9]+(?:-[a-z0-9]+)*$"),
+    ] = None,
+    date_from: Annotated[date | None, Query(alias="dateFrom")] = None,
+    date_to: Annotated[date | None, Query(alias="dateTo")] = None,
 ) -> PublicEventPage:
     return await get_public_event_page(
         session=session,
         limit=limit,
         raw_cursor=cursor,
+        query=q,
+        category_slug=category,
+        date_from=date_from,
+        date_to=date_to,
         settings=cast(Settings, request.app.state.settings),
     )
 

@@ -6,6 +6,7 @@ export interface CursorPagerState {
   canGoBack: boolean
   goBack: () => void
   goForward: (nextCursor: string) => void
+  reset: () => void
 }
 
 export function useCursorPager(): CursorPagerState {
@@ -28,11 +29,17 @@ export function useCursorPager(): CursorPagerState {
     })
   }, [])
 
+  const reset = useCallback(() => {
+    setCursor(null)
+    setHistory([])
+  }, [])
+
   return {
     cursor,
     page: history.length + 1,
     canGoBack: history.length > 0,
     goBack,
     goForward,
+    reset,
   }
 }

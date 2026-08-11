@@ -5,6 +5,7 @@ import { AppProviders } from './AppProviders'
 import { App } from './App'
 
 vi.mock('../api/publicEvents', () => ({
+  fetchPublicCategories: vi.fn().mockResolvedValue([]),
   fetchPublicEvents: vi.fn().mockResolvedValue({
     items: [],
     nextCursor: null,
@@ -23,7 +24,11 @@ describe('App', () => {
     )
 
     expect(
-      await screen.findByRole('heading', { name: 'Yaklaşan etkinlikler' }),
+      await screen.findByRole(
+        'heading',
+        { name: 'Yaklaşan etkinlikler' },
+        { timeout: 5000 },
+      ),
     ).toBeInTheDocument()
   })
 })

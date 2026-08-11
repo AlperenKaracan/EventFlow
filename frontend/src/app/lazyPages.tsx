@@ -13,6 +13,11 @@ export const PublicEventDetailPage = lazy(async () => ({
     .PublicEventDetailPage,
 }))
 
+export const PublicEventsPage = lazy(async () => ({
+  default: (await import('../features/events/PublicEventsPage'))
+    .PublicEventsPage,
+}))
+
 export const OrganizerEventsPage = lazy(async () => ({
   default: (await import('../features/organizer/OrganizerEventsPage'))
     .OrganizerEventsPage,

@@ -73,8 +73,12 @@ Query parametreleri:
 
 - `limit`: `1-100`, varsayılan `20`.
 - `cursor`: Önceki yanıttaki opaque ve imzalı `nextCursor`.
+- `q`: Başlık ve açıklamada Türkçe full-text arama; en fazla `120` karakter.
+- `category`: Kategori slug değeri; örneğin `teknoloji` veya `is-dunyasi`.
+- `dateFrom`: Etkinliğin kendi IANA saat dilimindeki yerel başlangıç günü için dahil alt sınır, `YYYY-MM-DD`.
+- `dateTo`: Etkinliğin kendi IANA saat dilimindeki yerel başlangıç günü için dahil üst sınır, `YYYY-MM-DD`.
 
-Yalnız gelecekte başlayan `ACTIVE` eventler `(startsAt ASC, id ASC)` sırasıyla döner. Yanıt `items`, `nextCursor` ve `hasMore` alanlarını içerir; API `previousCursor` üretmez. Bozuk, değiştirilmiş veya başka liste bağlamından kopyalanmış cursor `400 INVALID_CURSOR` döner.
+Yalnız gelecekte başlayan `ACTIVE` eventler `(startsAt ASC, id ASC)` sırasıyla döner. Filtreler birlikte `AND` mantığıyla uygulanır. `dateFrom > dateTo` isteği `422 INVALID_DATE_RANGE` döner. Yanıt `items`, `nextCursor` ve `hasMore` alanlarını içerir; API `previousCursor` üretmez. Cursor sürüm, sıralama tuple'ı ve normalize edilmiş bütün filtrelerin hash'ini taşır. Bozuk, değiştirilmiş veya başka filtre/liste bağlamından kopyalanmış cursor `400 INVALID_CURSOR` döner.
 
 ### `GET /api/v1/events/{eventId}`
 

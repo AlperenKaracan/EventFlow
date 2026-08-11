@@ -265,3 +265,15 @@ Değerlendirdiğim alternatifler: FastAPI'nin varsayılan jsDelivr CDN bağlant�
 Neden bunu seçtim: Yerel geliştirme, kapalı ağ ve CDN engeli durumlarında `/docs` boş kalmaz; dokümantasyon render'ı üçüncü taraf çalışma zamanı erişimine bağlı olmaz.
 
 Neyi feda ettim: Backend imajı Swagger statik dosyaları nedeniyle büyür ve paket sürümü ayrıca güncellenmelidir; production kullanıcıları şemayı kullanır fakat etkileşimli UI görmez.
+
+## D-023 - Event araması generated Türkçe tsvector kullanır
+
+Durum: PR 6 P1'de migration, API, query-plan ve frontend filtre testleriyle uygulandı.
+
+Karar: Event başlığı A, açıklaması B ağırlığıyla PostgreSQL tarafından üretilen stored `tsvector` alanında `pg_catalog.turkish` yapılandırmasıyla indekslenecek; arama `websearch_to_tsquery` ve GIN üzerinden çalışacak. Kategori slug ile, tarih aralığı ise her etkinliğin kendi IANA saat dilimindeki dahil yerel takvim günüyle filtrelenecek. Cursor bütün normalize filtrelerin hash'ine bağlanacak.
+
+Değerlendirdiğim alternatifler: `ILIKE '%q%'`; harici arama servisi; UTC gününe göre tarih filtresi; filtrelerden bağımsız cursor; her filtre kombinasyonu için ek B-tree indeksleri.
+
+Neden bunu seçtim: Modüler monolit sınırı korunur, Türkçe kelime çözümleme PostgreSQL içinde deterministik kalır, GIN başlık/açıklama taramasını ölçekler ve kullanıcı farklı saat dilimindeki etkinlikleri etkinliğin ilan edilen yerel gününe göre bulur. Filtre hash'i eski cursor'ın yeni sorguda kayıt atlamasını veya tekrarlamasını önler.
+
+Neyi feda ettim: Event yazımları generated vector ve GIN bakım maliyeti taşır; yerel tarih ifadesi satır başına timezone dönüşümü yaptığı için ayrı bir indeks kullanmaz. Katalog ölçeği büyürse ölçüme dayalı expression index veya farklı arama mimarisi ayrıca değerlendirilmelidir.
