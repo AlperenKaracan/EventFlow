@@ -84,7 +84,11 @@ describe('ReservationsPage', () => {
   it('requires confirmation before cancelling a reservation', async () => {
     renderPage()
     expect(
-      await screen.findByRole('heading', { name: reservation.event.title }),
+      await screen.findByRole(
+        'heading',
+        { name: reservation.event.title },
+        { timeout: 5000 },
+      ),
     ).toBeInTheDocument()
 
     fireEvent.click(

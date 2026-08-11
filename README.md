@@ -200,6 +200,10 @@ Pop-Location
 
 ## Ürün ve API özeti
 
+### Arayüz ve deneyim
+
+EventFlow tek koyu temalı, responsive ve erişilebilir bir tasarım sistemi kullanır. Keşif, kimlik, rezervasyon ve organizatör akışlarının tasarım kararları, önce/sonra görselleri ve doğrulama kapsamı [UI/UX yeniden tasarım belgesinde](docs/UI_UX_REDESIGN.md) bulunur.
+
 - `GET /api/v1/categories`
 - `GET /api/v1/events` ve `GET /api/v1/events/{eventId}`
 - `POST /api/v1/events`, `PATCH /api/v1/events/{eventId}`, `DELETE /api/v1/events/{eventId}`
