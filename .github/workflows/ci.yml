@@ -177,6 +177,8 @@ jobs:
           test "$(docker compose exec -T frontend id -u)" = '101'
           test "$(docker compose exec -T alloy id -u)" = '473'
           test "$(docker inspect eventflow-loki-1 --format '{{.Config.User}}')" = '10001'
+          test "$(docker compose exec -T prometheus id -u)" = '65534'
+          docker compose exec -T prometheus promtool check config /etc/prometheus/prometheus.yml
           curl --fail --silent http://127.0.0.1:8000/health
           curl --fail --silent http://127.0.0.1:8000/ready
           curl --fail --silent http://127.0.0.1:8080/health
@@ -220,6 +222,7 @@ jobs:
           health_urls = (
               "http://loki:3100/ready",
               "http://alloy:12345/-/healthy",
+              "http://prometheus:9090/-/ready",
           )
           for _ in range(30):
               try:
@@ -251,13 +254,23 @@ jobs:
           expected = {"environment", "level", "route", "service_name"}
           if labels != expected:
               raise SystemExit(f"unexpected Loki index labels: {sorted(labels)}")
+
+          prometheus_query = urllib.parse.urlencode(
+              {"query": 'up{job="eventflow-backend"}'}
+          )
+          with urllib.request.urlopen(
+              f"http://prometheus:9090/api/v1/query?{prometheus_query}", timeout=5
+          ) as response:
+              targets = json.load(response)["data"]["result"]
+          if not targets or targets[0]["value"][1] != "1":
+              raise SystemExit("Prometheus backend target is not UP")
           PY
 
       - name: Print diagnostics
         if: always()
         run: |
           docker compose ps -a
-          docker compose logs --no-color migrate seed backend frontend loki alloy
+          docker compose logs --no-color migrate seed backend frontend loki alloy prometheus
 
       - name: Stop stack
         if: always()

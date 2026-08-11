@@ -38,3 +38,16 @@ def test_compose_mounts_docker_socket_read_only_and_uses_named_storage() -> None
     assert "loki_data:/loki" in compose
     assert 'user: "473:473"' in compose
     assert "${DOCKER_SOCKET_GID:-0}" in compose
+
+
+def test_prometheus_scrapes_only_the_backend_metrics_endpoint() -> None:
+    config = (
+        REPOSITORY_ROOT / "observability" / "prometheus" / "prometheus.yml"
+    ).read_text(encoding="utf-8")
+    compose = (REPOSITORY_ROOT / "compose.yaml").read_text(encoding="utf-8")
+
+    assert "job_name: eventflow-backend" in config
+    assert "metrics_path: /metrics" in config
+    assert 'targets: ["backend:8000"]' in config
+    assert "prom/prometheus:v3.13.2" in compose
+    assert "prometheus_data:/prometheus" in compose
