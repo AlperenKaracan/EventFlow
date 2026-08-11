@@ -71,3 +71,67 @@ async def test_seed_is_repeatable_without_duplicates(migrated_postgres_url: str)
     }
     assert all(value.startswith("$argon2id$") for value in second_snapshot["password_hashes"])
     assert second_snapshot["full_event"] == (1, 1, 1)
+
+    engine = create_async_engine(migrated_postgres_url)
+    async with engine.begin() as connection:
+        await connection.execute(
+            text(
+                """
+                UPDATE events
+                SET title = 'Organizatörün güncellediği başlık',
+                    status = 'CANCELLED',
+                    reserved_count = 0,
+                    version = 2,
+                    cancelled_at = now()
+                WHERE id = '30000000-0000-7000-8000-000000000003'
+                """
+            )
+        )
+        await connection.execute(
+            text(
+                """
+                UPDATE reservations
+                SET status = 'CANCELLED_BY_EVENT', cancelled_at = now()
+                WHERE id = '40000000-0000-7000-8000-000000000001'
+                """
+            )
+        )
+        await connection.execute(
+            text(
+                """
+                UPDATE users
+                SET full_name = 'Kullanıcının güncellediği ad'
+                WHERE id = '10000000-0000-7000-8000-000000000002'
+                """
+            )
+        )
+    await engine.dispose()
+
+    await seed_database(migrated_postgres_url, **parameters)
+
+    engine = create_async_engine(migrated_postgres_url)
+    async with engine.connect() as connection:
+        domain_state = (
+            await connection.execute(
+                text(
+                    """
+                    SELECT e.title, e.status, e.reserved_count, e.version,
+                           r.status, u.full_name
+                    FROM events e
+                    JOIN reservations r ON r.event_id = e.id
+                    JOIN users u ON u.id = r.attendee_id
+                    WHERE e.id = '30000000-0000-7000-8000-000000000003'
+                    """
+                )
+            )
+        ).one()
+    await engine.dispose()
+
+    assert tuple(domain_state) == (
+        "Organizatörün güncellediği başlık",
+        "CANCELLED",
+        0,
+        2,
+        "CANCELLED_BY_EVENT",
+        "Kullanıcının güncellediği ad",
+    )

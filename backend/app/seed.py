@@ -75,17 +75,7 @@ async def seed_users(
         },
     ]
     statement = insert(User).values(rows)
-    await connection.execute(
-        statement.on_conflict_do_update(
-            index_elements=[User.email],
-            set_={
-                "full_name": statement.excluded.full_name,
-                "role": statement.excluded.role,
-                "status": statement.excluded.status,
-                "updated_at": datetime.now(tz=UTC),
-            },
-        )
-    )
+    await connection.execute(statement.on_conflict_do_nothing(index_elements=[User.email]))
 
 
 async def seed_categories(connection: AsyncConnection) -> None:
@@ -192,26 +182,7 @@ def event_rows() -> list[dict[str, object]]:
 async def seed_events(connection: AsyncConnection) -> None:
     rows = event_rows()
     statement = insert(Event).values(rows)
-    await connection.execute(
-        statement.on_conflict_do_update(
-            index_elements=[Event.id],
-            set_={
-                "organizer_id": statement.excluded.organizer_id,
-                "category_id": statement.excluded.category_id,
-                "title": statement.excluded.title,
-                "description": statement.excluded.description,
-                "location": statement.excluded.location,
-                "starts_at": statement.excluded.starts_at,
-                "timezone": statement.excluded.timezone,
-                "capacity": statement.excluded.capacity,
-                "reserved_count": statement.excluded.reserved_count,
-                "status": statement.excluded.status,
-                "version": statement.excluded.version,
-                "cancelled_at": statement.excluded.cancelled_at,
-                "updated_at": datetime.now(tz=UTC),
-            },
-        )
-    )
+    await connection.execute(statement.on_conflict_do_nothing(index_elements=[Event.id]))
 
 
 async def seed_reservations(connection: AsyncConnection) -> None:
@@ -233,13 +204,8 @@ async def seed_reservations(connection: AsyncConnection) -> None:
     ]
     statement = insert(Reservation).values(rows)
     await connection.execute(
-        statement.on_conflict_do_update(
+        statement.on_conflict_do_nothing(
             constraint="uq_reservations_event_attendee",
-            set_={
-                "status": statement.excluded.status,
-                "cancelled_at": statement.excluded.cancelled_at,
-                "updated_at": datetime.now(tz=UTC),
-            },
         )
     )
 
