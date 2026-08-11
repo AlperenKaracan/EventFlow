@@ -58,11 +58,16 @@ describe('EventCard', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('presents Turkish date and location labels', async () => {
+  it('presents Turkish date, location, and capacity', async () => {
     renderCard()
 
-    expect(await screen.findByText('TARİH')).toBeInTheDocument()
-    expect(screen.getByText('KONUM')).toBeInTheDocument()
+    expect(await screen.findByText(/10 Eylül/)).toBeInTheDocument()
+    expect(screen.getByText('İstanbul')).toBeInTheDocument()
     expect(screen.getByText('80 yer kaldı')).toBeInTheDocument()
+    expect(
+      screen.getByRole('progressbar', {
+        name: 'Kontenjanın yüzde 20 kadarı dolu',
+      }),
+    ).toBeInTheDocument()
   })
 })

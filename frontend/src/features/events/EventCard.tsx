@@ -2,33 +2,35 @@ import { Link } from '@tanstack/react-router'
 import {
   Box,
   Card,
-  CardActions,
-  CardContent,
   Chip,
+  LinearProgress,
   Stack,
   Typography,
 } from '@mui/material'
 
 import type { PublicEventResponse } from '../../api/generated'
+import {
+  eventDateParts,
+  formatShortEventDateTime,
+} from '../../shared/eventTime'
 import { getCategoryAccent } from './categoryAccent'
-
-const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
-  dateStyle: 'long',
-  timeStyle: 'short',
-})
 
 export function EventCard({ event }: { event: PublicEventResponse }) {
   const accent = getCategoryAccent(event.category.slug)
+  const date = eventDateParts(event.startsAt, event.timezone)
+  const occupancy = Math.min(
+    100,
+    Math.round((event.reservedCount / event.capacity) * 100),
+  )
 
   return (
     <Card
       component="article"
       variant="outlined"
       sx={{
-        backgroundImage: `linear-gradient(145deg, ${accent.background}, transparent 42%)`,
         display: 'flex',
         flexDirection: 'column',
-        minHeight: 270,
+        minHeight: 340,
         overflow: 'hidden',
         position: 'relative',
         transition:
@@ -36,117 +38,134 @@ export function EventCard({ event }: { event: PublicEventResponse }) {
         '&::before': {
           backgroundColor: accent.foreground,
           content: '""',
-          height: 4,
+          height: 3,
           inset: '0 0 auto',
           position: 'absolute',
         },
         '&:hover': {
           borderColor: accent.border,
-          boxShadow: `0 22px 52px ${accent.glow}`,
-          transform: 'translateY(-4px)',
+          boxShadow: `0 22px 54px ${accent.glow}`,
+          transform: 'translateY(-3px)',
         },
-        '&:focus-within': {
-          borderColor: accent.foreground,
-          boxShadow: `0 0 0 3px ${accent.glow}`,
-        },
-        '@media (prefers-reduced-motion: reduce)': {
-          transition: 'none',
-          '&:hover': { transform: 'none' },
-        },
+        '&:focus-within': { borderColor: accent.foreground },
       }}
     >
-      <CardContent sx={{ flexGrow: 1, p: 3 }}>
-        <Stack
-          direction="row"
-          sx={{ alignItems: 'center', gap: 1, justifyContent: 'space-between' }}
-        >
-          <Chip
-            label={event.category.name}
-            size="small"
-            variant="outlined"
-            sx={{
-              backgroundColor: accent.background,
-              borderColor: accent.border,
-              color: accent.foreground,
-            }}
-          />
-          <Typography
-            variant="caption"
-            color={event.availableCapacity > 0 ? 'success.main' : 'error.main'}
-            sx={{ fontWeight: 750 }}
-          >
-            {event.availableCapacity > 0
-              ? `${event.availableCapacity} yer kaldı`
-              : 'Kontenjan dolu'}
-          </Typography>
-        </Stack>
-        <Typography
-          component="h2"
-          variant="h5"
-          sx={{ fontWeight: 820, lineHeight: 1.2, mt: 3 }}
-        >
-          {event.title}
-        </Typography>
-        <Stack sx={{ gap: 1.5, mt: 2.5 }}>
-          <Stack sx={{ gap: 0.25 }}>
-            <Typography
-              color="text.secondary"
-              variant="caption"
-              sx={{ fontWeight: 800, letterSpacing: '0.08em' }}
-            >
-              TARİH
-            </Typography>
-            <Typography sx={{ color: 'text.primary', fontWeight: 700 }}>
-              {dateFormatter.format(new Date(event.startsAt))}
-            </Typography>
-          </Stack>
-          <Stack sx={{ gap: 0.25 }}>
-            <Typography
-              color="text.secondary"
-              variant="caption"
-              sx={{ fontWeight: 800, letterSpacing: '0.08em' }}
-            >
-              KONUM
-            </Typography>
-            <Typography color="text.secondary">{event.location}</Typography>
-          </Stack>
-        </Stack>
-      </CardContent>
-      <CardActions
-        sx={{
-          borderColor: 'divider',
-          borderTop: '1px solid',
-          px: 2.25,
-          py: 1.6,
+      <Link
+        to="/events/$eventId"
+        params={{ eventId: event.id }}
+        aria-label="Etkinliği incele"
+        style={{
+          color: 'inherit',
+          display: 'flex',
+          flex: 1,
+          textDecoration: 'none',
         }}
       >
-        <Link
-          to="/events/$eventId"
-          params={{ eventId: event.id }}
-          style={{ textDecoration: 'none' }}
+        <Box
+          sx={{
+            display: 'flex',
+            flex: 1,
+            flexDirection: 'column',
+            p: 3,
+          }}
         >
-          <Box
-            component="span"
+          <Stack
+            direction="row"
+            sx={{ alignItems: 'flex-start', justifyContent: 'space-between' }}
+          >
+            <Box
+              aria-hidden="true"
+              sx={{
+                alignItems: 'center',
+                bgcolor: accent.background,
+                border: '1px solid',
+                borderColor: accent.border,
+                borderRadius: 2.5,
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 58,
+                px: 1,
+                py: 1,
+              }}
+            >
+              <Typography
+                sx={{
+                  color: accent.foreground,
+                  fontSize: 11,
+                  fontWeight: 850,
+                  letterSpacing: '0.08em',
+                }}
+              >
+                {date.month}
+              </Typography>
+              <Typography
+                sx={{ fontSize: 25, fontWeight: 850, lineHeight: 1.05 }}
+              >
+                {date.day}
+              </Typography>
+            </Box>
+            <Chip
+              label={event.category.name}
+              size="small"
+              variant="outlined"
+              sx={{
+                backgroundColor: accent.background,
+                borderColor: accent.border,
+                color: accent.foreground,
+              }}
+            />
+          </Stack>
+
+          <Typography component="h2" variant="h5" sx={{ mt: 3 }}>
+            {event.title}
+          </Typography>
+          <Typography color="text.secondary" variant="body2" sx={{ mt: 1.25 }}>
+            {formatShortEventDateTime(event.startsAt, event.timezone)}
+          </Typography>
+          <Typography color="text.secondary" variant="body2" sx={{ mt: 0.5 }}>
+            {event.location}
+          </Typography>
+
+          <Box sx={{ flexGrow: 1 }} />
+          <Stack
+            direction="row"
             sx={{
               alignItems: 'center',
-              border: '1px solid',
-              borderColor: 'primary.main',
-              borderRadius: 2.5,
-              color: 'primary.main',
-              display: 'inline-flex',
-              fontSize: '0.875rem',
-              fontWeight: 750,
-              gap: 0.75,
-              minHeight: 38,
-              px: 2,
-              transition: 'background-color 150ms ease',
-              '&:hover': { bgcolor: 'rgba(167, 139, 250, 0.08)' },
+              justifyContent: 'space-between',
+              mt: 3,
             }}
           >
-            Etkinliği incele <span aria-hidden="true">→</span>
-          </Box>
-        </Link>
-      </CardActions>
+            <Typography
+              color={
+                event.availableCapacity > 0 ? 'success.main' : 'error.main'
+              }
+              variant="caption"
+              sx={{ fontWeight: 800 }}
+            >
+              {event.availableCapacity > 0
+                ? `${event.availableCapacity} yer kaldı`
+                : 'Kontenjan dolu'}
+            </Typography>
+            <Typography
+              color="primary.light"
+              variant="body2"
+              sx={{ fontWeight: 780 }}
+            >
+              Detayları gör{' '}
+              <Box component="span" aria-hidden="true">
+                →
+              </Box>
+            </Typography>
+          </Stack>
+          <LinearProgress
+            aria-label={`Kontenjanın yüzde ${occupancy} kadarı dolu`}
+            color={event.availableCapacity > 0 ? 'primary' : 'error'}
+            value={occupancy}
+            variant="determinate"
+            sx={{ height: 4, mt: 1.5 }}
+          />
+        </Box>
+      </Link>
     </Card>
   )
 }

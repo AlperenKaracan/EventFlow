@@ -87,13 +87,13 @@ describe('PublicEventsPage', () => {
     expect(screen.getByText('ETKİNLİK KEŞFİ')).toBeInTheDocument()
     expect(await screen.findByText('İlk sayfa')).toBeInTheDocument()
     expect(screen.getByText('1 etkinlik listeleniyor')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Sonraki' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sonraki sayfa' }))
 
     expect(await screen.findByText('İkinci sayfa')).toBeInTheDocument()
     expect(screen.getByText('Sayfa 2')).toBeInTheDocument()
     expect(fetchPublicEvents).toHaveBeenLastCalledWith('cursor-2', emptyFilters)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Önceki' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Önceki sayfa' }))
     expect(await screen.findByText('İlk sayfa')).toBeInTheDocument()
     expect(screen.getByText('Sayfa 1')).toBeInTheDocument()
   })
@@ -110,13 +110,13 @@ describe('PublicEventsPage', () => {
     renderWithQueryClient(<PublicEventsPage />)
 
     await screen.findByText('İlk sayfa')
-    fireEvent.click(screen.getByRole('button', { name: 'Sonraki' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sonraki sayfa' }))
     await screen.findByText('Sayfa 2')
 
     fireEvent.change(screen.getByRole('textbox', { name: 'Etkinlik ara' }), {
       target: { value: '  yazılım   atölyesi  ' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Filtreleri uygula' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sonuçları göster' }))
 
     await waitFor(() =>
       expect(fetchPublicEvents).toHaveBeenLastCalledWith(null, {
