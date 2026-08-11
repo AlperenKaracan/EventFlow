@@ -9,7 +9,11 @@ const mocks = vi.hoisted(() => ({
 vi.mock('./generated', () => mocks)
 vi.mock('./client', () => ({}))
 
-import { createReservationIntent, reserveEvent } from './attendee'
+import {
+  createReservationIntent,
+  fetchActiveReservationForEvent,
+  reserveEvent,
+} from './attendee'
 
 describe('attendee API boundary', () => {
   beforeEach(() => {
@@ -34,6 +38,47 @@ describe('attendee API boundary', () => {
     expect(mocks.createReservation).toHaveBeenCalledWith({
       path: { event_id: 'event-1' },
       headers: { 'Idempotency-Key': intent.idempotencyKey },
+      throwOnError: true,
+    })
+  })
+
+  it('finds an active reservation across history pages', async () => {
+    const activeReservation = {
+      id: 'reservation-2',
+      status: 'ACTIVE',
+      event: { id: 'event-2' },
+    }
+    mocks.listMyReservations
+      .mockResolvedValueOnce({
+        data: {
+          items: [
+            {
+              id: 'reservation-1',
+              status: 'CANCELLED_BY_ATTENDEE',
+              event: { id: 'event-1' },
+            },
+          ],
+          nextCursor: 'next-page',
+          hasMore: true,
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          items: [activeReservation],
+          nextCursor: null,
+          hasMore: false,
+        },
+      })
+
+    await expect(fetchActiveReservationForEvent('event-2')).resolves.toEqual(
+      activeReservation,
+    )
+    expect(mocks.listMyReservations).toHaveBeenNthCalledWith(1, {
+      query: { cursor: null, limit: 100 },
+      throwOnError: true,
+    })
+    expect(mocks.listMyReservations).toHaveBeenNthCalledWith(2, {
+      query: { cursor: 'next-page', limit: 100 },
       throwOnError: true,
     })
   })
