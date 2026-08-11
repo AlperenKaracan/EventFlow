@@ -1,25 +1,30 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link } from '@tanstack/react-router'
 import {
+  Alert,
   Box,
   Button,
-  Card,
-  CardActions,
-  CardContent,
   Chip,
   Container,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
+  Divider,
+  LinearProgress,
   Stack,
   Typography,
 } from '@mui/material'
 import { useState } from 'react'
+import type { ReactNode } from 'react'
 
-import { cancelOwnedEvent, fetchOwnedEvents } from '../../api/organizer'
 import type { OwnerEventResponse } from '../../api/generated'
+import { cancelOwnedEvent, fetchOwnedEvents } from '../../api/organizer'
+import { designTokens } from '../../app/theme'
 import { EmptyState, ErrorState, LoadingState } from '../../shared/AsyncState'
+import { EventDateTime } from '../../shared/ui/EventDateTime'
+import { PageIntro } from '../../shared/ui/PageIntro'
+import { StatCard, Surface } from '../../shared/ui/Surface'
 import { useCursorPager } from '../events/cursorPager'
 
 export function OrganizerEventsPage() {
@@ -40,187 +45,266 @@ export function OrganizerEventsPage() {
       await queryClient.invalidateQueries({ queryKey: ['owned-events'] })
     },
   })
+  const items = eventsQuery.data?.items ?? []
+  const activeEvents = items.filter((event) => event.status === 'ACTIVE')
+  const totalReservations = activeEvents.reduce(
+    (sum, event) => sum + event.reservedCount,
+    0,
+  )
+  const totalAvailable = activeEvents.reduce(
+    (sum, event) => sum + event.availableCapacity,
+    0,
+  )
 
   return (
-    <Container component="main" maxWidth="lg" sx={{ py: { xs: 4, md: 7 } }}>
-      <Stack
-        direction={{ xs: 'column', sm: 'row' }}
-        sx={{
-          alignItems: { xs: 'stretch', sm: 'end' },
-          gap: 3,
-          justifyContent: 'space-between',
-        }}
-      >
-        <Box>
-          <Typography
-            component="p"
-            color="primary.main"
-            sx={{
-              fontSize: '0.78rem',
-              fontWeight: 850,
-              letterSpacing: '0.12em',
-            }}
+    <Container
+      component="main"
+      maxWidth={false}
+      sx={{
+        maxWidth: designTokens.layout.contentMaxWidth,
+        py: { xs: 4, md: 7 },
+      }}
+    >
+      <PageIntro
+        eyebrow="ORGANİZATÖR ÇALIŞMA ALANI"
+        title="Etkinliklerim"
+        description="Yayınlarınızı, kontenjanları ve katılımcı hareketlerini hızlıca görün; gereken aksiyona doğrudan geçin."
+        actions={
+          <Button
+            component={Link}
+            to="/organizer/events/new"
+            variant="contained"
           >
-            ORGANİZATÖR PANELİ
-          </Typography>
-          <Typography component="h1" variant="h2">
-            Etkinliklerim
-          </Typography>
-          <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Etkinliklerinizi, kontenjanları ve katılımcı listelerini tek yerden
-            yönetin.
-          </Typography>
-        </Box>
-        <Button component={Link} to="/organizer/events/new" variant="contained">
-          Yeni etkinlik
-        </Button>
-      </Stack>
+            + Yeni etkinlik
+          </Button>
+        }
+      />
 
-      {eventsQuery.isPending ? (
-        <LoadingState label="Etkinlikleriniz yükleniyor" />
-      ) : null}
-      {eventsQuery.isError ? (
-        <ErrorState
-          error={eventsQuery.error}
-          onRetry={() => void eventsQuery.refetch()}
-        />
-      ) : null}
-      {eventsQuery.data?.items.length === 0 ? (
-        <EmptyState
-          title="Henüz etkinliğiniz yok"
-          description="İlk etkinliğinizi oluşturarak başlayın."
-        />
-      ) : null}
-      {eventsQuery.data?.items.length ? (
+      {items.length ? (
         <Box
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' },
+            gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' },
             mt: 4,
           }}
         >
-          {eventsQuery.data.items.map((event) => (
-            <Card
-              key={event.id}
-              variant="outlined"
-              sx={{ display: 'flex', flexDirection: 'column', minHeight: 220 }}
-            >
-              <CardContent sx={{ flexGrow: 1, p: 3 }}>
-                <Stack
-                  direction="row"
-                  sx={{ gap: 1, justifyContent: 'space-between' }}
-                >
-                  <Chip
-                    label={event.status === 'ACTIVE' ? 'Aktif' : 'İptal edildi'}
-                    color={event.status === 'ACTIVE' ? 'success' : 'default'}
-                    size="small"
-                  />
-                  <Typography color="text.secondary" variant="caption">
-                    {event.status === 'ACTIVE'
-                      ? 'Rezervasyona açık'
-                      : 'Salt okunur'}
-                  </Typography>
-                </Stack>
-                <Typography
-                  component="h2"
-                  variant="h6"
-                  sx={{ fontWeight: 800, mt: 2 }}
-                >
-                  {event.title}
-                </Typography>
-                <Box
-                  sx={{
-                    alignItems: 'baseline',
-                    display: 'flex',
-                    gap: 0.75,
-                    mt: 2.5,
-                  }}
-                >
-                  <Typography sx={{ fontSize: '1.55rem', fontWeight: 850 }}>
-                    {event.reservedCount}
-                  </Typography>
-                  <Typography color="text.secondary" variant="body2">
-                    / {event.capacity} rezervasyon
-                  </Typography>
-                </Box>
-              </CardContent>
-              <CardActions
-                sx={{
-                  borderColor: 'divider',
-                  borderTop: '1px solid',
-                  flexWrap: 'wrap',
-                  px: 2.25,
-                  py: 1.5,
-                }}
-              >
-                <Link
-                  to="/organizer/events/$eventId/edit"
-                  params={{ eventId: event.id }}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <Box component="span" sx={cardActionLinkSx}>
-                    {event.status === 'ACTIVE' ? 'Düzenle' : 'Görüntüle'}
-                  </Box>
-                </Link>
-                <Link
-                  to="/organizer/events/$eventId/attendees"
-                  params={{ eventId: event.id }}
-                  style={{ textDecoration: 'none' }}
-                >
-                  <Box component="span" sx={cardActionLinkSx}>
-                    Katılımcılar
-                  </Box>
-                </Link>
-                <Button
-                  color="error"
-                  disabled={event.status !== 'ACTIVE'}
-                  onClick={() => setEventToCancel(event)}
-                >
-                  İptal et
-                </Button>
-              </CardActions>
-            </Card>
-          ))}
+          <StatCard
+            label="Aktif etkinlik"
+            value={activeEvents.length}
+            hint={`${pager.page}. sayfadaki yayınlar`}
+          />
+          <StatCard
+            label="Aktif rezervasyon"
+            value={totalReservations}
+            accent="success.main"
+            hint="Toplam ayrılan yer"
+          />
+          <StatCard
+            label="Kalan kontenjan"
+            value={totalAvailable}
+            accent="info.main"
+            hint="Aktif etkinliklerde"
+          />
         </Box>
       ) : null}
 
-      {eventsQuery.data?.items.length ? (
+      <Box sx={{ mt: 4 }}>
+        {eventsQuery.isPending ? (
+          <LoadingState label="Etkinlikleriniz yükleniyor" />
+        ) : null}
+        {eventsQuery.isError ? (
+          <ErrorState
+            error={eventsQuery.error}
+            onRetry={() => void eventsQuery.refetch()}
+          />
+        ) : null}
+        {eventsQuery.data?.items.length === 0 ? (
+          <EmptyState
+            title="Henüz etkinliğiniz yok"
+            description="İlk etkinliğinizi oluşturarak topluluğunuzla buluşmaya başlayın."
+            action={
+              <Button
+                component={Link}
+                to="/organizer/events/new"
+                variant="contained"
+              >
+                İlk etkinliğimi oluştur
+              </Button>
+            }
+          />
+        ) : null}
+        {items.length ? (
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2.5,
+              gridTemplateColumns: { xs: '1fr', lg: 'repeat(2, 1fr)' },
+            }}
+          >
+            {items.map((event) => {
+              const occupancy = Math.min(
+                100,
+                Math.round((event.reservedCount / event.capacity) * 100),
+              )
+              const cancelled = event.status === 'CANCELLED'
+              return (
+                <Surface
+                  component="article"
+                  key={event.id}
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    p: 0,
+                    overflow: 'hidden',
+                  }}
+                >
+                  <Box sx={{ flexGrow: 1, p: 3 }}>
+                    <Stack
+                      direction="row"
+                      sx={{
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Chip
+                        label={cancelled ? 'İptal edildi' : 'Yayında'}
+                        color={cancelled ? 'default' : 'success'}
+                        size="small"
+                        variant="outlined"
+                      />
+                      <Typography color="text.secondary" variant="caption">
+                        {cancelled ? 'Salt okunur kayıt' : 'Rezervasyona açık'}
+                      </Typography>
+                    </Stack>
+                    <Typography component="h2" variant="h5" sx={{ mt: 2.5 }}>
+                      {event.title}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gap: 2,
+                        gridTemplateColumns: { xs: '1fr', sm: '1fr 0.7fr' },
+                        mt: 2.5,
+                      }}
+                    >
+                      <EventDateTime
+                        startsAt={event.startsAt}
+                        timeZone={event.timezone}
+                      />
+                      <Box>
+                        <Typography color="text.secondary" variant="overline">
+                          KONUM
+                        </Typography>
+                        <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                          {event.location}
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Divider sx={{ my: 2.5 }} />
+                    <Stack
+                      direction="row"
+                      sx={{
+                        alignItems: 'baseline',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 760 }}>
+                        {event.reservedCount} rezervasyon
+                      </Typography>
+                      <Typography color="text.secondary" variant="caption">
+                        {event.availableCapacity} yer kaldı
+                      </Typography>
+                    </Stack>
+                    <LinearProgress
+                      value={occupancy}
+                      variant="determinate"
+                      aria-label={`Doluluk oranı yüzde ${occupancy}`}
+                      sx={{ height: 6, mt: 1 }}
+                    />
+                  </Box>
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    sx={{
+                      bgcolor: 'background.default',
+                      borderTop: '1px solid',
+                      borderColor: 'divider',
+                      gap: 1,
+                      p: 2,
+                    }}
+                  >
+                    <ButtonLink to="edit" eventId={event.id}>
+                      {cancelled ? 'Kaydı görüntüle' : 'Etkinliği düzenle'}
+                    </ButtonLink>
+                    <ButtonLink to="attendees" eventId={event.id}>
+                      Katılımcılar
+                    </ButtonLink>
+                    <Button
+                      color="error"
+                      disabled={cancelled}
+                      onClick={() => setEventToCancel(event)}
+                      sx={{ ml: { sm: 'auto' } }}
+                    >
+                      Etkinliği iptal et
+                    </Button>
+                  </Stack>
+                </Surface>
+              )
+            })}
+          </Box>
+        ) : null}
+      </Box>
+
+      {items.length ? (
         <Stack
           direction="row"
-          sx={{ alignItems: 'center', gap: 2, justifyContent: 'center', mt: 5 }}
+          sx={{
+            alignItems: 'center',
+            gap: 1.5,
+            justifyContent: 'center',
+            mt: 5,
+          }}
         >
           <Button
             variant="outlined"
             disabled={!pager.canGoBack}
             onClick={pager.goBack}
           >
-            Önceki
+            Önceki sayfa
           </Button>
-          <Typography>Sayfa {pager.page}</Typography>
+          <Typography color="text.secondary">{pager.page}. sayfa</Typography>
           <Button
             variant="outlined"
-            disabled={!eventsQuery.data.nextCursor}
+            disabled={!eventsQuery.data?.nextCursor}
             onClick={() =>
-              eventsQuery.data.nextCursor &&
+              eventsQuery.data?.nextCursor &&
               pager.goForward(eventsQuery.data.nextCursor)
             }
           >
-            Sonraki
+            Sonraki sayfa
           </Button>
         </Stack>
       ) : null}
 
       <Dialog
         open={Boolean(eventToCancel)}
-        onClose={() => setEventToCancel(null)}
+        onClose={() => !cancelMutation.isPending && setEventToCancel(null)}
+        fullWidth
+        maxWidth="xs"
       >
-        <DialogTitle>Etkinliği iptal et</DialogTitle>
+        <DialogTitle>Etkinliği iptal etmek istiyor musunuz?</DialogTitle>
         <DialogContent>
-          <Typography>
-            “{eventToCancel?.title}” etkinliği iptal edilecek. Bu işlem yeni
-            rezervasyonları durdurur.
+          <Typography color="text.secondary">
+            {eventToCancel?.title} yayından kaldırılacak ve yeni rezervasyon
+            kabul etmeyecek.
           </Typography>
+          {eventToCancel?.reservedCount ? (
+            <Alert severity="warning" sx={{ mt: 2 }}>
+              {eventToCancel.reservedCount} aktif rezervasyon etkinlik iptali
+              nedeniyle kapatılacak. Katılımcılar geçmiş kayıtlarında açıklayıcı
+              durumu görecek.
+            </Alert>
+          ) : null}
           {cancelMutation.isError ? (
             <Box sx={{ mt: 2 }}>
               <ErrorState
@@ -233,7 +317,9 @@ export function OrganizerEventsPage() {
           ) : null}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setEventToCancel(null)}>Vazgeç</Button>
+          <Button color="inherit" onClick={() => setEventToCancel(null)}>
+            Vazgeç
+          </Button>
           <Button
             color="error"
             variant="contained"
@@ -242,7 +328,9 @@ export function OrganizerEventsPage() {
               eventToCancel && cancelMutation.mutate(eventToCancel)
             }
           >
-            İptal et
+            {cancelMutation.isPending
+              ? 'İptal ediliyor...'
+              : 'Etkinliği iptal et'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -250,14 +338,41 @@ export function OrganizerEventsPage() {
   )
 }
 
-const cardActionLinkSx = {
-  alignItems: 'center',
-  borderRadius: 2,
-  color: 'primary.main',
-  display: 'inline-flex',
-  fontSize: '0.875rem',
-  fontWeight: 750,
-  minHeight: 40,
-  px: 1.5,
-  '&:hover': { bgcolor: 'rgba(167, 139, 250, 0.08)' },
-} as const
+function ButtonLink({
+  to,
+  eventId,
+  children,
+}: {
+  to: 'edit' | 'attendees'
+  eventId: string
+  children: ReactNode
+}) {
+  const destination =
+    to === 'edit'
+      ? '/organizer/events/$eventId/edit'
+      : '/organizer/events/$eventId/attendees'
+  return (
+    <Link
+      to={destination}
+      params={{ eventId }}
+      style={{ textDecoration: 'none' }}
+    >
+      <Box
+        component="span"
+        sx={{
+          alignItems: 'center',
+          borderRadius: 3,
+          color: 'primary.light',
+          display: 'inline-flex',
+          fontSize: '0.875rem',
+          fontWeight: 760,
+          minHeight: 44,
+          px: 1.5,
+          '&:hover': { bgcolor: 'action.hover' },
+        }}
+      >
+        {children}
+      </Box>
+    </Link>
+  )
+}
