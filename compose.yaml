@@ -101,7 +101,8 @@ services:
     ports:
       - "8000:8000"
     restart: unless-stopped
-    stop_grace_period: 30s
+    stop_signal: SIGTERM
+    stop_grace_period: 130s
 
   frontend:
     build:

@@ -277,3 +277,15 @@ Değerlendirdiğim alternatifler: `ILIKE '%q%'`; harici arama servisi; UTC gün�
 Neden bunu seçtim: Modüler monolit sınırı korunur, Türkçe kelime çözümleme PostgreSQL içinde deterministik kalır, GIN başlık/açıklama taramasını ölçekler ve kullanıcı farklı saat dilimindeki etkinlikleri etkinliğin ilan edilen yerel gününe göre bulur. Filtre hash'i eski cursor'ın yeni sorguda kayıt atlamasını veya tekrarlamasını önler.
 
 Neyi feda ettim: Event yazımları generated vector ve GIN bakım maliyeti taşır; yerel tarih ifadesi satır başına timezone dönüşümü yaptığı için ayrı bir indeks kullanmaz. Katalog ölçeği büyürse ölçüme dayalı expression index veya farklı arama mimarisi ayrıca değerlendirilmelidir.
+
+## D-024 - Graceful shutdown süresi uygulama ayarından yönetilir
+
+Durum: PR 6 P1'de server entrypoint, POSIX SIGTERM drain testi ve pool cleanup testiyle uygulandı.
+
+Karar: Backend container doğrudan `python -m app.server` çalıştıracak; bu entrypoint Uvicorn `timeout_graceful_shutdown` değerini doğrulanmış `GRACEFUL_SHUTDOWN_TIMEOUT_SECONDS` ayarından alacak. Compose açık `SIGTERM` ve ayarın 120 saniyelik üst sınırından uzun 130 saniyelik `stop_grace_period` kullanacak. Redis ve SQLAlchemy pool'ları FastAPI lifespan kapanışında kapatılacak.
+
+Değerlendirdiğim alternatifler: Dockerfile içinde sabit Uvicorn timeout; shell entrypoint ile environment interpolation; Compose varsayılan 10 saniyelik stop süresi; istekleri beklemeden process'i sonlandırmak.
+
+Neden bunu seçtim: Exec-form Python entrypoint PID 1 sinyal semantiğini korur, uygulama ve deployment timeout sırası açık olur, akan transaction commit veya rollback için süre bulur ve bağımlılık pool'ları deterministik kapanır. Gerçek SIGTERM alt süreç testi yalnız fonksiyon çağrısını değil Uvicorn drain davranışını da kanıtlar.
+
+Neyi feda ettim: Özel server entrypoint'i Uvicorn CLI'dan bir bakım katmanı daha ekler; 130 saniyelik Compose penceresi gerçekten takılmış isteklerde operatörün daha uzun beklemesine neden olabilir.

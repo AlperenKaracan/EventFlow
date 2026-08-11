@@ -70,7 +70,7 @@ Modül sınırları:
 | Modül | Sorumluluk | Güncel durum |
 |---|---|---|
 | `shared` | Fail-fast config, async DB base/session altyapısı, ortak hata modeli | Çalışıyor |
-| `observability` | Request ID, JSON logging, `/health`, `/ready` | Çalışıyor |
+| `observability` | Request ID, JSON logging, `/health`, `/ready`, graceful drain | Çalışıyor |
 | `users` | User persistence, rol/statü enum'ları | Auth ile çalışıyor |
 | `auth` | Register/login/me ve refresh rotation/replay | PR 2'de çalışıyor |
 | `categories` | Seed edilmiş kategori kataloğu | Public read API çalışıyor |
@@ -231,6 +231,12 @@ erDiagram
 - Domain foreign key'lerinde bilinçli olarak cascade delete kullanılmaz; tarihçe sessizce kaybolamaz.
 
 Bu constraint'ler tek başına use-case algoritması değildir. Event lifecycle'ın version kilidi PR 3'te; reservation/idempotency sahipliği, event-first lock order ve same-transaction audit PR 4'te gerçek PostgreSQL yarışlarıyla kanıtlanmıştır.
+
+## Graceful shutdown sınırı
+
+Container PID 1 olarak çalışan `python -m app.server`, Uvicorn'un graceful timeout değerini doğrulanmış `GRACEFUL_SHUTDOWN_TIMEOUT_SECONDS` ayarından alır. `SIGTERM` geldiğinde Uvicorn listener'ı kapatır, yeni bağlantıları reddeder ve akan ASGI task'larını timeout içinde tamamlar. FastAPI lifespan ancak bu drain sonrasında kapanır; Redis client `aclose()` ve SQLAlchemy engine `dispose()` bu kapanışta çalışır.
+
+Compose açık `SIGTERM` kullanır ve `stop_grace_period: 130s` ile ayarın izin verdiği en yüksek 120 saniyenin üzerinde kalır. Böylece Docker normal koşulda `SIGKILL` aşamasına geçmeden uygulamanın commit veya rollback ve pool cleanup işlemleri biter. POSIX integration testi, sinyal geldiği anda çalışan yavaş HTTP isteğinin `200` ile tamamlandığını ve lifespan kapanış işaretinin daha sonra üretildiğini doğrular.
 
 ## İndeksler ve maliyetleri
 
