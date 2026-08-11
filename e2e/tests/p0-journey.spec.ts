@@ -29,6 +29,7 @@ async function login(page: Page, email: string) {
   await page.getByLabel('E-posta').fill(email)
   await page.getByLabel('Şifre').fill(password)
   await page.getByRole('button', { name: 'Giriş yap', exact: true }).click()
+  await expect(page.getByRole('button', { name: 'Çıkış yap' })).toBeVisible()
 }
 
 async function logout(page: Page) {
@@ -96,6 +97,28 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   await createdEventCard.getByRole('button', { name: 'Düzenle' }).click()
   await expect(page).toHaveURL(/\/organizer\/events\/[^/]+\/edit$/)
   const eventId = new URL(page.url()).pathname.split('/')[3]
+  await page.reload()
+  await expect(page.getByLabel('Saat dilimi')).toHaveValue(
+    'İstanbul — Türkiye saati (UTC+03:00)',
+  )
+  const persistedStartsAtField = page.getByRole('group', {
+    name: 'Başlangıç tarihi ve saati',
+  })
+  await expect(
+    persistedStartsAtField.getByRole('spinbutton', { name: 'Day' }),
+  ).toHaveText('20')
+  await expect(
+    persistedStartsAtField.getByRole('spinbutton', { name: 'Month' }),
+  ).toHaveText('09')
+  await expect(
+    persistedStartsAtField.getByRole('spinbutton', { name: 'Year' }),
+  ).toHaveText('2035')
+  await expect(
+    persistedStartsAtField.getByRole('spinbutton', { name: 'Hours' }),
+  ).toHaveText('19')
+  await expect(
+    persistedStartsAtField.getByRole('spinbutton', { name: 'Minutes' }),
+  ).toHaveText('30')
   const stalePage = await page.context().newPage()
   await stalePage.goto(`/organizer/events/${eventId}/edit`)
   await expect(stalePage.getByLabel('Başlık')).toHaveValue(eventTitle)
