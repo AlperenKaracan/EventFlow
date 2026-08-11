@@ -85,9 +85,20 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   await page
     .getByLabel('Açıklama')
     .fill('P0 tarayıcı yolculuğu için izole etkinlik.')
-  await page.getByLabel('Konum veya platform').fill('İstanbul')
-  await page.getByLabel('Saat dilimi').click()
-  await page.getByRole('option', { name: /^İstanbul - Türkiye saati/ }).click()
+  const locationField = page.getByRole('combobox', {
+    name: 'Konum veya platform',
+  })
+  await locationField.fill('İstanbul')
+  await page.getByRole('option', { name: /^İstanbul Türkiye$/ }).click()
+  const timezoneField = page.getByRole('combobox', { name: 'Saat dilimi' })
+  await expect(timezoneField).toHaveValue('İstanbul, Türkiye (UTC+03:00)')
+  await timezoneField.fill('Berlin')
+  await page.getByRole('option', { name: /^Berlin Almanya/ }).click()
+  await expect(timezoneField).toHaveValue(/^Berlin, Almanya/)
+  await timezoneField.fill('İstanbul')
+  await page
+    .getByRole('option', { name: /^İstanbul Türkiye.*UTC\+03:00/ })
+    .click()
   const startsAtField = page.getByRole('group', {
     name: 'Başlangıç tarihi ve saati',
   })
@@ -114,7 +125,7 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   const eventId = new URL(page.url()).pathname.split('/')[3]
   await page.reload()
   await expect(page.getByLabel('Saat dilimi')).toHaveValue(
-    'İstanbul - Türkiye saati (UTC+03:00)',
+    'İstanbul, Türkiye (UTC+03:00)',
   )
   const persistedStartsAtField = page.getByRole('group', {
     name: 'Başlangıç tarihi ve saati',
