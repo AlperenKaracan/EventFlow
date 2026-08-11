@@ -289,3 +289,15 @@ Değerlendirdiğim alternatifler: Dockerfile içinde sabit Uvicorn timeout; shel
 Neden bunu seçtim: Exec-form Python entrypoint PID 1 sinyal semantiğini korur, uygulama ve deployment timeout sırası açık olur, akan transaction commit veya rollback için süre bulur ve bağımlılık pool'ları deterministik kapanır. Gerçek SIGTERM alt süreç testi yalnız fonksiyon çağrısını değil Uvicorn drain davranışını da kanıtlar.
 
 Neyi feda ettim: Özel server entrypoint'i Uvicorn CLI'dan bir bakım katmanı daha ekler; 130 saniyelik Compose penceresi gerçekten takılmış isteklerde operatörün daha uzun beklemesine neden olabilir.
+
+## D-025 - Prometheus metrikleri uygulama kapsamında ve düşük kardinaliteli tutulur
+
+Durum: PR 6 P2'de HTTP, rezervasyon, idempotency, rate-limit, etkinlik iptali ve readiness metrikleriyle uygulandı.
+
+Karar: Her FastAPI uygulama örneği kendine ait Prometheus collector registry kullanacak ve `/metrics` üzerinden sunacak. HTTP sayaç ve histogramları ham URL yerine eşleşen route template'i, bilinmeyen yollar için sabit `unmatched` değerini kullanacak. Request ID, kullanıcı/etkinlik kimliği, e-posta ve ham URL label olmayacak. İş alanı metrikleri request-scope context ile servislere ulaşacak; metrik veya yedek log kaydı hatası domain transaction'ından dışarı taşmayacak.
+
+Değerlendirdiğim alternatifler: Global default registry; ham URL veya request/resource ID label'ları; router fonksiyonlarından metrik nesnesini her servis imzasına taşımak; metrik yazım hatasını isteğe yansıtmak.
+
+Neden bunu seçtim: Uygulama kapsamı test izolasyonu sağlar, sabit label kümesi cardinality patlamasını önler ve context tabanlı facade modüler monolitin HTTP katmanı ile domain servislerini gevşek bağlar. Gözlemlenebilirlik altyapısı bozulduğunda rezervasyon ve audit transaction'ları çalışmaya devam eder.
+
+Neyi feda ettim: In-process metrikler çoklu backend replica durumunda Prometheus tarafında toplanarak sorgulanmalıdır; process yeniden başlatıldığında sayaçlar sıfırlanır ve request context dışındaki background işler ayrı metrik bağlaması ister.

@@ -7,6 +7,7 @@ from typing import cast
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
+from app.observability.metrics import record_rate_limit_rejection
 from app.shared.config import Settings
 from app.shared.errors import AppError
 
@@ -55,6 +56,7 @@ async def enforce_login_rate_limit(
 
     if count > settings.LOGIN_RATE_LIMIT_PER_MINUTE:
         retry_after = max(ttl, 1)
+        record_rate_limit_rejection(endpoint="login")
         raise AppError(
             status_code=429,
             code="RATE_LIMIT_EXCEEDED",

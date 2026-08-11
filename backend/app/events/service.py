@@ -36,6 +36,7 @@ from app.events.schemas import (
     PublicEventResponse,
 )
 from app.events.timezone import validate_event_datetime
+from app.observability.metrics import record_event_cancellation
 from app.reservations.models import Reservation, ReservationStatus
 from app.shared.config import Settings
 from app.shared.errors import AppError
@@ -351,6 +352,7 @@ async def cancel_event(
             ]
         )
         await session.commit()
+        record_event_cancellation()
     except Exception:
         await session.rollback()
         raise

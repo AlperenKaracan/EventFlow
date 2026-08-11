@@ -7,12 +7,14 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.auth.router import router as auth_router
 from app.events.router import categories_router, events_router
 from app.observability.logging import configure_logging
+from app.observability.metrics import EventFlowMetrics
 from app.observability.middleware import RequestContextMiddleware
 from app.observability.router import router as observability_router
 from app.reservations.router import router as reservations_router
@@ -57,6 +59,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         level=active_settings.LOG_LEVEL,
         environment=active_settings.APP_ENV,
     )
+    metrics = EventFlowMetrics(logger=logger)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -106,12 +109,18 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app.state.settings = active_settings
     app.state.logger = logger
+    app.state.metrics = metrics
+
+    @app.get("/metrics", include_in_schema=False)
+    async def prometheus_metrics() -> Response:
+        return Response(generate_latest(metrics.registry), media_type=CONTENT_TYPE_LATEST)
+
     app.add_middleware(
         ExactCORSMiddleware,
         allowed_origins=active_settings.cors_origins,
     )
     app.add_middleware(SecurityHeadersMiddleware, settings=active_settings)
-    app.add_middleware(RequestContextMiddleware, logger=logger)
+    app.add_middleware(RequestContextMiddleware, logger=logger, metrics=metrics)
     register_exception_handlers(app)
     app.include_router(auth_router)
     app.include_router(categories_router)

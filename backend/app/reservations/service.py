@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from logging import Logger
+from time import perf_counter
 from typing import Any
 from uuid import UUID
 
@@ -15,6 +16,11 @@ from app.idempotency.repository import (
     lock_idempotency_key,
 )
 from app.idempotency.responses import SemanticResponse, semantic_error_body
+from app.observability.metrics import (
+    observe_reservation_lock_wait,
+    record_idempotency_request,
+    record_reservation_attempt,
+)
 from app.reservations.cursor import (
     ReservationCursorKind,
     decode_reservation_cursor,
@@ -164,13 +170,18 @@ async def create_reservation(
             logger=logger,
         )
         if replay is not None:
+            record_reservation_attempt(outcome="replayed")
             return replay
         if owner_record is None:
             raise RuntimeError("idempotency claim returned neither owner nor replay")
 
-        event = await get_event_for_update(session=session, event_id=event_id)
+        lock_started_at = perf_counter()
+        try:
+            event = await get_event_for_update(session=session, event_id=event_id)
+        finally:
+            observe_reservation_lock_wait(operation="create", started_at=lock_started_at)
         if event is None:
-            return await _complete_deterministic_error(
+            response = await _complete_deterministic_error(
                 session=session,
                 record=owner_record,
                 status_code=404,
@@ -178,9 +189,11 @@ async def create_reservation(
                 message="İstenen kaynak bulunamadı.",
                 request_id=request_id,
             )
+            record_reservation_attempt(outcome="not_found")
+            return response
         database_now = await get_database_now(session)
         if event.status is not EventStatus.ACTIVE:
-            return await _complete_deterministic_error(
+            response = await _complete_deterministic_error(
                 session=session,
                 record=owner_record,
                 status_code=409,
@@ -188,8 +201,10 @@ async def create_reservation(
                 message="Yalnızca aktif etkinliklere rezervasyon yapılabilir.",
                 request_id=request_id,
             )
+            record_reservation_attempt(outcome="inactive")
+            return response
         if event.starts_at <= database_now:
-            return await _complete_deterministic_error(
+            response = await _complete_deterministic_error(
                 session=session,
                 record=owner_record,
                 status_code=409,
@@ -197,6 +212,8 @@ async def create_reservation(
                 message="Başlamış etkinliğe rezervasyon yapılamaz.",
                 request_id=request_id,
             )
+            record_reservation_attempt(outcome="started")
+            return response
 
         reservation = await get_attendee_event_reservation_for_update(
             session=session,
@@ -204,7 +221,7 @@ async def create_reservation(
             attendee_id=attendee_id,
         )
         if reservation is not None and reservation.status is ReservationStatus.ACTIVE:
-            return await _complete_deterministic_error(
+            response = await _complete_deterministic_error(
                 session=session,
                 record=owner_record,
                 status_code=409,
@@ -212,8 +229,10 @@ async def create_reservation(
                 message="Bu etkinlik için zaten aktif rezervasyonunuz var.",
                 request_id=request_id,
             )
+            record_reservation_attempt(outcome="duplicate")
+            return response
         if event.reserved_count >= event.capacity:
-            return await _complete_deterministic_error(
+            response = await _complete_deterministic_error(
                 session=session,
                 record=owner_record,
                 status_code=409,
@@ -221,6 +240,8 @@ async def create_reservation(
                 message="Etkinlik kapasitesi dolu.",
                 request_id=request_id,
             )
+            record_reservation_attempt(outcome="full")
+            return response
 
         before = _reservation_snapshot(reservation) if reservation is not None else None
         action = "reservation.reactivated"
@@ -243,7 +264,7 @@ async def create_reservation(
                 )
                 if conflicting is None:
                     raise RuntimeError("reservation insert failed without a conflicting row")
-                return await _complete_deterministic_error(
+                response = await _complete_deterministic_error(
                     session=session,
                     record=owner_record,
                     status_code=409,
@@ -251,6 +272,8 @@ async def create_reservation(
                     message="Bu etkinlik için zaten rezervasyon kaydı bulunuyor.",
                     request_id=request_id,
                 )
+                record_reservation_attempt(outcome="duplicate")
+                return response
             action = "reservation.created"
         else:
             reservation.status = ReservationStatus.ACTIVE
@@ -284,6 +307,9 @@ async def create_reservation(
             original_request_id=request_id,
         )
         await session.commit()
+        record_reservation_attempt(
+            outcome="created" if action == "reservation.created" else "reactivated"
+        )
         return SemanticResponse(
             status_code=201,
             body=body,
@@ -312,6 +338,7 @@ async def _claim_or_replay(
             request_hash=request_hash,
         )
         if record is not None:
+            record_idempotency_request(outcome="owner")
             return record, None
         record = await lock_idempotency_key(
             session=session,
@@ -326,6 +353,7 @@ async def _claim_or_replay(
             break
         if record.request_hash != request_hash:
             await session.rollback()
+            record_idempotency_request(outcome="conflict")
             raise AppError(
                 status_code=409,
                 code="IDEMPOTENCY_KEY_REUSED",
@@ -345,8 +373,10 @@ async def _claim_or_replay(
                 replayed=True,
             )
             await session.commit()
+            record_idempotency_request(outcome="replay")
             return None, replay
         await session.rollback()
+        record_idempotency_request(outcome="in_progress")
         logger.warning(
             "Visible idempotency record remained in processing state",
             extra={"event": "idempotency.processing_visible"},
@@ -362,6 +392,7 @@ async def _claim_or_replay(
         "Idempotency record disappeared while resolving a conflict",
         extra={"event": "idempotency.record_missing"},
     )
+    record_idempotency_request(outcome="in_progress")
     raise AppError(
         status_code=409,
         code="IDEMPOTENCY_IN_PROGRESS",
@@ -409,7 +440,11 @@ async def cancel_reservation(
         )
         if event_id is None:
             raise resource_not_found_error()
-        event = await get_event_for_update(session=session, event_id=event_id)
+        lock_started_at = perf_counter()
+        try:
+            event = await get_event_for_update(session=session, event_id=event_id)
+        finally:
+            observe_reservation_lock_wait(operation="cancel", started_at=lock_started_at)
         if event is None:
             raise RuntimeError("reservation event disappeared inside transaction")
         reservation = await get_owned_reservation_for_update(

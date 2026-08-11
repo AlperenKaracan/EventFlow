@@ -8,6 +8,7 @@ from uuid import UUID
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
+from app.observability.metrics import record_rate_limit_rejection
 from app.shared.config import Settings
 from app.shared.errors import AppError
 
@@ -58,6 +59,7 @@ async def enforce_reservation_rate_limit(
         ) from exc
 
     if count > settings.RESERVATION_RATE_LIMIT_PER_MINUTE:
+        record_rate_limit_rejection(endpoint="reservation_create")
         raise AppError(
             status_code=429,
             code="RATE_LIMIT_EXCEEDED",
