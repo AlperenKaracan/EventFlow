@@ -1,0 +1,81 @@
+logging {
+  level  = "info"
+  format = "json"
+}
+
+discovery.docker "eventflow" {
+  host             = "unix:///var/run/docker.sock"
+  refresh_interval = sys.env("ALLOY_DOCKER_REFRESH_INTERVAL")
+
+  filter {
+    name   = "label"
+    values = ["com.docker.compose.project=eventflow"]
+  }
+}
+
+discovery.relabel "eventflow" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "service_name"
+  }
+
+  rule {
+    target_label = "environment"
+    replacement  = sys.env("APP_ENV")
+  }
+}
+
+loki.source.docker "eventflow" {
+  host             = "unix:///var/run/docker.sock"
+  targets          = discovery.docker.eventflow.targets
+  relabel_rules    = discovery.relabel.eventflow.rules
+  forward_to       = [loki.process.eventflow.receiver]
+  refresh_interval = sys.env("ALLOY_DOCKER_REFRESH_INTERVAL")
+}
+
+loki.process "eventflow" {
+  forward_to = [loki.write.local.receiver]
+
+  stage.json {
+    expressions = {
+      level = "",
+      route = "",
+    }
+    drop_malformed = false
+  }
+
+  stage.template {
+    source   = "parse_error"
+    template = "{{ if .level }}{{ else }}json_parse_failed_or_unstructured{{ end }}"
+  }
+
+  stage.structured_metadata {
+    values = {
+      parse_error = "",
+    }
+  }
+
+  stage.template {
+    source   = "level"
+    template = "{{ if .Value }}{{ .Value }}{{ else }}UNKNOWN{{ end }}"
+  }
+
+  stage.labels {
+    values = {
+      level = "",
+      route = "",
+    }
+  }
+
+  stage.label_keep {
+    values = ["service_name", "environment", "level", "route"]
+  }
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

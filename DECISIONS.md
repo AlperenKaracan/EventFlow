@@ -172,7 +172,7 @@ Neyi feda ettim: Bu teknik politika tek başına hukuki retention kararı değil
 
 ## D-015 — Loki düşük-cardinality label ve 7 günlük lokal retention
 
-Durum: Karar kabul edildi; PR 6 P2'de uygulanacak.
+Durum: PR 6 P2'de Loki 3.7, Alloy Docker discovery, 7 günlük retention ve düşük kardinalite testleriyle uygulandı.
 
 Karar: Loki label'ları `service_name`, `environment`, `level` ve gerekirse route template ile sınırlı olacak; request/user/event/email alanları JSON field kalacak. Lokal demo retention varsayılan 7 gün olacaktır.
 

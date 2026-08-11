@@ -124,5 +124,62 @@ services:
     restart: unless-stopped
     stop_grace_period: 10s
 
+  loki:
+    image: grafana/loki:3.7.6
+    command:
+      ["-config.file=/etc/loki/local-config.yaml", "-config.expand-env=true"]
+    environment:
+      LOKI_RETENTION_PERIOD: ${LOKI_RETENTION_PERIOD:?LOKI_RETENTION_PERIOD is required}
+    healthcheck:
+      test: ["CMD", "/usr/bin/loki", "-version"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - ./observability/loki.yaml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.18.1
+    user: "473:473"
+    group_add:
+      - ${DOCKER_SOCKET_GID:-0}
+    command:
+      [
+        "run",
+        "--server.http.listen-addr=0.0.0.0:12345",
+        "--storage.path=/var/lib/alloy/data",
+        "/etc/alloy/config.alloy",
+      ]
+    environment:
+      APP_ENV: ${APP_ENV:?APP_ENV is required}
+      ALLOY_DOCKER_REFRESH_INTERVAL: ${ALLOY_DOCKER_REFRESH_INTERVAL:?ALLOY_DOCKER_REFRESH_INTERVAL is required}
+    depends_on:
+      loki:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/alloy", "validate", "/etc/alloy/config.alloy"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - ./observability/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy_data:/var/lib/alloy/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+
 volumes:
   postgres_data:
+  loki_data:
+  alloy_data:
