@@ -178,6 +178,7 @@ jobs:
           test "$(docker compose exec -T alloy id -u)" = '473'
           test "$(docker inspect eventflow-loki-1 --format '{{.Config.User}}')" = '10001'
           test "$(docker compose exec -T prometheus id -u)" = '65534'
+          test "$(docker compose exec -T grafana id -u)" = '472'
           docker compose exec -T prometheus promtool check config /etc/prometheus/prometheus.yml
           curl --fail --silent http://127.0.0.1:8000/health
           curl --fail --silent http://127.0.0.1:8000/ready
@@ -187,6 +188,17 @@ jobs:
           grep --ignore-case --quiet '^x-content-type-options: nosniff' <<< "$frontend_headers"
           grep --ignore-case --quiet '^x-frame-options: DENY' <<< "$frontend_headers"
           grep --ignore-case --quiet '^referrer-policy: no-referrer' <<< "$frontend_headers"
+          grafana_user="$(sed -n 's/^GRAFANA_ADMIN_USER=//p' .env)"
+          grafana_password="$(sed -n 's/^GRAFANA_ADMIN_PASSWORD=//p' .env)"
+          test "$(curl --fail --silent --user "${grafana_user}:${grafana_password}" http://127.0.0.1:3000/api/dashboards/home | jq --raw-output '.dashboard.uid')" = 'eventflow-overview'
+          for dashboard_uid in eventflow-overview eventflow-metrics eventflow-logs; do
+            test "$(curl --fail --silent --user "${grafana_user}:${grafana_password}" "http://127.0.0.1:3000/api/dashboards/uid/${dashboard_uid}" | jq --raw-output '.dashboard.uid')" = "${dashboard_uid}"
+          done
+          for datasource_uid in eventflow-prometheus eventflow-loki; do
+            test "$(curl --fail --silent --user "${grafana_user}:${grafana_password}" "http://127.0.0.1:3000/api/datasources/uid/${datasource_uid}/health" | jq --raw-output '.status')" = 'OK'
+          done
+          docker compose exec -T grafana grafana cli plugins ls | grep --fixed-strings --quiet 'grafana-lokiexplore-app @ 2.5.0'
+          docker compose exec -T grafana grafana cli plugins ls | grep --fixed-strings --quiet 'grafana-metricsdrilldown-app @ 2.4.0'
 
       - name: Verify repeatable seed
         run: |
@@ -223,6 +235,7 @@ jobs:
               "http://loki:3100/ready",
               "http://alloy:12345/-/healthy",
               "http://prometheus:9090/-/ready",
+              "http://grafana:3000/api/health",
           )
           for _ in range(30):
               try:
@@ -270,7 +283,7 @@ jobs:
         if: always()
         run: |
           docker compose ps -a
-          docker compose logs --no-color migrate seed backend frontend loki alloy prometheus
+          docker compose logs --no-color migrate seed backend frontend loki alloy prometheus grafana
 
       - name: Stop stack
         if: always()

@@ -148,9 +148,11 @@ Neyi feda ettim: Deployment migration sonrasında ayrı seed başarı koşuluna 
 
 ## D-013 — Prometheus, Loki, Alloy ve Grafana pipeline'ı
 
-Durum: Karar kabul edildi; provisioning ve smoke testleri PR 6 P2'de.
+Durum: PR 6 P2'de uygulandı; provisioning, sorgu ve dayanıklılık smoke testleri CI kapsamına alındı.
 
 Karar: Metrikler Prometheus uyumlu endpoint'ten, container JSON logları Alloy üzerinden Loki'ye taşınacak; Grafana datasource/dashboard'ları repository dosyalarıyla provision edilecek.
+
+Uygulama notu: Prometheus, Loki, Alloy ve Grafana kalıcı named volume kullanır ve root olmayan kullanıcılarla çalışır. Request ID log gövdesinde sorgulanabilir kalır ancak Prometheus etiketi veya Loki index etiketi yapılmaz. Grafana datasource UID'leri, dashboard UID'leri, klasörleri ve operasyon panelleri repository dosyalarında sabittir.
 
 Değerlendirdiğim alternatifler: Yalnız Docker logs; ELK; OpenTelemetry collector + vendor SaaS; manuel Grafana kurulumu.
 
