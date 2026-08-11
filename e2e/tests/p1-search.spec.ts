@@ -40,7 +40,7 @@ test('P1 event search, category, and local date filters', async ({ page }) => {
       url.searchParams.get('dateTo') === '2035-06-18'
     )
   })
-  await filters.getByRole('button', { name: 'Filtreleri uygula' }).click()
+  await filters.getByRole('button', { name: 'Sonuçları göster' }).click()
   expect((await filteredResponse).status()).toBe(200)
 
   await expect(
