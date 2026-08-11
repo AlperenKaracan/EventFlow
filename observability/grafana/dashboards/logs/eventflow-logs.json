@@ -7,8 +7,8 @@
   "id": null,
   "links": [
     {"icon": "dashboard", "includeVars": true, "keepTime": true, "tags": [], "targetBlank": false, "title": "Genel bakış", "type": "link", "url": "/d/eventflow-overview/eventflow-genel-bakis"},
-    {"icon": "dashboard", "includeVars": true, "keepTime": true, "tags": [], "targetBlank": false, "title": "Metrik dashboardunu aç", "type": "link", "url": "/d/eventflow-metrics/eventflow-metrikleri"},
-    {"icon": "external link", "includeVars": false, "keepTime": true, "tags": [], "targetBlank": false, "title": "Loki Explore ile ayrıntılı incele", "type": "link", "url": "/explore?schemaVersion=1&panes=%7B%22eventflow%22:%7B%22datasource%22:%22eventflow-loki%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bservice_name=~%5C%22.%2B%5C%22%7D%22,%22queryType%22:%22range%22%7D%5D%7D%7D"}
+    {"icon": "dashboard", "includeVars": true, "keepTime": true, "tags": [], "targetBlank": false, "title": "Metrikler", "type": "link", "url": "/d/eventflow-metrics/eventflow-metrikleri"},
+    {"icon": "external link", "includeVars": false, "keepTime": true, "tags": [], "targetBlank": false, "title": "Ayrıntılı log incelemesi", "type": "link", "url": "/explore?schemaVersion=1&panes=%7B%22eventflow%22:%7B%22datasource%22:%22eventflow-loki%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bservice_name=~%5C%22.%2B%5C%22%7D%22,%22queryType%22:%22range%22%7D%5D%7D%7D"}
   ],
   "panels": [
     {
@@ -25,7 +25,7 @@
       "fieldConfig": {"defaults": {"color": {"mode": "continuous-BlPu"}, "decimals": 0, "noValue": "Veri yok", "unit": "short"}, "overrides": []},
       "gridPos": {"h": 5, "w": 8, "x": 0, "y": 1},
       "id": 1,
-      "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "sum(count_over_time({environment=~\"$environment\",service_name=~\"$service\",level=~\"$level\"} |~ \"$search\" [$__range]))", "legendFormat": "Toplam log", "queryType": "range", "refId": "A"}],
       "title": "Toplam log",
       "type": "stat"
@@ -36,7 +36,7 @@
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 0, "noValue": "Veri yok", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "orange", "value": 1}, {"color": "red", "value": 5}]}, "unit": "short"}, "overrides": []},
       "gridPos": {"h": 5, "w": 8, "x": 8, "y": 1},
       "id": 2,
-      "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "sum(count_over_time({environment=~\"$environment\",service_name=~\"$service\",level=~\"ERROR|CRITICAL\"} |~ \"$search\" [$__range]))", "legendFormat": "Hata logu", "queryType": "range", "refId": "A"}],
       "title": "Hata logları",
       "type": "stat"
@@ -47,7 +47,7 @@
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 0, "noValue": "Veri yok", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 1}, {"color": "red", "value": 10}]}, "unit": "short"}, "overrides": []},
       "gridPos": {"h": 5, "w": 8, "x": 16, "y": 1},
       "id": 3,
-      "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "sum(count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | status >= 400 | route=~\"$route\" [$__range]))", "legendFormat": "Başarısız HTTP", "queryType": "range", "refId": "A"}],
       "title": "Başarısız HTTP",
       "type": "stat"
@@ -58,7 +58,7 @@
       "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 0, "noValue": "Veri yok", "thresholds": {"mode": "absolute", "steps": [{"color": "green", "value": null}, {"color": "yellow", "value": 500}, {"color": "red", "value": 1500}]}, "unit": "ms"}, "overrides": []},
       "gridPos": {"h": 5, "w": 12, "x": 0, "y": 6},
       "id": 4,
-      "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "max(quantile_over_time(0.95, {environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | route=~\"$route\" | status=~\"$status\" | unwrap durationMs | __error__=\"\" [$__range]))", "legendFormat": "En yüksek p95", "queryType": "range", "refId": "A"}],
       "title": "En yüksek istek süresi p95",
       "type": "stat"
@@ -69,7 +69,7 @@
       "fieldConfig": {"defaults": {"color": {"mode": "continuous-YlOrBr"}, "decimals": 0, "noValue": "Veri yok", "unit": "short"}, "overrides": []},
       "gridPos": {"h": 5, "w": 12, "x": 12, "y": 6},
       "id": 5,
-      "options": {"colorMode": "background", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "center", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto", "wideLayout": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "sum(count_over_time({environment=~\"$environment\",service_name=~\"$service\"} | parse_error != \"\" [$__range]))", "legendFormat": "Ayrıştırma sorunu", "queryType": "range", "refId": "A"}],
       "title": "Yapılandırılmamış loglar",
       "type": "stat"
@@ -106,23 +106,29 @@
     },
     {
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
-      "description": "Seçili zaman aralığında en çok tamamlanan sekiz rota şablonu.",
+      "description": "Seçili zaman aralığında en çok tamamlanan rota şablonlarını gösterir. Kayıtlı bir rota şablonuyla eşleşmeyen 404 istekleri ayrı ve anlaşılır bir adla sunulur.",
       "fieldConfig": {"defaults": {"color": {"mode": "continuous-BlPu"}, "decimals": 0, "noValue": "Veri yok", "unit": "short"}, "overrides": []},
       "gridPos": {"h": 8, "w": 6, "x": 18, "y": 12},
       "id": 8,
       "options": {"displayMode": "gradient", "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showUnfilled": true, "sizing": "auto", "valueMode": "color"},
-      "targets": [{"direction": "backward", "editorMode": "code", "expr": "topk(8, sum by (route) (count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | route=~\"$route\" | status=~\"$status\" [$__range])))", "legendFormat": "{{route}}", "queryType": "range", "refId": "A"}],
+      "targets": [
+        {"direction": "backward", "editorMode": "code", "expr": "topk(7, sum by (route) (count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | route=~\"$route\" | route!=\"unmatched\" | status=~\"$status\" [$__range])))", "legendFormat": "{{route}}", "queryType": "range", "refId": "A"},
+        {"direction": "backward", "editorMode": "code", "expr": "sum(count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | route=~\"$route\" | route=\"unmatched\" | status=~\"$status\" [$__range]))", "legendFormat": "Eşleşmeyen rota (404)", "queryType": "range", "refId": "B"}
+      ],
       "title": "En yoğun rotalar",
       "type": "bargauge"
     },
     {
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
-      "description": "Rota bazında p95 istek süresini loglardan hesaplar; performans bozulmasını zaman ekseninde gösterir.",
+      "description": "Rota bazında p95 istek süresini loglardan hesaplar; performans bozulmasını zaman ekseninde gösterir. Eşleşmeyen 404 istekleri ayrı bir seri olarak adlandırılır.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "line", "fillOpacity": 10, "lineInterpolation": "smooth", "lineWidth": 2, "showPoints": "never"}, "decimals": 0, "noValue": "Veri yok", "unit": "ms"}, "overrides": []},
       "gridPos": {"h": 9, "w": 12, "x": 0, "y": 20},
       "id": 9,
       "options": {"legend": {"calcs": ["lastNotNull", "max"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
-      "targets": [{"direction": "backward", "editorMode": "code", "expr": "quantile_over_time(0.95, {environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | route=~\"$route\" | status=~\"$status\" | unwrap durationMs | __error__=\"\" [$interval]) by (route)", "legendFormat": "{{route}}", "queryType": "range", "refId": "A"}],
+      "targets": [
+        {"direction": "backward", "editorMode": "code", "expr": "quantile_over_time(0.95, {environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | route=~\"$route\" | route!=\"unmatched\" | status=~\"$status\" | unwrap durationMs | __error__=\"\" [$interval]) by (route)", "legendFormat": "{{route}}", "queryType": "range", "refId": "A"},
+        {"direction": "backward", "editorMode": "code", "expr": "quantile_over_time(0.95, {environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=\"http.request.completed\" | route=~\"$route\" | route=\"unmatched\" | status=~\"$status\" | unwrap durationMs | __error__=\"\" [$interval]) by (route)", "legendFormat": "Eşleşmeyen rota (404)", "queryType": "range", "refId": "B"}
+      ],
       "title": "Rota bazında p95 istek süresi",
       "type": "timeseries"
     },
@@ -148,7 +154,7 @@
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
       "description": "Rezervasyon, idempotency ve etkinlik olaylarının zaman içindeki hacmi.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "custom": {"drawStyle": "bars", "fillOpacity": 55, "lineWidth": 1, "showPoints": "never", "stacking": {"group": "A", "mode": "normal"}}, "decimals": 0, "noValue": "Veri yok", "unit": "short"}, "overrides": []},
-      "gridPos": {"h": 8, "w": 10, "x": 0, "y": 30},
+      "gridPos": {"h": 8, "w": 16, "x": 0, "y": 30},
       "id": 11,
       "options": {"legend": {"calcs": ["sum"], "displayMode": "table", "placement": "bottom", "showLegend": true}, "tooltip": {"mode": "multi", "sort": "desc"}},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "sum by (event) (count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=~\"reservation[.].*|idempotency[.].*|event[.].*\" [$interval]))", "legendFormat": "{{event}}", "queryType": "range", "refId": "A"}],
@@ -159,7 +165,7 @@
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
       "description": "Yapılandırılmış outcome alanı bulunan iş alanı loglarını sonuçlarına göre dağıtır.",
       "fieldConfig": {"defaults": {"color": {"mode": "palette-classic"}, "decimals": 0, "noValue": "Veri yok", "unit": "short"}, "overrides": []},
-      "gridPos": {"h": 8, "w": 6, "x": 10, "y": 30},
+      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 30},
       "id": 12,
       "options": {"displayLabels": ["name", "percent"], "legend": {"displayMode": "table", "placement": "bottom", "showLegend": true, "values": ["value", "percent"]}, "pieType": "donut", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "tooltip": {"mode": "single", "sort": "none"}},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "sum by (outcome) (count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | outcome != \"\" [$__range]))", "legendFormat": "{{outcome}}", "queryType": "range", "refId": "A"}],
@@ -168,19 +174,19 @@
     },
     {
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
-      "description": "Beklenen uygulama hatalarını güvenli hata kodu ve HTTP durumuna göre sıralar. Kaynak kimlikleri bu görünümde yer almaz.",
-      "fieldConfig": {"defaults": {"color": {"mode": "continuous-YlRd"}, "decimals": 0, "noValue": "Veri yok", "unit": "short"}, "overrides": []},
-      "gridPos": {"h": 8, "w": 8, "x": 16, "y": 30},
+      "description": "Seçili zaman aralığındaki beklenen uygulama hatalarını güvenli hata kodu ve HTTP durumuyla gösterir. Sarı değerler düşük, kırmızı değerler yüksek tekrar sayısını belirtir. Kaynak kimlikleri bu görünümde yer almaz.",
+      "fieldConfig": {"defaults": {"color": {"mode": "thresholds"}, "decimals": 0, "noValue": "Veri yok", "thresholds": {"mode": "absolute", "steps": [{"color": "yellow", "value": null}, {"color": "red", "value": 5}]}, "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 7, "w": 24, "x": 0, "y": 38},
       "id": 13,
-      "options": {"displayMode": "gradient", "maxVizHeight": 300, "minVizHeight": 16, "minVizWidth": 8, "namePlacement": "auto", "orientation": "horizontal", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "showUnfilled": true, "sizing": "auto", "valueMode": "color"},
-      "targets": [{"direction": "backward", "editorMode": "code", "expr": "topk(8, sum by (errorCode, status) (count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=~\"http.request.rejected|request.unhandled_exception\" | errorCode != \"\" [$__range])))", "legendFormat": "{{errorCode}} - HTTP {{status}}", "queryType": "range", "refId": "A"}],
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "auto", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "value_and_name", "wideLayout": true},
+      "targets": [{"direction": "backward", "editorMode": "code", "expr": "topk(8, sum by (errorCode, status) (count_over_time({environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=~\"http.request.rejected|request.unhandled_exception\" | errorCode != \"\" [$__range])))", "legendFormat": "{{errorCode}} ({{status}})", "queryType": "range", "refId": "A"}],
       "title": "Uygulama hata kodları",
-      "type": "bargauge"
+      "type": "stat"
     },
     {
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
       "description": "Rezervasyon, idempotency ve etkinlik olaylarının yapılandırılmış ayrıntıları. Kimlikler index etiketi değildir; yalnız açılan JSON detayında görünür.",
-      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 38},
+      "gridPos": {"h": 9, "w": 24, "x": 0, "y": 45},
       "id": 14,
       "options": {"dedupStrategy": "none", "enableInfiniteScrolling": true, "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "{environment=~\"$environment\",service_name=\"backend\"} | json | __error__=\"\" | event=~\"reservation[.].*|idempotency[.].*|event[.].*\" |~ \"$search\"", "queryType": "range", "refId": "A"}],
@@ -189,7 +195,7 @@
     },
     {
       "collapsed": false,
-      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 47},
+      "gridPos": {"h": 1, "w": 24, "x": 0, "y": 54},
       "id": 103,
       "panels": [],
       "title": "Request ID incelemesi ve canlı log akışı",
@@ -198,7 +204,7 @@
     {
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
       "description": "Tam veya regex request ID ile aynı HTTP denemesinin başlangıç, iş alanı ve tamamlanma zincirini kronolojik sırada gösterir.",
-      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 48},
+      "gridPos": {"h": 10, "w": 24, "x": 0, "y": 55},
       "id": 15,
       "options": {"dedupStrategy": "none", "enableInfiniteScrolling": false, "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Ascending", "wrapLogMessage": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "{environment=~\"$environment\",service_name=~\"$service\"} | json | __error__=\"\" | requestId=~\"$request_id\"", "queryType": "range", "refId": "A"}],
@@ -208,7 +214,7 @@
     {
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
       "description": "Servis, seviye ve serbest metin filtreleriyle seçilen tüm logların canlı akışı.",
-      "gridPos": {"h": 11, "w": 16, "x": 0, "y": 58},
+      "gridPos": {"h": 11, "w": 16, "x": 0, "y": 65},
       "id": 16,
       "options": {"dedupStrategy": "none", "enableInfiniteScrolling": true, "enableLogDetails": true, "prettifyLogMessage": true, "showCommonLabels": false, "showLabels": false, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "{environment=~\"$environment\",service_name=~\"$service\",level=~\"$level\"} |~ \"$search\"", "queryType": "range", "refId": "A"}],
@@ -218,7 +224,7 @@
     {
       "datasource": {"type": "loki", "uid": "eventflow-loki"},
       "description": "Alloy tarafından kaybedilmeden iletilen ancak JSON olarak ayrıştırılamayan satırlar. parse_error yapılandırılmış metadata alanından filtrelenir.",
-      "gridPos": {"h": 11, "w": 8, "x": 16, "y": 58},
+      "gridPos": {"h": 11, "w": 8, "x": 16, "y": 65},
       "id": 17,
       "options": {"dedupStrategy": "none", "enableInfiniteScrolling": true, "enableLogDetails": true, "prettifyLogMessage": false, "showCommonLabels": false, "showLabels": true, "showTime": true, "sortOrder": "Descending", "wrapLogMessage": true},
       "targets": [{"direction": "backward", "editorMode": "code", "expr": "{environment=~\"$environment\",service_name=~\"$service\"} | parse_error != \"\"", "queryType": "range", "refId": "A"}],
@@ -234,7 +240,7 @@
       {"allValue": ".+", "current": {"selected": true, "text": ["Tümü"], "value": ["$__all"]}, "datasource": {"type": "loki", "uid": "eventflow-loki"}, "definition": "label_values(environment)", "includeAll": true, "label": "Ortam", "multi": true, "name": "environment", "options": [], "query": {"label": "environment", "refId": "LokiVariableQueryEditor-Environment", "stream": "", "type": 1}, "refresh": 2, "regex": "", "sort": 1, "type": "query"},
       {"allValue": ".+", "current": {"selected": true, "text": ["backend"], "value": ["backend"]}, "datasource": {"type": "loki", "uid": "eventflow-loki"}, "definition": "label_values(service_name)", "includeAll": true, "label": "Servis", "multi": true, "name": "service", "options": [], "query": {"label": "service_name", "refId": "LokiVariableQueryEditor-Service", "stream": "", "type": 1}, "refresh": 2, "regex": "", "sort": 1, "type": "query"},
       {"allValue": ".+", "current": {"selected": true, "text": ["Tümü"], "value": ["$__all"]}, "datasource": {"type": "loki", "uid": "eventflow-loki"}, "definition": "label_values(level)", "includeAll": true, "label": "Seviye", "multi": true, "name": "level", "options": [], "query": {"label": "level", "refId": "LokiVariableQueryEditor-Level", "stream": "", "type": 1}, "refresh": 2, "regex": "", "sort": 1, "type": "query"},
-      {"allValue": ".+", "current": {"selected": true, "text": ["Tümü"], "value": ["$__all"]}, "datasource": {"type": "loki", "uid": "eventflow-loki"}, "definition": "label_values(route)", "includeAll": true, "label": "Rota", "multi": true, "name": "route", "options": [], "query": {"label": "route", "refId": "LokiVariableQueryEditor-Route", "stream": "", "type": 1}, "refresh": 2, "regex": "", "sort": 1, "type": "query"},
+      {"allValue": ".+", "current": {"selected": true, "text": ["Tümü"], "value": ["$__all"]}, "datasource": {"type": "loki", "uid": "eventflow-loki"}, "definition": "label_values(route)", "description": "unmatched, kayıtlı bir rota şablonuyla eşleşmeyen 404 isteklerini güvenli ve tek bir grupta toplar.", "includeAll": true, "label": "Rota", "multi": true, "name": "route", "options": [], "query": {"label": "route", "refId": "LokiVariableQueryEditor-Route", "stream": "", "type": 1}, "refresh": 2, "regex": "", "sort": 1, "type": "query"},
       {"allValue": ".+", "current": {"selected": true, "text": ["Tümü"], "value": ["$__all"]}, "includeAll": true, "label": "HTTP durumu", "multi": true, "name": "status", "options": [{"selected": true, "text": "Tümü", "value": "$__all"}, {"selected": false, "text": "2xx", "value": "2.."}, {"selected": false, "text": "3xx", "value": "3.."}, {"selected": false, "text": "4xx", "value": "4.."}, {"selected": false, "text": "5xx", "value": "5.."}], "query": "2xx : 2..,3xx : 3..,4xx : 4..,5xx : 5..", "type": "custom"},
       {"current": {"selected": true, "text": "500 ms", "value": "500"}, "label": "Yavaş istek eşiği", "name": "slow_ms", "options": [{"selected": false, "text": "250 ms", "value": "250"}, {"selected": true, "text": "500 ms", "value": "500"}, {"selected": false, "text": "1 sn", "value": "1000"}, {"selected": false, "text": "2 sn", "value": "2000"}], "query": "250 ms : 250,500 ms : 500,1 sn : 1000,2 sn : 2000", "type": "custom"},
       {"auto": false, "auto_count": 30, "auto_min": "10s", "current": {"selected": true, "text": "5m", "value": "5m"}, "label": "Hesaplama penceresi", "name": "interval", "options": [{"selected": false, "text": "1m", "value": "1m"}, {"selected": true, "text": "5m", "value": "5m"}, {"selected": false, "text": "15m", "value": "15m"}, {"selected": false, "text": "30m", "value": "30m"}, {"selected": false, "text": "1h", "value": "1h"}], "query": "1m,5m,15m,30m,1h", "refresh": 2, "skipUrlSync": false, "type": "interval"},

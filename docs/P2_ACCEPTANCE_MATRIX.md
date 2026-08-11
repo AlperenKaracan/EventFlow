@@ -65,7 +65,7 @@ Kapsam: PR 6 içindeki tek P2 teslimi olan Prometheus metrics endpoint'i ve onu 
 | Ana ekran | UID `eventflow-overview`, 3 panel | Yeşil |
 | Metrik dashboard | UID `eventflow-metrics`, 12 panel | Yeşil |
 | Log dashboard | UID `eventflow-logs`, 4 bölüm ve 17 analiz paneli | Yeşil |
-| Dashboard sorguları | Genel bakış, metrik ve log ekranlarında toplam 33 PromQL/LogQL target; 17 log targetı gerçek Loki üzerinde ayrıca yürütüldü | Yeşil |
+| Dashboard sorguları | Genel bakış, metrik ve log ekranlarında toplam 36 PromQL/LogQL target; 19 log targetı gerçek Loki, 15 metrik targetı gerçek Prometheus üzerinde yürütüldü | Yeşil |
 | Pinned eklentiler | Loki Explore `2.5.0`, Metrics Drilldown `2.4.0` | Yeşil |
 | Dil ve sunum | Türkçe başlık/açıklama, doğru units/legend/threshold, yanıltıcı sıfır yok | Yeşil |
 
@@ -81,7 +81,9 @@ Ekran kanıtları:
 Log analizi geliştirme doğrulaması:
 
 - operasyon özeti, HTTP, iş alanı ve request ID incelemesi için 4 bölüm ve 17 panel provision edildi
-- 17 LogQL targetın tamamı Grafana datasource API üzerinden gerçek Loki'ye karşı hatasız çalıştı
+- 19 LogQL targetın tamamı Grafana datasource API üzerinden gerçek Loki'ye karşı hatasız çalıştı
+- 15 PromQL targetın tamamı Grafana datasource API üzerinden gerçek Prometheus'a karşı hatasız çalıştı
+- eşleşmeyen 404 istekleri düşük cardinality `unmatched` etiketi korunarak grafiklerde `Eşleşmeyen rota (404)` adıyla gösterildi
 - yeni `http.request.rejected` ve `RESOURCE_NOT_FOUND` kaydı backend, Alloy ve Loki zincirinde bulundu
 - query selectorları request ID, actor ID, event ID veya reservation ID içermiyor
 
