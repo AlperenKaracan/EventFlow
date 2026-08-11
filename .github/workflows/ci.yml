@@ -98,6 +98,15 @@ jobs:
       - name: Lint Markdown and TypeScript
         run: pnpm lint
 
+      - name: Verify repository governance
+        run: |
+          test -s .github/PULL_REQUEST_TEMPLATE.md
+          test -s .github/CODEOWNERS
+          test -s SECURITY.md
+          grep --fixed-strings --quiet '@AlperenKaracan' .github/CODEOWNERS
+          grep --fixed-strings --quiet 'Birleştirme kapısı' .github/PULL_REQUEST_TEMPLATE.md
+          grep --fixed-strings --quiet 'Zafiyet bildirimi' SECURITY.md
+
       - name: Type check
         run: pnpm typecheck
 

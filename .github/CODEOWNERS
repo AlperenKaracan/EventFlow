@@ -1,0 +1,20 @@
+# Default repository owner
+* @AlperenKaracan
+
+# Security-sensitive backend and schema boundaries
+/backend/ @AlperenKaracan
+/backend/migrations/ @AlperenKaracan
+
+# Browser product and end-to-end journeys
+/frontend/ @AlperenKaracan
+/e2e/ @AlperenKaracan
+
+# Delivery, CI, and observability configuration
+/.github/ @AlperenKaracan
+/compose.yaml @AlperenKaracan
+/observability/ @AlperenKaracan
+
+# Architecture and security policy
+/ARCHITECTURE.md @AlperenKaracan
+/DECISIONS.md @AlperenKaracan
+/SECURITY.md @AlperenKaracan

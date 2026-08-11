@@ -1,5 +1,9 @@
 # EventFlow Security
 
+## Desteklenen sürümler
+
+Aktif geliştirme yalnız `main` dalının son sürümünde desteklenir. Henüz yayımlanmış kararlı sürüm veya geriye dönük güvenlik düzeltmesi politikası yoktur. Repository public yapılmadan ya da ilk sürüm yayımlanmadan önce bu tablo semantik sürüm aralıklarıyla güncellenecektir.
+
 ## Credential modeli
 
 - Parolalar Argon2id ile hash'lenir; düz parola/token/cookie loglanmaz.
@@ -8,7 +12,7 @@
 - Her login yeni token family başlatır. Her refresh önce PostgreSQL transaction advisory lock ile family'yi, ardından eski satırı `FOR UPDATE` ile kilitler ve rotate eder.
 - Eski token replay'i, yarışın kazananı dahil aynı family'nin bütün aktif tokenlarını revoke eder. Client bu nedenle refresh isteklerini single-flight yapmalıdır.
 
-Refresh cookie `HttpOnly`, `SameSite=Lax`, `/api/v1/auth` path'li ve production'da `Secure`'dır. Refresh/logout exact allowlist `Origin` kontrolü olmadan çalışmaz. Access tokenın browser storage yerine yalnız frontend belleğinde tutulması hedeflenir.
+Refresh cookie `HttpOnly`, `SameSite=Lax`, `/api/v1/auth` path'li ve production'da `Secure`'dır. Refresh/logout exact allowlist `Origin` kontrolü olmadan çalışmaz. Access token browser storage'a yazılmaz; yalnız frontend process belleğinde tutulur.
 
 ## Authorization ve IDOR
 
@@ -41,4 +45,21 @@ Idempotency semantic snapshot'ları request ID içermez; replay güncel request 
 
 ## Zafiyet bildirimi
 
-Public issue içinde credential, kişisel veri veya exploit ayrıntısı paylaşılmamalıdır. Repository public yapılmadan önce özel vulnerability reporting kanalı etkinleştirilecek ve bu bölüm iletişim bilgisiyle güncellenecektir.
+Credential, kişisel veri, erişim tokenı, çalışan exploit veya henüz giderilmemiş zafiyet ayrıntısı issue, pull request, discussion ya da herkese açık başka bir kanalda paylaşılmamalıdır.
+
+Repository erişimi olan güvenlik araştırmacıları ve ekip üyeleri GitHub içindeki **Security > Advisories > New draft security advisory** akışını kullanmalıdır. Bildirim şu bilgileri içermelidir:
+
+- Etkilenen endpoint, bileşen veya commit.
+- Tekrar üretme adımları ve beklenen etki.
+- Varsa güvenli proof-of-concept; gerçek kullanıcı verisi içermemelidir.
+- Önerilen azaltım veya düzeltme fikri.
+
+İlk alındı yanıtı için hedef süre 3 iş günü, ilk risk değerlendirmesi için 7 iş günüdür. Düzeltme doğrulanmadan ve koordineli açıklama tarihi kararlaştırılmadan ayrıntılar yayımlanmamalıdır. Repository public yapılmadan önce GitHub private vulnerability reporting etkinleştirilecek; bu kanal etkin değilse public yayın yapılmayacaktır.
+
+## Güvenlik düzeltmesi süreci
+
+1. Bildirim private advisory içinde doğrulanır ve önem derecesi belirlenir.
+2. Düzeltme private fork veya erişimi kısıtlı dalda hazırlanır; secret ve gerçek PII test verisine alınmaz.
+3. Authorization, IDOR, replay, rate-limit ve ilgili regresyon testleri eklenir.
+4. Gerekirse credential rotation, token-family revoke veya veri etki analizi uygulanır.
+5. Düzeltme ve koordineli açıklama, doğrulama tamamlandıktan sonra yayımlanır.
