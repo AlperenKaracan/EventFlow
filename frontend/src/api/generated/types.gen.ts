@@ -707,6 +707,22 @@ export type ListPublicEventsData = {
          * Cursor
          */
         cursor?: string | null;
+        /**
+         * Q
+         */
+        q?: string | null;
+        /**
+         * Category
+         */
+        category?: string | null;
+        /**
+         * Datefrom
+         */
+        dateFrom?: string | null;
+        /**
+         * Dateto
+         */
+        dateTo?: string | null;
     };
     url: '/api/v1/events';
 };

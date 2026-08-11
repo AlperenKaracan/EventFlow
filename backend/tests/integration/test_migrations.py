@@ -24,6 +24,11 @@ EXPECTED_REFRESH_INDEXES = {
     "ix_refresh_tokens_user_id_expires_at",
     "uq_refresh_tokens_token_hash",
 }
+EXPECTED_EVENT_INDEXES = {
+    "ix_events_active_starts_at_id",
+    "ix_events_organizer_id_created_at_id",
+    "ix_events_search_vector_gin",
+}
 
 
 @pytest.fixture
@@ -76,10 +81,28 @@ async def test_upgrade_head_is_repeatable_and_creates_expected_schema(
     assert await fetch_table_names(migrated_connection) == EXPECTED_TABLES
 
     revision = await migrated_connection.scalar(text("SELECT version_num FROM alembic_version"))
-    assert revision == "20260809_0001"
+    assert revision == "20260811_0002"
     assert (
         await fetch_index_names(migrated_connection, "refresh_tokens") >= EXPECTED_REFRESH_INDEXES
     )
+    assert await fetch_index_names(migrated_connection, "events") >= EXPECTED_EVENT_INDEXES
+
+    generated_expression = await migrated_connection.scalar(
+        text(
+            """
+            SELECT pg_get_expr(attribute_default.adbin, attribute_default.adrelid)
+            FROM pg_attribute AS attribute
+            JOIN pg_attrdef AS attribute_default
+              ON attribute_default.adrelid = attribute.attrelid
+             AND attribute_default.adnum = attribute.attnum
+            WHERE attribute.attrelid = 'events'::regclass
+              AND attribute.attname = 'search_vector'
+              AND attribute.attgenerated = 's'
+            """
+        )
+    )
+    assert generated_expression is not None
+    assert "to_tsvector('turkish'::regconfig" in generated_expression
 
     self_fk = await migrated_connection.scalar(
         text(

@@ -5,10 +5,17 @@ import { beforeEach, vi } from 'vitest'
 
 import { ApiError } from '../../api/errors'
 import type { PublicEventResponse } from '../../api/generated'
-import { fetchPublicEvents } from '../../api/publicEvents'
+import {
+  fetchPublicCategories,
+  fetchPublicEvents,
+  type PublicEventFilters,
+} from '../../api/publicEvents'
 import { PublicEventsPage } from './PublicEventsPage'
 
-vi.mock('../../api/publicEvents', () => ({ fetchPublicEvents: vi.fn() }))
+vi.mock('../../api/publicEvents', () => ({
+  fetchPublicCategories: vi.fn(),
+  fetchPublicEvents: vi.fn(),
+}))
 vi.mock('./EventCard', () => ({
   EventCard: ({ event }: { event: PublicEventResponse }) => (
     <article>{event.title}</article>
@@ -28,6 +35,13 @@ const event: PublicEventResponse = {
   availableCapacity: 80,
 }
 
+const emptyFilters: PublicEventFilters = {
+  query: '',
+  category: '',
+  dateFrom: '',
+  dateTo: '',
+}
+
 function renderWithQueryClient(children: ReactNode) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
@@ -40,6 +54,10 @@ function renderWithQueryClient(children: ReactNode) {
 describe('PublicEventsPage', () => {
   beforeEach(() => {
     vi.mocked(fetchPublicEvents).mockReset()
+    vi.mocked(fetchPublicCategories).mockReset()
+    vi.mocked(fetchPublicCategories).mockResolvedValue([
+      { id: 'category-1', name: 'Teknoloji', slug: 'teknoloji' },
+    ])
   })
 
   it('keeps cursor history for forward and backward navigation', async () => {
@@ -72,11 +90,42 @@ describe('PublicEventsPage', () => {
 
     expect(await screen.findByText('İkinci sayfa')).toBeInTheDocument()
     expect(screen.getByText('Sayfa 2')).toBeInTheDocument()
-    expect(fetchPublicEvents).toHaveBeenLastCalledWith('cursor-2')
+    expect(fetchPublicEvents).toHaveBeenLastCalledWith('cursor-2', emptyFilters)
 
     fireEvent.click(screen.getByRole('button', { name: 'Önceki' }))
     expect(await screen.findByText('İlk sayfa')).toBeInTheDocument()
     expect(screen.getByText('Sayfa 1')).toBeInTheDocument()
+  })
+
+  it('applies search filters and resets cursor history', async () => {
+    vi.mocked(fetchPublicEvents).mockImplementation((cursor, filters) =>
+      Promise.resolve({
+        items: [{ ...event, title: filters.query || 'İlk sayfa' }],
+        nextCursor: cursor ? null : 'cursor-2',
+        hasMore: cursor === null,
+      }),
+    )
+
+    renderWithQueryClient(<PublicEventsPage />)
+
+    await screen.findByText('İlk sayfa')
+    fireEvent.click(screen.getByRole('button', { name: 'Sonraki' }))
+    await screen.findByText('Sayfa 2')
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Etkinlik ara' }), {
+      target: { value: '  yazılım   atölyesi  ' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Filtreleri uygula' }))
+
+    await waitFor(() =>
+      expect(fetchPublicEvents).toHaveBeenLastCalledWith(null, {
+        ...emptyFilters,
+        query: 'yazılım atölyesi',
+      }),
+    )
+    expect(await screen.findByText('yazılım atölyesi')).toBeInTheDocument()
+    expect(await screen.findByText('Sayfa 1')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Kategori' })).toBeEnabled()
   })
 
   it('renders an explicit empty state', async () => {

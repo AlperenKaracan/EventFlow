@@ -9,8 +9,10 @@ import {
   Toolbar,
   Typography,
 } from '@mui/material'
+import { Suspense } from 'react'
 
 import { useAuth } from '../auth/authContext'
+import { LoadingState } from '../shared/AsyncState'
 
 export function RootLayout() {
   const auth = useAuth()
@@ -145,7 +147,9 @@ export function RootLayout() {
           </Toolbar>
         </Container>
       </AppBar>
-      <Outlet />
+      <Suspense fallback={<LoadingState label="Sayfa yükleniyor" />}>
+        <Outlet />
+      </Suspense>
     </Box>
   )
 }
