@@ -32,6 +32,9 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
   const eventQuery = useQuery({
     queryKey: ['public-event', eventId],
     queryFn: () => fetchPublicEvent(eventId),
+    retry: (failureCount, error) =>
+      !(error instanceof ApiError && error.code === 'RESOURCE_NOT_FOUND') &&
+      failureCount < 1,
   })
   const reserveMutation = useMutation({
     mutationFn: reserveEvent,
