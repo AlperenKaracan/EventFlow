@@ -19,6 +19,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  security:
+    name: Secret and history scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Scan repository and Git history
+        uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   backend:
     name: Backend quality and PostgreSQL integration
     runs-on: ubuntu-latest
@@ -120,7 +135,7 @@ jobs:
         run: pnpm audit --prod --audit-level high
 
   compose:
-    name: Compose, P0 Playwright, and non-root smoke
+    name: Compose, browser, and non-root smoke
     needs:
       - backend
       - frontend
@@ -139,8 +154,8 @@ jobs:
           runtime: node@22.17.1
           cache: true
 
-      - name: Install locked E2E dependencies
-        run: pnpm install --frozen-lockfile --filter @eventflow/e2e...
+      - name: Install locked frontend and E2E dependencies
+        run: pnpm install --frozen-lockfile --filter @eventflow/frontend... --filter @eventflow/e2e...
 
       - name: Install Playwright Chromium
         run: pnpm --filter @eventflow/e2e exec playwright install --with-deps chromium
@@ -179,6 +194,8 @@ jobs:
           test "$(docker inspect eventflow-loki-1 --format '{{.Config.User}}')" = '10001'
           test "$(docker compose exec -T prometheus id -u)" = '65534'
           test "$(docker compose exec -T grafana id -u)" = '472'
+          test "$(docker top "$(docker compose ps -q db)" -eo uid | sed -n '2p')" != '0'
+          test "$(docker top "$(docker compose ps -q redis)" -eo uid | sed -n '2p')" != '0'
           docker compose exec -T prometheus promtool check config /etc/prometheus/prometheus.yml
           curl --fail --silent http://127.0.0.1:8000/health
           curl --fail --silent http://127.0.0.1:8000/ready
@@ -206,6 +223,13 @@ jobs:
           counts="$(docker compose exec -T db psql -U eventflow -d eventflow -tAc \
             'SELECT (SELECT count(*) FROM users), (SELECT count(*) FROM categories), (SELECT count(*) FROM events), (SELECT count(*) FROM reservations);')"
           test "$counts" = '2|6|6|2'
+
+      - name: Verify generated OpenAPI client is current
+        env:
+          OPENAPI_URL: http://127.0.0.1:8000/api/v1/openapi.json
+        run: |
+          pnpm --filter @eventflow/frontend api:generate
+          git diff --exit-code -- frontend/src/api/generated
 
       - name: Run P0 browser journey
         env:
