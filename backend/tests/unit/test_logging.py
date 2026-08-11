@@ -51,3 +51,26 @@ def test_json_formatter_does_not_invent_request_id_for_lifecycle_log() -> None:
 
     assert payload["event"] == "Application startup complete."
     assert payload["requestId"] is None
+
+
+def test_json_formatter_keeps_domain_ids_as_json_fields() -> None:
+    record = logging.LogRecord(
+        name="eventflow",
+        level=logging.INFO,
+        pathname=__file__,
+        lineno=60,
+        msg="Reservation mutation completed",
+        args=(),
+        exc_info=None,
+    )
+    record.event = "reservation.created"
+    record.actorId = "10000000-0000-7000-8000-000000000002"
+    record.eventId = "30000000-0000-7000-8000-000000000001"
+    record.outcome = "created"
+
+    payload = json.loads(JsonFormatter(service="backend", environment="test").format(record))
+
+    assert payload["event"] == "reservation.created"
+    assert payload["actorId"] == "10000000-0000-7000-8000-000000000002"
+    assert payload["eventId"] == "30000000-0000-7000-8000-000000000001"
+    assert payload["outcome"] == "created"

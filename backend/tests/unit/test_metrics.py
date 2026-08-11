@@ -1,4 +1,5 @@
 from logging import Logger
+from typing import Any, cast
 from unittest.mock import Mock
 
 from app.observability.metrics import EventFlowMetrics
@@ -7,7 +8,9 @@ from app.observability.metrics import EventFlowMetrics
 def test_metric_update_failure_never_escapes() -> None:
     logger = Mock(spec=Logger)
     metrics = EventFlowMetrics(logger=logger)
-    metrics.reservation_attempts.labels = Mock(side_effect=RuntimeError("collector failed"))
+    cast(Any, metrics.reservation_attempts).labels = Mock(
+        side_effect=RuntimeError("collector failed")
+    )
 
     metrics.record_reservation_attempt(outcome="created")
 
@@ -18,6 +21,8 @@ def test_metric_and_fallback_log_failure_never_escape() -> None:
     logger = Mock(spec=Logger)
     logger.warning.side_effect = RuntimeError("logging failed")
     metrics = EventFlowMetrics(logger=logger)
-    metrics.rate_limit_rejections.labels = Mock(side_effect=RuntimeError("collector failed"))
+    cast(Any, metrics.rate_limit_rejections).labels = Mock(
+        side_effect=RuntimeError("collector failed")
+    )
 
     metrics.record_rate_limit_rejection(endpoint="login")

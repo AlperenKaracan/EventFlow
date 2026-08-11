@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 REPOSITORY_ROOT = Path(__file__).parents[3]
 
@@ -17,9 +17,9 @@ def test_loki_uses_tsdb_filesystem_and_seven_day_retention() -> None:
 
 
 def test_alloy_limits_discovery_and_index_labels() -> None:
-    config = (
-        REPOSITORY_ROOT / "observability" / "alloy" / "config.alloy"
-    ).read_text(encoding="utf-8")
+    config = (REPOSITORY_ROOT / "observability" / "alloy" / "config.alloy").read_text(
+        encoding="utf-8"
+    )
 
     assert 'values = ["com.docker.compose.project=eventflow"]' in config
     assert 'values = ["service_name", "environment", "level", "route"]' in config
@@ -43,9 +43,9 @@ def test_compose_mounts_docker_socket_read_only_and_uses_named_storage() -> None
 
 
 def test_prometheus_scrapes_only_the_backend_metrics_endpoint() -> None:
-    config = (
-        REPOSITORY_ROOT / "observability" / "prometheus" / "prometheus.yml"
-    ).read_text(encoding="utf-8")
+    config = (REPOSITORY_ROOT / "observability" / "prometheus" / "prometheus.yml").read_text(
+        encoding="utf-8"
+    )
     compose = (REPOSITORY_ROOT / "compose.yaml").read_text(encoding="utf-8")
 
     assert "job_name: eventflow-backend" in config
@@ -57,7 +57,7 @@ def test_prometheus_scrapes_only_the_backend_metrics_endpoint() -> None:
 
 def _dashboard(kind: str, filename: str) -> dict[str, Any]:
     path = REPOSITORY_ROOT / "observability" / "grafana" / "dashboards" / kind / filename
-    return json.loads(path.read_text(encoding="utf-8"))
+    return cast(dict[str, Any], json.loads(path.read_text(encoding="utf-8")))
 
 
 def test_grafana_provisions_fixed_datasources_folders_and_home_dashboard() -> None:

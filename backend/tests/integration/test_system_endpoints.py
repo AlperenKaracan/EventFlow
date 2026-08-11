@@ -52,14 +52,8 @@ async def test_metrics_use_route_templates_and_bounded_labels(client: AsyncClien
     assert response.status_code == 200
     assert response.headers["content-type"].startswith("text/plain")
     body = response.text
-    assert (
-        'eventflow_http_requests_total{method="GET",route="/health",status="200"} 1.0'
-        in body
-    )
-    assert (
-        'eventflow_http_requests_total{method="GET",route="unmatched",status="404"} 1.0'
-        in body
-    )
+    assert 'eventflow_http_requests_total{method="GET",route="/health",status="200"} 1.0' in body
+    assert 'eventflow_http_requests_total{method="GET",route="unmatched",status="404"} 1.0' in body
     assert request_id not in body
     assert 'eventflow_readiness_status{dependency="postgresql"} 0.0' in body
     assert 'eventflow_readiness_status{dependency="redis"} 0.0' in body
