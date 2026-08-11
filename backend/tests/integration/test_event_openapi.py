@@ -1,6 +1,32 @@
 from httpx import AsyncClient
 
 
+async def test_swagger_ui_is_self_hosted_and_renderable_offline(client: AsyncClient) -> None:
+    response = await client.get("/docs")
+
+    assert response.status_code == 200
+    assert 'src="/docs-assets/swagger-ui-bundle.js"' in response.text
+    assert 'src="/docs-initializer.js"' in response.text
+    assert 'href="/docs-assets/swagger-ui.css"' in response.text
+    assert "cdn.jsdelivr.net" not in response.text
+
+    javascript = await client.get("/docs-assets/swagger-ui-bundle.js")
+    initializer = await client.get("/docs-initializer.js")
+    stylesheet = await client.get("/docs-assets/swagger-ui.css")
+
+    assert javascript.status_code == 200
+    assert javascript.headers["content-type"].split(";", 1)[0] in {
+        "application/javascript",
+        "text/javascript",
+    }
+    assert "SwaggerUIBundle" in javascript.text
+    assert initializer.status_code == 200
+    assert "SwaggerUIBundle" in initializer.text
+    assert "'/api/v1/openapi.json'" in initializer.text
+    assert stylesheet.status_code == 200
+    assert stylesheet.headers["content-type"].startswith("text/css")
+
+
 async def test_event_openapi_documents_operations_errors_and_cursor_contract(
     client: AsyncClient,
 ) -> None:
@@ -8,6 +34,7 @@ async def test_event_openapi_documents_operations_errors_and_cursor_contract(
 
     assert response.status_code == 200
     document = response.json()
+    assert document["openapi"] == "3.1.0"
     paths = document["paths"]
     assert paths["/api/v1/categories"]["get"]["operationId"] == "listCategories"
     assert paths["/api/v1/events"]["get"]["operationId"] == "listPublicEvents"

@@ -45,12 +45,12 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | P0-API-01 | API `/api/v1` ile versiyonlanır                                |      1-4 | Route/OpenAPI testleri                                                                 | ✅ Kanıtlandı |
 | P0-API-02 | Bütün hatalar ortak envelope kullanır                          |      1-4 | Unit/integration error matrisi                                                         | ✅ Kanıtlandı |
 | P0-API-03 | Domain hataları doğru HTTP status döndürür                     |      2-4 | Error mapping testleri                                                                 | ✅ Kanıtlandı |
-| P0-API-04 | OpenAPI/Swagger mevcuttur                                      |      1,5 | Schema sözleşme testi + generated Hey API client                                       | ✅ Kanıtlandı |
+| P0-API-04 | OpenAPI/Swagger mevcuttur                                      |      1,5 | OpenAPI 3.1 sözleşmesi + self-hosted Swagger render testi + generated client           | ✅ Kanıtlandı |
 | P0-OBS-01 | Seviyeli structured JSON log                                   |        1 | Unit schema testi + 11 container satırının JSON parse'ı                                | ✅ Kanıtlandı |
 | P0-OBS-02 | Request/correlation ID header, body ve loglarda                |        1 | UUIDv7/preserve/error/log propagation testleri                                         | ✅ Kanıtlandı |
 | P0-OBS-03 | `/health` process, `/ready` dependency anlamını taşır          |        1 | Healthy ve dependency-unready integration testleri                                     | ✅ Kanıtlandı |
 | P0-OBS-04 | Loglarda secret/PII yok; print kullanılmaz                     |      1-5 | Redaction + 104 container logu + source scan                                           | ✅ Kanıtlandı |
-| P0-TST-01 | Kritik iş kuralları otomatik testlidir                         |      1-5 | 124 backend + 32 frontend + 4 production E2E                                           | ✅ Kanıtlandı |
+| P0-TST-01 | Kritik iş kuralları otomatik testlidir                         |      1-5 | 125 backend + 32 frontend + 4 production E2E                                           | ✅ Kanıtlandı |
 | P0-TST-02 | Kapasite ve zamanlılık concurrency testi zorunlu               |        4 | Gerçek PostgreSQL 200-request testi                                                    | ✅ Kanıtlandı |
 | P0-TST-03 | Testler izole; lokal geliştirici DB’sine bağlı değil           |      1-5 | Testcontainers + temiz Compose + benzersiz E2E verisi                                  | ✅ Kanıtlandı |
 | P0-CI-01  | Push CI: lint/format/type/test/build/audit                     |      1,5 | [PR 1 CI run #2](https://github.com/AlperenKaracan/EventFlow/actions/runs/31323243906) | ✅ Kanıtlandı |
@@ -134,7 +134,7 @@ Durum anahtarı: `⬜ Bekliyor` · `🟡 Devam ediyor` · `✅ Kanıtlandı` · 
 | Kapı                      | Komut/kanıt                                                                                    | Sonuç                                                                                                    |
 | ------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
 | Backend statik kalite     | Ruff format/lint ve strict mypy                                                                | 92 dosya formatlı; 53 source file typed; temiz                                                           |
-| Backend tam test          | `uv run pytest --cov=app --cov-report=term-missing`                                            | 124/124 geçti; toplam branch coverage `%92`                                                              |
+| Backend tam test          | `uv run pytest --cov=app --cov-report=term-missing`                                            | 125/125 geçti; toplam branch coverage `%92`                                                              |
 | Frontend kalite           | Peer, Prettier, Markdownlint, ESLint ve TypeScript                                             | Tüm workspace kapıları temiz                                                                             |
 | Frontend component test   | `pnpm test`                                                                                    | 13 dosyada 32/32 test geçti; cursor, state, auth-race, timezone, koyu tema, semantik kart ve hata dahil  |
 | Frontend production build | `pnpm build` ve Docker multi-stage build                                                       | Geçti; ana giriş `316.77 kB` (`101.10 kB` gzip), form lazy chunk'ı `268.80 kB` (`83.04 kB` gzip)         |
