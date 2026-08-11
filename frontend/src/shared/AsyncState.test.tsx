@@ -17,7 +17,9 @@ describe('ErrorState', () => {
       />,
     )
 
-    expect(screen.getByText('Etkinlikte yer kalmadı')).toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: 'Etkinlikte yer kalmadı' }),
+    ).toBeInTheDocument()
     expect(
       screen.getByText(/başka bir etkinlik seçebilirsiniz/),
     ).toBeInTheDocument()

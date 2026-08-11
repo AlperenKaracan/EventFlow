@@ -90,7 +90,9 @@ describe('PublicEventDetailPage', () => {
     renderDetail()
 
     expect(
-      await screen.findByText('Etkinlik artık görüntülenemiyor'),
+      await screen.findByRole('heading', {
+        name: 'Etkinlik artık görüntülenemiyor',
+      }),
     ).toBeInTheDocument()
     expect(
       screen.getByText(

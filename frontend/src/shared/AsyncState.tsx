@@ -89,7 +89,9 @@ export function ErrorState({
         ) : undefined
       }
     >
-      <Typography sx={{ fontWeight: 700 }}>{visibleTitle}</Typography>
+      <Typography component="h2" sx={{ fontWeight: 700 }}>
+        {visibleTitle}
+      </Typography>
       <Typography variant="body2">{visibleDescription}</Typography>
     </Alert>
   )
