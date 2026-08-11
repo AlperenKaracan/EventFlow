@@ -30,7 +30,7 @@ export function PublicEventsPage() {
             color="secondary.main"
             sx={{ fontWeight: 800 }}
           >
-            EVENTFLOW KEŞİF
+            ETKİNLİK KEŞFİ
           </Typography>
           <Typography component="h1" variant="h2" sx={{ mt: 0.75 }}>
             Yaklaşan etkinlikler
@@ -47,13 +47,23 @@ export function PublicEventsPage() {
           </Typography>
         </Box>
         {eventsQuery.data?.items.length ? (
-          <Typography
-            color="text.secondary"
-            sx={{ mt: { xs: 2, sm: 0 } }}
-            variant="body2"
+          <Box
+            aria-live="polite"
+            sx={{
+              bgcolor: 'background.paper',
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 999,
+              color: 'text.secondary',
+              mt: { xs: 2.5, sm: 0 },
+              px: 1.75,
+              py: 0.85,
+            }}
           >
-            Bu sayfada {eventsQuery.data.items.length} etkinlik
-          </Typography>
+            <Typography variant="body2" sx={{ fontWeight: 700 }}>
+              {eventsQuery.data.items.length} etkinlik listeleniyor
+            </Typography>
+          </Box>
         ) : null}
       </Box>
 

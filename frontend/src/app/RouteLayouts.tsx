@@ -149,16 +149,3 @@ export function RootLayout() {
     </Box>
   )
 }
-
-export function UpcomingRoute() {
-  return (
-    <Container component="main" maxWidth="md" sx={{ py: 8 }}>
-      <Typography component="h1" variant="h2">
-        Bu ekran yakında hazır olacak
-      </Typography>
-      <Button component={Link} to="/" sx={{ mt: 3 }}>
-        Etkinliklere dön
-      </Button>
-    </Container>
-  )
-}

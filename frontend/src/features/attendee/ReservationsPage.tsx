@@ -30,7 +30,7 @@ const dateFormatter = new Intl.DateTimeFormat('tr-TR', {
 
 const statusLabels = {
   ACTIVE: 'Aktif',
-  CANCELLED_BY_ATTENDEE: 'Sizin tarafınızdan iptal edildi',
+  CANCELLED_BY_ATTENDEE: 'Siz iptal ettiniz',
   CANCELLED_BY_EVENT: 'Etkinlik iptal edildi',
 } as const
 
@@ -185,8 +185,26 @@ export function ReservationsPage() {
                     <Link
                       to="/events/$eventId"
                       params={{ eventId: reservation.event.id }}
+                      style={{ textDecoration: 'none' }}
                     >
-                      <Button component="span">Etkinlik</Button>
+                      <Box
+                        component="span"
+                        sx={{
+                          alignItems: 'center',
+                          borderRadius: 2,
+                          color: 'primary.main',
+                          display: 'inline-flex',
+                          fontSize: '0.875rem',
+                          fontWeight: 750,
+                          minHeight: 40,
+                          px: 1.5,
+                          '&:hover': {
+                            bgcolor: 'rgba(167, 139, 250, 0.08)',
+                          },
+                        }}
+                      >
+                        Etkinliği incele
+                      </Box>
                     </Link>
                   )}
                   {reservation.status === 'ACTIVE' ? (
