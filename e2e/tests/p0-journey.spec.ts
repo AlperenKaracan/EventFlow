@@ -233,3 +233,56 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
     cancelledReservationCard.getByRole('link', { name: 'Etkinlik' }),
   ).toHaveCount(0)
 })
+
+test('reservation survives a lost response without duplication', async ({
+  page,
+}) => {
+  const suffix = randomUUID().slice(0, 8)
+  const attendee = {
+    email: `network-loss-${suffix}@example.com`,
+    fullName: `Ağ Kaybı ${suffix}`,
+  }
+  const eventId = '30000000-0000-7000-8000-000000000004'
+  const idempotencyKeys: string[] = []
+  let committedResponseWasLost = false
+
+  await register(page, { ...attendee, role: 'Katılımcı' })
+  await page.route(
+    `**/api/v1/events/${eventId}/reservations`,
+    async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue()
+        return
+      }
+
+      const key = route.request().headers()['idempotency-key']
+      expect(key).toBeTruthy()
+      idempotencyKeys.push(key)
+
+      if (!committedResponseWasLost) {
+        committedResponseWasLost = true
+        const response = await route.fetch()
+        expect(response.status()).toBe(201)
+        await route.abort('failed')
+        return
+      }
+
+      await route.continue()
+    },
+  )
+
+  await page.goto(`/events/${eventId}`)
+  await page.getByRole('button', { name: 'Yer ayır', exact: true }).click()
+  await expect(page.getByText('Yeriniz ayrıldı.')).toBeVisible()
+  expect(idempotencyKeys).toHaveLength(2)
+  expect(new Set(idempotencyKeys).size).toBe(1)
+
+  await page.goto('/attendee/reservations')
+  const reservationCard = page.locator('.MuiCard-root').filter({
+    hasText: 'Boş Kontenjanlı Koşu',
+  })
+  await expect(reservationCard).toHaveCount(1)
+  await expect(
+    reservationCard.getByRole('button', { name: 'Rezervasyonu iptal et' }),
+  ).toBeEnabled()
+})
