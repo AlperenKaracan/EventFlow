@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse, Response
+from fastapi.staticfiles import StaticFiles
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -16,6 +19,36 @@ from app.reservations.router import router as reservations_router
 from app.shared.config import Settings, load_settings
 from app.shared.errors import register_exception_handlers
 from app.shared.security_middleware import ExactCORSMiddleware, SecurityHeadersMiddleware
+
+SWAGGER_UI_HTML = """<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>EventFlow API - Swagger UI</title>
+    <link rel="stylesheet" href="/docs-assets/swagger-ui.css">
+    <link rel="icon" href="/docs-assets/favicon-32x32.png">
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="/docs-assets/swagger-ui-bundle.js"></script>
+    <script src="/docs-initializer.js"></script>
+  </body>
+</html>
+"""
+
+SWAGGER_INITIALIZER = """window.ui = SwaggerUIBundle({
+  url: '/api/v1/openapi.json',
+  dom_id: '#swagger-ui',
+  deepLinking: true,
+  showExtensions: true,
+  showCommonExtensions: true,
+  presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+  layout: 'BaseLayout'
+});
+"""
+
+DOCS_ASSET_DIRECTORY = Path(__file__).with_name("docs_assets")
 
 
 def create_app(settings: Settings | None = None) -> FastAPI:
@@ -51,10 +84,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app = FastAPI(
         title="EventFlow API",
         version="0.1.0",
-        docs_url="/docs" if active_settings.APP_ENV != "production" else None,
+        docs_url=None,
+        redoc_url=None,
         openapi_url="/api/v1/openapi.json",
         lifespan=lifespan,
     )
+    if active_settings.APP_ENV != "production":
+        app.mount(
+            "/docs-assets",
+            StaticFiles(directory=DOCS_ASSET_DIRECTORY),
+            name="docs-assets",
+        )
+
+        @app.get("/docs", include_in_schema=False)
+        async def swagger_ui_html() -> HTMLResponse:
+            return HTMLResponse(SWAGGER_UI_HTML)
+
+        @app.get("/docs-initializer.js", include_in_schema=False)
+        async def swagger_ui_initializer() -> Response:
+            return Response(SWAGGER_INITIALIZER, media_type="application/javascript")
+
     app.state.settings = active_settings
     app.state.logger = logger
     app.add_middleware(

@@ -253,3 +253,15 @@ Değerlendirdiğim alternatifler: Her çalışmada bütün seed alanlarını ilk
 Neden bunu seçtim: Tekrar çalıştırılan deployment seed'i organizatör değişikliklerini, iptalleri, kullanıcı durumunu veya rezervasyon yaşam döngüsünü geri alamaz ve `reserved_count == ACTIVE reservations` invariantını bozamaz.
 
 Neyi feda ettim: Demo içerik metinlerindeki sonraki seed değişiklikleri mevcut ortama otomatik uygulanmaz; böyle bir yenileme için açık ve ayrı bir bakım komutu gerekir.
+
+## D-022 — Swagger UI varlıkları backend tarafından sunulur
+
+Durum: PR 5 P0 dokümantasyon doğrulamasında uygulandı ve HTML/statik varlık integration testiyle güvenceye alındı.
+
+Karar: Geliştirme ve test ortamlarındaki Apache-2.0 lisanslı Swagger UI `5.32.11` JavaScript, CSS ve favicon dosyaları backend imajında sabit sürümle paketlenecek ve `/docs-assets` üzerinden aynı origin'den sunulacak. OpenAPI `3.1.0` şeması `/api/v1/openapi.json` adresinde kalacak; production ortamında etkileşimli dokümantasyon kapalı kalacaktır.
+
+Değerlendirdiğim alternatifler: FastAPI'nin varsayılan jsDelivr CDN bağlantılarını kullanmak; yalnız ham OpenAPI JSON sunmak; production'da da Swagger UI açmak.
+
+Neden bunu seçtim: Yerel geliştirme, kapalı ağ ve CDN engeli durumlarında `/docs` boş kalmaz; dokümantasyon render'ı üçüncü taraf çalışma zamanı erişimine bağlı olmaz.
+
+Neyi feda ettim: Backend imajı Swagger statik dosyaları nedeniyle büyür ve paket sürümü ayrıca güncellenmelidir; production kullanıcıları şemayı kullanır fakat etkileşimli UI görmez.
