@@ -89,9 +89,12 @@ async def test_sigterm_drains_inflight_request_before_lifespan_shutdown(
             assert response.status_code == 200
             assert response.json() == {"status": "completed"}
 
-        assert await asyncio.wait_for(process.wait(), timeout=5) == 0
+        return_code = await asyncio.wait_for(process.wait(), timeout=5)
         stopped = await asyncio.to_thread(stopped_marker.read_text, encoding="utf-8")
         assert stopped == "stopped"
+        # Uvicorn 0.52+ restores and re-raises the captured shutdown signal after
+        # the request drain and lifespan shutdown have completed.
+        assert return_code in {0, -signal.SIGTERM}
     finally:
         if process.returncode is None:
             process.kill()
