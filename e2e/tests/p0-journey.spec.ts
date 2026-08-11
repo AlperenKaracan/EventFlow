@@ -75,6 +75,8 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
     .getByLabel('Açıklama')
     .fill('P0 tarayıcı yolculuğu için izole etkinlik.')
   await page.getByLabel('Konum veya platform').fill('İstanbul')
+  await page.getByLabel('Saat dilimi').click()
+  await page.getByRole('option', { name: /^İstanbul — Türkiye saati/ }).click()
   const startsAtField = page.getByRole('group', {
     name: 'Başlangıç tarihi ve saati',
   })
