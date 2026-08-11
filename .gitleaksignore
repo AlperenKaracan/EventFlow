@@ -1,3 +1,4 @@
 # Test-only JWT values. Exact historical fingerprints are allowlisted; real secrets are never exempted.
 065e775b9ded0005b7370a870d757d14991c500b:backend/tests/integration/test_graceful_shutdown.py:generic-api-key:53
+5e542e48aa053fa36af7b3499e0fd454cb998249:backend/tests/integration/test_graceful_shutdown.py:generic-api-key:53
 fcdc9dfcd16a6bfb16b6d59bb5b1cc949d482a8f:backend/tests/integration/conftest.py:generic-api-key:57
