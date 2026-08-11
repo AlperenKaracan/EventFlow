@@ -160,6 +160,7 @@ services:
     environment:
       APP_ENV: ${APP_ENV:?APP_ENV is required}
       ALLOY_DOCKER_REFRESH_INTERVAL: ${ALLOY_DOCKER_REFRESH_INTERVAL:?ALLOY_DOCKER_REFRESH_INTERVAL is required}
+      ALLOY_COMPOSE_PROJECT_FILTER: com.docker.compose.project=${COMPOSE_PROJECT_NAME:-eventflow}
     depends_on:
       loki:
         condition: service_healthy
