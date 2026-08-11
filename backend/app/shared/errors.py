@@ -72,7 +72,12 @@ def error_response(
 
 def register_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(AppError)
-    async def handle_app_error(_request: Request, exc: AppError) -> JSONResponse:
+    async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
+        _log_request_rejection(
+            request=request,
+            status_code=exc.status_code,
+            error_code=exc.code,
+        )
         return error_response(
             status_code=exc.status_code,
             code=exc.code,
@@ -82,13 +87,23 @@ def register_exception_handlers(app: FastAPI) -> None:
         )
 
     @app.exception_handler(StarletteHTTPException)
-    async def handle_http_error(_request: Request, exc: StarletteHTTPException) -> JSONResponse:
+    async def handle_http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         if exc.status_code == 404:
+            _log_request_rejection(
+                request=request,
+                status_code=404,
+                error_code="RESOURCE_NOT_FOUND",
+            )
             return error_response(
                 status_code=404,
                 code="RESOURCE_NOT_FOUND",
                 message="İstenen kaynak bulunamadı.",
             )
+        _log_request_rejection(
+            request=request,
+            status_code=exc.status_code,
+            error_code="HTTP_ERROR",
+        )
         return error_response(
             status_code=exc.status_code,
             code="HTTP_ERROR",
@@ -97,7 +112,7 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(RequestValidationError)
     async def handle_validation_error(
-        _request: Request, exc: RequestValidationError
+        request: Request, exc: RequestValidationError
     ) -> JSONResponse:
         safe_details = [
             {
@@ -107,6 +122,11 @@ def register_exception_handlers(app: FastAPI) -> None:
             }
             for error in exc.errors()
         ]
+        _log_request_rejection(
+            request=request,
+            status_code=422,
+            error_code="VALIDATION_ERROR",
+        )
         return error_response(
             status_code=422,
             code="VALIDATION_ERROR",
@@ -116,12 +136,34 @@ def register_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(Exception)
     async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+        route = request.scope.get("route")
         request.app.state.logger.exception(
             "Unhandled request exception",
-            extra={"event": "request.unhandled_exception", "errorCode": "INTERNAL_ERROR"},
+            extra={
+                "event": "request.unhandled_exception",
+                "method": request.method,
+                "route": getattr(route, "path", "unmatched"),
+                "status": 500,
+                "errorCode": "INTERNAL_ERROR",
+            },
         )
         return error_response(
             status_code=500,
             code="INTERNAL_ERROR",
             message="Beklenmeyen bir hata oluştu.",
         )
+
+
+def _log_request_rejection(*, request: Request, status_code: int, error_code: str) -> None:
+    route = request.scope.get("route")
+    extra = {
+        "event": "http.request.rejected",
+        "method": request.method,
+        "route": getattr(route, "path", "unmatched"),
+        "status": status_code,
+        "errorCode": error_code,
+    }
+    if status_code >= 500:
+        request.app.state.logger.warning("Request rejected", extra=extra)
+    else:
+        request.app.state.logger.info("Request rejected", extra=extra)

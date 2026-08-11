@@ -303,3 +303,15 @@ Değerlendirdiğim alternatifler: Global default registry; ham URL veya request/
 Neden bunu seçtim: Uygulama kapsamı test izolasyonu sağlar, sabit label kümesi cardinality patlamasını önler ve context tabanlı facade modüler monolitin HTTP katmanı ile domain servislerini gevşek bağlar. Gözlemlenebilirlik altyapısı bozulduğunda rezervasyon ve audit transaction'ları çalışmaya devam eder.
 
 Neyi feda ettim: In-process metrikler çoklu backend replica durumunda Prometheus tarafında toplanarak sorgulanmalıdır; process yeniden başlatıldığında sayaçlar sıfırlanır ve request context dışındaki background işler ayrı metrik bağlaması ister.
+
+## D-026 - Beklenen HTTP hataları güvenli ve yapılandırılmış loglanır
+
+Durum: PR 6 P2 log analizi geliştirmesinde uygulandı ve Loki akış testiyle doğrulandı.
+
+Karar: Uygulamanın yönettiği HTTP reddetmeleri `http.request.rejected` olayıyla; method, route template, status ve güvenli hata kodu alanlarıyla loglanacak. Beklenen 4xx sonuçları INFO, bağımlılık gibi beklenen 5xx sonuçları WARNING seviyesinde tutulacak. Beklenmeyen hatalar aynı bounded alanları `request.unhandled_exception` olayında taşıyacak. Request ID JSON gövdesinde korelasyon alanı olarak kalacak; kullanıcı, etkinlik, rezervasyon ve request kimlikleri Loki index label yapılmayacak.
+
+Değerlendirdiğim alternatifler: Yalnız `http.request.completed` loguna güvenmek; response mesajını veya validation ayrıntılarını loglamak; error code ve kimlikleri Loki etiketi yapmak; bütün 4xx sonuçlarını WARNING seviyesine yükseltmek.
+
+Neden bunu seçtim: Operatörler hata kodu ve route bazında güvenli analiz yapabilir, aynı request ID ile lifecycle zincirine inebilir ve normal kullanıcı hataları sistem alarmı gibi görünmez. Route template ve sabit hata kodu kümesi cardinality sınırını korur; response ayrıntılarını loglamamak kişisel veya kullanıcı kontrollü verinin gözlemlenebilirlik hattına taşınma riskini azaltır.
+
+Neyi feda ettim: Validation alan ayrıntıları ve kaynak kimlikleri toplu dashboarddan görülemez; gerektiğinde yetkili audit kaydı ve request ID korelasyonu ayrı incelenmelidir. Aynı başarısız istek hem rejection hem completion lifecycle kaydı ürettiği için sorguların `event` alanını açık filtrelemesi gerekir.
