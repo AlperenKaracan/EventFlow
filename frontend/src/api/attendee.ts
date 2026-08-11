@@ -5,6 +5,7 @@ import {
 } from './generated'
 import type {
   ReservationHistoryPage,
+  ReservationHistoryResponse,
   ReservationMutationResponse,
 } from './generated'
 import { toApiError } from './errors'
@@ -44,6 +45,29 @@ export const fetchMyReservations = (
   guarded(() =>
     listMyReservations({ query: { cursor, limit: 12 }, throwOnError: true }),
   )
+
+export async function fetchActiveReservationForEvent(
+  eventId: string,
+): Promise<ReservationHistoryResponse | null> {
+  let cursor: string | null = null
+
+  do {
+    const page: ReservationHistoryPage = await guarded(() =>
+      listMyReservations({
+        query: { cursor, limit: 100 },
+        throwOnError: true,
+      }),
+    )
+    const activeReservation = page.items.find(
+      (reservation) =>
+        reservation.event.id === eventId && reservation.status === 'ACTIVE',
+    )
+    if (activeReservation) return activeReservation
+    cursor = page.nextCursor
+  } while (cursor)
+
+  return null
+}
 
 export async function cancelMyReservation(
   reservationId: string,

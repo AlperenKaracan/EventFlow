@@ -162,13 +162,18 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   ).toBeVisible()
   await page.goto(`/events/${eventId}`)
   await page.getByRole('button', { name: 'Yerimi ayır' }).click()
-  await page.getByRole('button', { name: 'Rezervasyonu onayla' }).click()
-  await expect(page.getByText(/Yeriniz ayrıldı/)).toBeVisible()
+  await expect(page.getByText(/Rezervasyonun hazır/)).toBeVisible()
 
   await page.reload()
   await expect(
-    page.getByRole('button', { name: 'Kontenjan dolu' }),
-  ).toBeDisabled()
+    page.getByText(
+      'Rezervasyonun hazır. Etkinlikteki yerin senin için ayrıldı.',
+    ),
+  ).toBeVisible()
+  await expect(
+    page.getByRole('link', { name: 'Rezervasyonumu görüntüle' }),
+  ).toBeVisible()
+  await expect(page.getByRole('button', { name: 'Yerimi ayır' })).toHaveCount(0)
 
   await cancelActiveReservation(page, updatedTitle)
   await page.getByRole('button', { name: 'Yeniden yer ayır' }).click()
@@ -183,8 +188,7 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   await register(secondPage, { ...attendeeTwo, role: 'Katılımcı' })
   await secondPage.goto(`/events/${eventId}`)
   await secondPage.getByRole('button', { name: 'Yerimi ayır' }).click()
-  await secondPage.getByRole('button', { name: 'Rezervasyonu onayla' }).click()
-  await expect(secondPage.getByText(/Yeriniz ayrıldı/)).toBeVisible()
+  await expect(secondPage.getByText(/Rezervasyonun hazır/)).toBeVisible()
   await secondContext.close()
 
   await login(page, attendeeOne.email)
@@ -300,8 +304,7 @@ test('reservation survives a lost response without duplication', async ({
 
   await page.goto(`/events/${eventId}`)
   await page.getByRole('button', { name: 'Yerimi ayır' }).click()
-  await page.getByRole('button', { name: 'Rezervasyonu onayla' }).click()
-  await expect(page.getByText(/Yeriniz ayrıldı/)).toBeVisible()
+  await expect(page.getByText(/Rezervasyonun hazır/)).toBeVisible()
   expect(idempotencyKeys).toHaveLength(2)
   expect(new Set(idempotencyKeys).size).toBe(1)
 

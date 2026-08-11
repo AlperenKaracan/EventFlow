@@ -6,18 +6,17 @@ import {
   Button,
   Chip,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Divider,
   LinearProgress,
   Stack,
   Typography,
 } from '@mui/material'
-import { useState } from 'react'
 
-import { createReservationIntent, reserveEvent } from '../../api/attendee'
+import {
+  createReservationIntent,
+  fetchActiveReservationForEvent,
+  reserveEvent,
+} from '../../api/attendee'
 import { ApiError } from '../../api/errors'
 import { fetchPublicEvent } from '../../api/publicEvents'
 import { designTokens } from '../../app/theme'
@@ -47,7 +46,6 @@ function DetailItem({
 export function PublicEventDetailPage({ eventId }: { eventId: string }) {
   const auth = useAuth()
   const queryClient = useQueryClient()
-  const [confirmOpen, setConfirmOpen] = useState(false)
   const eventQuery = useQuery({
     queryKey: ['public-event', eventId],
     queryFn: () => fetchPublicEvent(eventId),
@@ -55,11 +53,17 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
       !(error instanceof ApiError && error.code === 'RESOURCE_NOT_FOUND') &&
       failureCount < 1,
   })
+  const activeReservationQuery = useQuery({
+    queryKey: ['my-reservations', 'active-event', eventId],
+    queryFn: () => fetchActiveReservationForEvent(eventId),
+    enabled:
+      auth.session.status === 'authenticated' &&
+      auth.session.user.role === 'attendee',
+  })
   const reserveMutation = useMutation({
     mutationFn: reserveEvent,
     retry: 1,
     onSuccess: async () => {
-      setConfirmOpen(false)
       await queryClient.invalidateQueries({
         queryKey: ['public-event', eventId],
       })
@@ -106,8 +110,11 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
   )
   const reserveDisabled =
     event.availableCapacity === 0 ||
+    activeReservationQuery.isPending ||
     reserveMutation.isPending ||
     reserveMutation.isSuccess
+  const hasActiveReservation =
+    reserveMutation.isSuccess || Boolean(activeReservationQuery.data)
 
   return (
     <Container
@@ -255,9 +262,9 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
             />
             <Divider sx={{ my: 3 }} />
 
-            {reserveMutation.isSuccess ? (
+            {hasActiveReservation ? (
               <Alert severity="success" sx={{ mb: 2 }}>
-                Yeriniz ayrıldı. Rezervasyonunuz hesabınıza eklendi.
+                Rezervasyonun hazır. Etkinlikteki yerin senin için ayrıldı.
               </Alert>
             ) : null}
             {reserveMutation.isError ? (
@@ -291,25 +298,36 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
               </>
             ) : auth.session.status === 'authenticated' &&
               auth.session.user.role === 'attendee' ? (
-              reserveMutation.isSuccess ? (
+              activeReservationQuery.isError ? (
+                <ErrorState
+                  error={activeReservationQuery.error}
+                  onRetry={() => void activeReservationQuery.refetch()}
+                />
+              ) : hasActiveReservation ? (
                 <Button
                   component={Link}
                   to="/attendee/reservations"
                   fullWidth
                   variant="outlined"
                 >
-                  Rezervasyonlarımı gör
+                  Rezervasyonumu görüntüle
                 </Button>
               ) : (
                 <Button
                   fullWidth
                   variant="contained"
                   disabled={reserveDisabled}
-                  onClick={() => setConfirmOpen(true)}
+                  onClick={() =>
+                    reserveMutation.mutate(createReservationIntent(event.id))
+                  }
                 >
                   {event.availableCapacity === 0
                     ? 'Kontenjan dolu'
-                    : 'Yerimi ayır'}
+                    : activeReservationQuery.isPending
+                      ? 'Rezervasyon kontrol ediliyor...'
+                      : reserveMutation.isPending
+                        ? 'Yer ayrılıyor...'
+                        : 'Yerimi ayır'}
                 </Button>
               )
             ) : (
@@ -318,51 +336,18 @@ export function PublicEventDetailPage({ eventId }: { eventId: string }) {
                 description="Organizatör hesabıyla rezervasyon oluşturulamaz."
               />
             )}
-            <Typography
-              color="text.secondary"
-              variant="caption"
-              sx={{ display: 'block', mt: 2, textAlign: 'center' }}
-            >
-              Rezervasyonunu daha sonra hesabından iptal edebilirsin.
-            </Typography>
+            {!hasActiveReservation ? (
+              <Typography
+                color="text.secondary"
+                variant="caption"
+                sx={{ display: 'block', mt: 2, textAlign: 'center' }}
+              >
+                Rezervasyonunu daha sonra hesabından iptal edebilirsin.
+              </Typography>
+            ) : null}
           </Surface>
         </Box>
       </Box>
-
-      <Dialog
-        open={confirmOpen}
-        onClose={() => !reserveMutation.isPending && setConfirmOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Yerinizi ayıralım mı?</DialogTitle>
-        <DialogContent>
-          <Typography color="text.secondary">
-            {event.title} etkinliği için bir rezervasyon oluşturulacak. İşlemi
-            rezervasyonlarınızdan yönetebilirsiniz.
-          </Typography>
-        </DialogContent>
-        <DialogActions>
-          <Button
-            color="inherit"
-            disabled={reserveMutation.isPending}
-            onClick={() => setConfirmOpen(false)}
-          >
-            Vazgeç
-          </Button>
-          <Button
-            variant="contained"
-            disabled={reserveMutation.isPending}
-            onClick={() =>
-              reserveMutation.mutate(createReservationIntent(event.id))
-            }
-          >
-            {reserveMutation.isPending
-              ? 'Yer ayrılıyor...'
-              : 'Rezervasyonu onayla'}
-          </Button>
-        </DialogActions>
-      </Dialog>
     </Container>
   )
 }
