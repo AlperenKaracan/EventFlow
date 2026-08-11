@@ -67,7 +67,8 @@ export function OrganizerEventsPage() {
             Etkinliklerim
           </Typography>
           <Typography color="text.secondary" sx={{ mt: 1 }}>
-            Yayınlarınızı, kontenjanı ve katılımcıları yönetin.
+            Etkinliklerinizi, kontenjanları ve katılımcı listelerini tek yerden
+            yönetin.
           </Typography>
         </Box>
         <Button component={Link} to="/organizer/events/new" variant="contained">
@@ -116,7 +117,9 @@ export function OrganizerEventsPage() {
                     size="small"
                   />
                   <Typography color="text.secondary" variant="caption">
-                    Sürüm {event.version}
+                    {event.status === 'ACTIVE'
+                      ? 'Rezervasyona açık'
+                      : 'Salt okunur'}
                   </Typography>
                 </Stack>
                 <Typography
@@ -154,16 +157,20 @@ export function OrganizerEventsPage() {
                 <Link
                   to="/organizer/events/$eventId/edit"
                   params={{ eventId: event.id }}
+                  style={{ textDecoration: 'none' }}
                 >
-                  <Button component="span">
+                  <Box component="span" sx={cardActionLinkSx}>
                     {event.status === 'ACTIVE' ? 'Düzenle' : 'Görüntüle'}
-                  </Button>
+                  </Box>
                 </Link>
                 <Link
                   to="/organizer/events/$eventId/attendees"
                   params={{ eventId: event.id }}
+                  style={{ textDecoration: 'none' }}
                 >
-                  <Button component="span">Katılımcılar</Button>
+                  <Box component="span" sx={cardActionLinkSx}>
+                    Katılımcılar
+                  </Box>
                 </Link>
                 <Button
                   color="error"
@@ -242,3 +249,15 @@ export function OrganizerEventsPage() {
     </Container>
   )
 }
+
+const cardActionLinkSx = {
+  alignItems: 'center',
+  borderRadius: 2,
+  color: 'primary.main',
+  display: 'inline-flex',
+  fontSize: '0.875rem',
+  fontWeight: 750,
+  minHeight: 40,
+  px: 1.5,
+  '&:hover': { bgcolor: 'rgba(167, 139, 250, 0.08)' },
+} as const

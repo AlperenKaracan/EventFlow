@@ -96,7 +96,7 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   const createdEventCard = page.locator('.MuiCard-root').filter({
     hasText: eventTitle,
   })
-  await createdEventCard.getByRole('button', { name: 'Düzenle' }).click()
+  await createdEventCard.getByRole('link', { name: 'Düzenle' }).click()
   await expect(page).toHaveURL(/\/organizer\/events\/[^/]+\/edit$/)
   const eventId = new URL(page.url()).pathname.split('/')[3]
   await page.reload()
@@ -207,7 +207,7 @@ test('P0 organizer and attendee lifecycle', async ({ page, browser }) => {
   const cancelledEventCard = page.locator('.MuiCard-root').filter({
     hasText: updatedTitle,
   })
-  await cancelledEventCard.getByRole('button', { name: 'Görüntüle' }).click()
+  await cancelledEventCard.getByRole('link', { name: 'Görüntüle' }).click()
   await expect(
     page.getByRole('heading', { name: 'İptal edilen etkinlik' }),
   ).toBeVisible()

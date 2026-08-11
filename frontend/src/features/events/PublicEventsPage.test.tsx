@@ -65,7 +65,9 @@ describe('PublicEventsPage', () => {
     expect(
       screen.queryByText('Yeni insanlarla tanış, yeni deneyimler keşfet.'),
     ).not.toBeInTheDocument()
+    expect(screen.getByText('ETKİNLİK KEŞFİ')).toBeInTheDocument()
     expect(await screen.findByText('İlk sayfa')).toBeInTheDocument()
+    expect(screen.getByText('1 etkinlik listeleniyor')).toBeInTheDocument()
     fireEvent.click(screen.getByRole('button', { name: 'Sonraki' }))
 
     expect(await screen.findByText('İkinci sayfa')).toBeInTheDocument()

@@ -193,17 +193,9 @@ export function OrganizerEventFormPage({ eventId }: { eventId?: string }) {
               : 'Katılımcıların karar vermesi için ihtiyaç duyduğu tüm bilgileri tek bir yerde, anlaşılır biçimde paylaşın.'}
           </Typography>
         </Box>
-        {isEditing && eventQuery.data ? (
+        {isEditing && eventQuery.data && isCancelled ? (
           <Stack direction="row" sx={{ alignItems: 'center', gap: 1.5 }}>
-            {isCancelled ? (
-              <Chip label="İptal edildi" color="default" size="small" />
-            ) : null}
-            <Typography
-              variant="body2"
-              sx={{ color: 'text.secondary', fontWeight: 700 }}
-            >
-              Sürüm {eventQuery.data.version}
-            </Typography>
+            <Chip label="İptal edildi" color="default" size="small" />
           </Stack>
         ) : null}
       </Stack>

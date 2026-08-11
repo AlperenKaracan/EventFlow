@@ -14,6 +14,10 @@ export function ForbiddenPage() {
       <Typography component="h1" variant="h2" sx={{ mt: 1 }}>
         Bu işlem için yetkiniz yok
       </Typography>
+      <Typography color="text.secondary" sx={{ mt: 2 }}>
+        Bu sayfayı görüntülemek için farklı bir hesapla giriş yapmanız
+        gerekebilir.
+      </Typography>
       <Button component={Link} to="/" variant="contained" sx={{ mt: 4 }}>
         Etkinliklere dön
       </Button>
