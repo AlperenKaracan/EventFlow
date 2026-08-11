@@ -1,7 +1,7 @@
 import json
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 REPOSITORY_ROOT = Path(__file__).parents[3]
 LOG_DASHBOARD_PATH = (
@@ -10,7 +10,10 @@ LOG_DASHBOARD_PATH = (
 
 
 def _load_log_dashboard() -> dict[str, Any]:
-    return json.loads(LOG_DASHBOARD_PATH.read_text(encoding="utf-8"))
+    return cast(
+        dict[str, Any],
+        json.loads(LOG_DASHBOARD_PATH.read_text(encoding="utf-8")),
+    )
 
 
 def test_log_dashboard_has_complete_analysis_workflow() -> None:
