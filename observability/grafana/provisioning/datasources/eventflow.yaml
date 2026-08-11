@@ -1,0 +1,32 @@
+apiVersion: 1
+prune: true
+
+datasources:
+  - name: EventFlow Prometheus
+    uid: eventflow-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: false
+    jsonData:
+      httpMethod: POST
+      manageAlerts: false
+      prometheusType: Prometheus
+      prometheusVersion: 3.13.2
+      timeInterval: 5s
+
+  - name: EventFlow Loki
+    uid: eventflow-loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      manageAlerts: false
+      maxLines: 1000
+      derivedFields:
+        - name: Request ID
+          matcherRegex: '"requestId":"([0-9a-fA-F-]{36})"'
+          url: '/explore?left=["now-1h","now","eventflow-loki",{"expr":"{service_name=~\\".+\\"} | json | requestId=\\"$${__value.raw}\\""}]'
+          urlDisplayLabel: İlgili request loglarını aç

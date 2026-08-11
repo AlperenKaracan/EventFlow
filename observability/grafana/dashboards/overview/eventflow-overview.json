@@ -1,0 +1,86 @@
+{
+  "annotations": {"list": []},
+  "description": "EventFlow metrik ve log operasyon ekranlarına giriş noktası.",
+  "editable": false,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [
+    {
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Metrik dashboardunu aç",
+      "type": "link",
+      "url": "/d/eventflow-metrics/eventflow-metrikleri"
+    },
+    {
+      "icon": "dashboard",
+      "includeVars": true,
+      "keepTime": true,
+      "tags": [],
+      "targetBlank": false,
+      "title": "Log dashboardunu aç",
+      "type": "link",
+      "url": "/d/eventflow-logs/eventflow-loglari"
+    }
+  ],
+  "panels": [
+    {
+      "description": "EventFlow gözlemlenebilirlik ekranlarına hızlı erişim ve kullanım özeti.",
+      "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
+      "id": 1,
+      "options": {
+        "content": "# EventFlow operasyon merkezi\n\nMetrik dashboardunda trafik, gecikme, rezervasyon ve bağımlılık sağlığını; log dashboardunda ise hata, route ve request ID akışlarını inceleyebilirsiniz. Üstteki bağlantılar seçili zaman aralığını korur.",
+        "mode": "markdown"
+      },
+      "title": "Başlangıç",
+      "type": "text"
+    },
+    {
+      "datasource": {"type": "prometheus", "uid": "eventflow-prometheus"},
+      "description": "Prometheus'un EventFlow backend metriklerine son toplama sırasında erişip erişemediğini gösterir.",
+      "fieldConfig": {
+        "defaults": {
+          "color": {"mode": "thresholds"},
+          "mappings": [
+            {"options": {"0": {"color": "red", "text": "Erişilemiyor"}, "1": {"color": "green", "text": "Çalışıyor"}}, "type": "value"}
+          ],
+          "noValue": "Veri yok",
+          "thresholds": {"mode": "absolute", "steps": [{"color": "red", "value": null}, {"color": "green", "value": 1}]}
+        },
+        "overrides": []
+      },
+      "gridPos": {"h": 6, "w": 12, "x": 0, "y": 6},
+      "id": 2,
+      "options": {"colorMode": "background", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"editorMode": "code", "expr": "up{job=\"eventflow-backend\"}", "legendFormat": "Backend", "range": true, "refId": "A"}],
+      "title": "Backend metrik erişimi",
+      "type": "stat"
+    },
+    {
+      "datasource": {"type": "loki", "uid": "eventflow-loki"},
+      "description": "Seçili zaman aralığında Loki'ye ulaşan EventFlow log satırı sayısını gösterir.",
+      "fieldConfig": {"defaults": {"color": {"mode": "continuous-GrYlRd"}, "decimals": 0, "noValue": "Veri yok", "unit": "short"}, "overrides": []},
+      "gridPos": {"h": 6, "w": 12, "x": 12, "y": 6},
+      "id": 3,
+      "options": {"colorMode": "value", "graphMode": "area", "justifyMode": "center", "orientation": "auto", "reduceOptions": {"calcs": ["lastNotNull"], "fields": "", "values": false}, "textMode": "auto"},
+      "targets": [{"direction": "backward", "editorMode": "code", "expr": "sum(count_over_time({service_name=~\".+\"}[$__range]))", "queryType": "instant", "refId": "A"}],
+      "title": "Toplanan log sayısı",
+      "type": "stat"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 41,
+  "tags": ["eventflow", "operasyon"],
+  "templating": {"list": []},
+  "time": {"from": "now-6h", "to": "now"},
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "EventFlow - Genel Bakış",
+  "uid": "eventflow-overview",
+  "version": 1,
+  "weekStart": "monday"
+}
