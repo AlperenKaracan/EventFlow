@@ -57,6 +57,7 @@ PR 6'nın son uygulama doğrulamasında aşağıdaki sonuçlar gerçekten çalı
 - Yerel normal stack'teki sekiz uzun ömürlü servis bu denetim sırasında `healthy` durumdaydı.
 - Yerel `/health`, `/ready`, OpenAPI JSON ve self-hosted Swagger UI `200` döndü; Swagger initializer doğru `/api/v1/openapi.json` adresini kullandı.
 - Audit tablosu PostgreSQL üzerinden okunabildi ve bütün etkinliklerde `reserved_count` ile aktif reservation sayısı arasındaki uyuşmazlık `0` çıktı.
+- GitHub Actions job özeti incelendi; `setup-uv` cache glob'unun `backend/backend/uv.lock` yoluna çözülmesine neden olan göreli yol hatası `uv.lock` olarak düzeltildi.
 
 Tarihsel PR kanıtları kendi kabul matrislerinde korunur. Sayıları daha düşük olan eski satırlar, ilgili PR kapanışındaki gerçek sonucu gösterir; güncel regresyon sonucu yukarıdaki son doğrulama satırıdır.
 
@@ -71,6 +72,7 @@ Tarihsel PR kanıtları kendi kabul matrislerinde korunur. Sayıları daha düş
 | Kritik integrity kuralları | Tamamlandı | Authorization, IDOR, lock sırası, counter invariantı, audit ve idempotency testlidir. |
 | Public API değişim zinciri | Tamamlandı | OpenAPI, generated client, test ve belgeler birlikte güncellenir; CI temiz diff ister. |
 | Temiz Compose ve non-root çalışma | Tamamlandı | Fresh-volume CI, UID ve health kontrolleri geçmiştir. |
+| Dependency cache geçersizleştirme | Tamamlandı | Backend `working-directory` altında doğru `uv.lock` yolu izlenir. |
 | Son dokümantasyon | Tamamlandı | Bu denetimle eski gelecek-zaman ve PR durum ifadeleri güncellenmiştir. |
 | PR 6 merge'i | Kullanıcı onayı bekliyor | PR draft tutulur; açık onay olmadan merge edilmez. |
 | Repository public görünürlüğü | Kullanıcı onayı bekliyor | Repository halen private; açık onay olmadan görünürlük değiştirilmez. |
