@@ -297,3 +297,25 @@ flowchart LR
 ```
 
 Migration testleri disposable PostgreSQL Testcontainer kullanır; geliştiricinin lokal DB'sine bağlanmaz. CI ayrıca runtime `create_all` çağrısını kaynak taramasıyla reddeder ve Docker image kullanıcılarını kontrol eder.
+
+## Gözlemlenebilirlik veri akışı
+
+```mermaid
+flowchart LR
+    client["Browser veya API client"] --> backend["FastAPI backend"]
+    backend --> stdout["Docker JSON stdout"]
+    backend --> metrics["/metrics"]
+    prometheus["Prometheus"] -->|"scrape 5s"| metrics
+    alloy["Grafana Alloy"] -->|"EventFlow container discovery"| stdout
+    alloy -->|"JSON parse ve düşük cardinality labels"| loki["Loki"]
+    grafana["Grafana"] --> prometheus
+    grafana --> loki
+```
+
+Backend gözlemlenebilirlik servislerine request sırasında ağ çağrısı yapmaz. Metrikler process belleğindeki ayrı Prometheus registry üzerinde güncellenir; update hatası güvenli biçimde loglanır ve domain transaction'ını engellemez. Container JSON logları Docker logging driver tarafından tutulur, Alloy daha sonra Loki'ye taşır.
+
+Prometheus etiketleri method, route template, status, outcome, operation, endpoint ve dependency gibi sınırlı kümelerdir. Request ID, user ID, event ID, email ve ham URL etiket değildir. Eşleşmeyen rota sabit `unmatched` değeri kullanır. `/metrics` kendi scrape trafiğini HTTP metriklerine eklemez.
+
+Loki index label kümesi `service_name`, `environment`, `level` ve route template ile sınırlıdır. Request ID JSON gövdesinde kalır ve sorgu zamanında `| json` ile çıkarılır. Alloy yalnız EventFlow Compose project label'ını keşfeder, Docker socket'i read-only bağlar ve bozuk JSON satırını `parse_error` structured metadata ile kaybetmeden korur.
+
+Prometheus, Loki, Alloy ve Grafana named volume ve root olmayan runtime kullanıcılarıyla çalışır. Loki lokal single-binary filesystem modeli ve 7 günlük retention kullanır. Bu tasarım geliştirici teslimi için yeniden üretilebilirliği öne çıkarır; distributed tracing, alert routing, HA Loki ve object storage kapsam dışıdır.
